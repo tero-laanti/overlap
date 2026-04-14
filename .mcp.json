@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "godot": {
+      "command": "node",
+      "args": ["/Users/tero/.claude/mcp-servers/godot-mcp/build/index.js"],
+      "env": {
+        "GODOT_PATH": "/Applications/Godot 2.app/Contents/MacOS/Godot"
+      }
+    }
+  }
+}
