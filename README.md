@@ -5,6 +5,7 @@ Overlap is an early-stage Godot 4.6 arcade racing game prototype. The current fo
 ## Current State
 
 - Arcade car controller with drift system (the "Big Lie" — drifting preserves and adds speed)
+- Rear-wheel drift smoke feedback that only emits while the car is sliding
 - Surface-dependent handling for tarmac, sand, and grass
 - Procedural test track with walls and a closed-loop centerline
 - Progress-based lap counter with a virtual checkpoint and HUD

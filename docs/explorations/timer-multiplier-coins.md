@@ -173,7 +173,6 @@ Each step is one scoped commit that can be tested independently.
 - Multi-round flow (restart timer, carry currency)
 - Coin placement by the player
 - Timer extensions as purchasable items
-- Drift detection + visual feedback (Phase 1 item 7)
-- Sound / particles / juice
+- Sound / broader juice pass beyond the current drift smoke feedback
 
 Those build on top of this foundation but are separate tasks.

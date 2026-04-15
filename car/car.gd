@@ -4,6 +4,8 @@ extends RigidBody3D
 @export var stats: CarStats
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
+const DRIFT_FEEDBACK_NODE := "DriftFeedback"
+const DRIFT_FEEDBACK_SCRIPT_PATH := "res://car/drift_feedback.gd"
 ## Minimum forward speed before braking force applies (below this, reverse kicks in).
 const BRAKE_SPEED_THRESHOLD := 0.5
 ## Reverse acceleration is this fraction of forward acceleration.
@@ -28,6 +30,7 @@ func _ready() -> void:
 	if not stats:
 		stats = load("res://car/default_stats.tres")
 	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
+	_ensure_drift_feedback()
 
 
 func _process(_delta: float) -> void:
@@ -124,3 +127,24 @@ func _get_surface_profile(world_position: Vector3) -> SurfaceProfile:
 		return _surface_provider.call("get_surface_profile_at_position", world_position) as SurfaceProfile
 
 	return null
+
+
+func _ensure_drift_feedback() -> void:
+	var drift_feedback := get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
+	if drift_feedback:
+		drift_feedback.bind_car(self)
+		return
+
+	var drift_feedback_script: GDScript = load(DRIFT_FEEDBACK_SCRIPT_PATH) as GDScript
+	if drift_feedback_script == null:
+		push_warning("Missing drift feedback script at %s" % DRIFT_FEEDBACK_SCRIPT_PATH)
+		return
+
+	var new_drift_feedback := drift_feedback_script.new() as DriftFeedback
+	if new_drift_feedback == null:
+		push_warning("Failed to instantiate drift feedback from %s" % DRIFT_FEEDBACK_SCRIPT_PATH)
+		return
+
+	new_drift_feedback.name = DRIFT_FEEDBACK_NODE
+	add_child(new_drift_feedback)
+	new_drift_feedback.bind_car(self)

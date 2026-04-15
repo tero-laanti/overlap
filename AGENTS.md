@@ -13,6 +13,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - `car/car.gd` — Car physics controller. Drift state machine, throttle/brake, steering. All physics in `_integrate_forces`.
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle parameters.
 - `car/default_stats.tres` — Default car stats instance.
+- `car/drift_feedback.gd` — Drift smoke particles. Signal-driven by car drift state, created at runtime.
 - `camera/game_camera.gd` — Dynamic follow camera with speed-based zoom.
 - `race/coin.gd` — Collectible coin pickup with multiplier-scaled payouts.
 - `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
