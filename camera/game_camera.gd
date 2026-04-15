@@ -2,8 +2,8 @@ class_name GameCamera
 extends Camera3D
 
 @export var target_path: NodePath
-@export var follow_distance := 8.0
-@export var look_ahead := 5.0
+@export var follow_distance := 10.0
+@export var look_ahead := 12.0
 @export var min_height := 12.0
 @export var max_height := 22.0
 @export var zoom_speed_ref := 25.0 ## Car speed at which max height is reached
