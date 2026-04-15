@@ -6,6 +6,8 @@
 
 Godot 4.6 arcade racer prototype. GDScript only. Jolt Physics. MCP Bridge enabled on port 6008.
 
+Read `DESIGN.md` for game vision, design principles, and constraints. That document is the authority on *what* we're building and *why*. This file covers *how* to work in the repo.
+
 ## Key Files
 
 - `car/car.gd` — Car physics controller. Drift state machine, throttle/brake, steering. All physics in `_integrate_forces`.
