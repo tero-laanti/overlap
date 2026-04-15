@@ -222,8 +222,8 @@ func _confirm_boost_pad_placement() -> void:
 
 
 func _update_placement_input(delta: float) -> void:
-	var progress_input: float = Input.get_action_strength("steer_right") - Input.get_action_strength("steer_left")
-	var lateral_input: float = Input.get_action_strength("throttle") - Input.get_action_strength("brake")
+	var progress_input: float = Input.get_action_strength("throttle") - Input.get_action_strength("brake")
+	var lateral_input: float = Input.get_action_strength("steer_right") - Input.get_action_strength("steer_left")
 	var max_lateral_offset: float = _track.get_boost_pad_max_lateral_offset(boost_pad_track_clearance)
 
 	_placement_progress = wrapf(_placement_progress + progress_input * placement_progress_speed * delta, 0.0, 1.0)
@@ -324,7 +324,7 @@ func _update_placement_overlay() -> void:
 	if not can_place:
 		status_text = "Move onto the tarmac to place"
 
-	_placement_label.text = "Place Boost Pad\nSteer: move around the track\nThrottle / Brake: shift across the lane\nSpace / Enter: place\n%s\nPads left after this: %d" % [
+	_placement_label.text = "Place Boost Pad\nThrottle / Brake: move around the track\nSteer: shift across the lane\nSpace / Enter: place\n%s\nPads left after this: %d" % [
 		status_text,
 		remaining_after_place,
 	]
