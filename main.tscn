@@ -144,7 +144,7 @@ theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.92, 0.65, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
-text = "Time Left 1:15.0"
+text = "Time Left --"
 
 [node name="MultiplierLabel" type="Label" parent="RunHUD/Margin/VBox"]
 theme_override_font_sizes/font_size = 22

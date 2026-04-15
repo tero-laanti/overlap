@@ -2,6 +2,7 @@ class_name RunState
 extends Node
 
 const RUN_STATE_GROUP := &"run_state"
+const DEFAULT_STARTING_ROUND_TIME := 30.0
 
 signal round_time_changed(time_remaining: float)
 signal lap_time_changed(current_lap_time: float)
@@ -13,7 +14,7 @@ signal round_started(round_number: int)
 signal round_finished
 
 @export var lap_tracker_path: NodePath
-@export var starting_round_time: float = 75.0
+@export var starting_round_time: float = DEFAULT_STARTING_ROUND_TIME
 @export var base_lap_reward: int = 10
 @export var starting_multiplier: int = 1
 @export var auto_start_run: bool = true
