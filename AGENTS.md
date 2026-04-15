@@ -60,6 +60,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 | 2 | `track_wall` | Track wall `StaticBody3D`s |
 | 3 | `track_surface` | Reserved for future use |
 | 4 | `collectible` | Coins and future pickups |
+| 5 | `track_modifier` | Boost Pad `Area3D`s and future placed track effects |
 
 - The layer names in `project.godot` and this table are the source of truth. When adding a new collidable type, claim the next free layer, update both, and set `collision_mask` to only the layers that object needs.
 

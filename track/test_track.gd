@@ -45,6 +45,7 @@ const START_LINE_LENGTH := 0.8
 const START_LINE_HEIGHT := 0.04
 const START_LINE_Y_OFFSET := 0.03
 const TRACK_EDGE_PADDING := 0.6
+const PLACEMENT_SURFACE_Y_OFFSET := 0.02
 
 var _points: Array[Vector3] = []
 var _segment_lengths: Array[float] = []
@@ -120,6 +121,40 @@ func get_progress_at_position(world_position: Vector3) -> float:
 
 func get_lap_start_progress() -> float:
 	return wrapf(lap_start_progress, 0.0, 1.0)
+
+
+func get_track_transform(progress: float, lateral_offset: float = 0.0, y_offset: float = PLACEMENT_SURFACE_Y_OFFSET) -> Transform3D:
+	if _points.is_empty():
+		_build_centerline()
+	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
+		return Transform3D(Basis.IDENTITY, to_global(Vector3.UP * y_offset))
+
+	var safe_progress: float = wrapf(progress, 0.0, 1.0)
+	var distance_along_track: float = safe_progress * _track_length
+	var segment_index: int = _get_segment_index_for_distance(distance_along_track)
+	var segment_start_distance: float = _cumulative_lengths[segment_index]
+	var segment_length: float = _segment_lengths[segment_index]
+	var segment_t: float = 0.0 if is_zero_approx(segment_length) else (distance_along_track - segment_start_distance) / segment_length
+	var from: Vector3 = _points[segment_index]
+	var to: Vector3 = _points[(segment_index + 1) % _points.size()]
+	var tangent: Vector3 = (to - from).normalized()
+	var right: Vector3 = Vector3(tangent.z, 0.0, -tangent.x).normalized()
+	var local_position: Vector3 = from.lerp(to, segment_t) + right * lateral_offset
+	local_position.y = y_offset
+	var local_basis: Basis = Basis(right, Vector3.UP, -tangent).orthonormalized()
+	return Transform3D(global_basis * local_basis, to_global(local_position))
+
+
+func get_boost_pad_max_lateral_offset(clearance: float = 0.0) -> float:
+	return maxf(track_width * 0.5 - clearance, 0.0)
+
+
+func is_boost_pad_position_valid(progress: float, lateral_offset: float, clearance: float = 0.0) -> bool:
+	if absf(lateral_offset) > get_boost_pad_max_lateral_offset(clearance):
+		return false
+
+	var placement_position: Vector3 = get_track_transform(progress, lateral_offset).origin
+	return get_surface_profile_at_position(placement_position) == tarmac_surface
 
 
 ## Generates a filled band of given half-width around the centerline.
@@ -205,6 +240,20 @@ func _rebuild_length_cache() -> void:
 		var segment_length: float = _points[i].distance_to(_points[next_index])
 		_segment_lengths.append(segment_length)
 		_track_length += segment_length
+
+
+func _get_segment_index_for_distance(distance_along_track: float) -> int:
+	var wrapped_distance: float = wrapf(distance_along_track, 0.0, _track_length)
+	var segment_index: int = _segment_lengths.size() - 1
+
+	for i in range(_segment_lengths.size()):
+		var segment_start_distance: float = _cumulative_lengths[i]
+		var segment_length: float = _segment_lengths[i]
+		if wrapped_distance <= segment_start_distance + segment_length:
+			segment_index = i
+			break
+
+	return segment_index
 
 
 func _get_local_track_point(world_position: Vector3) -> Vector2:

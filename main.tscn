@@ -30,6 +30,7 @@ albedo_color = Color(0.2, 0.4, 0.8, 1)
 
 [node name="Main" type="Node3D" unique_id=983565611]
 script = ExtResource("main_script")
+track_path = NodePath("Track")
 car_path = NodePath("Car")
 run_state_path = NodePath("RunState")
 round_end_screen_path = NodePath("RoundEndScreen")

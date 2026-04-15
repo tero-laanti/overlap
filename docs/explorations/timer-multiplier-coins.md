@@ -40,7 +40,7 @@ Owns the round state: timer, multiplier, currency. Not an autoload — it's a sc
 1. Round starts. Timer counts down. Multiplier is x1.
 2. Player completes a lap -> earns `base_lap_reward * current_multiplier`, multiplier increments.
 3. Player hits a coin -> earns `coin_value * current_multiplier`.
-4. Timer hits zero -> `round_finished` fires. The HUD clears, a round-end screen shows the results, and the player can buy extra starting time before beginning the next round.
+4. Timer hits zero -> `round_finished` fires. The HUD clears, a round-end screen shows the results, and the player can buy extra starting time or queue a Boost Pad to place before beginning the next round.
 
 **Open question — timer duration:**
 Round 1 should be generous. 60 seconds? 90? This is a feel question we'll need to playtest. Make it an `@export` and try values. The track perimeter is ~353 units and max speed is 25 units/s, so a full lap takes roughly 14 seconds at top speed, probably 18-22 in practice. So 60 seconds gives ~3 laps, 90 gives ~4-5. Lean toward 90 for round 1 so the player gets to feel the multiplier ramp.
@@ -161,7 +161,7 @@ RunState connects to LapTracker and coins via NodePaths or scene-tree lookups. R
 1. **RunState** — implemented. Timer countdown + multiplier increment on lap.
 2. **RunHUD** — implemented. Displays timer, multiplier, currency, lap, and lap times.
 3. **Coins** — implemented. Coin scene, oval placement, and multiplier-scaled rewards are wired in.
-4. **Round end** — implemented as a first-pass loop closer. `round_finished` now leads into a round-end screen with results, a repeatable timer-extension purchase, and manual continue into the next round.
+4. **Round end** — implemented as a first-pass loop closer. `round_finished` now leads into a round-end screen with results, repeatable timer-extension purchases, and a purchasable Boost Pad that routes into placement before the next round starts.
 
 Each step is one scoped commit that can be tested independently.
 
@@ -169,7 +169,7 @@ Each step is one scoped commit that can be tested independently.
 
 ## What This Doesn't Cover (Yet)
 
-- Expanded pit stop phase (buy/place items between rounds beyond the current timer-extension purchase)
+- Expanded pit stop phase beyond the current timer extension and Boost Pad placement flow
 - Coin placement by the player
 - Sound / broader juice pass beyond the current drift smoke feedback
 

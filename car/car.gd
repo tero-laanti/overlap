@@ -20,6 +20,7 @@ const GROUND_Y := 0.25
 var steering_input: float = 0.0
 var throttle_input: float = 0.0
 var is_drifting: bool = false
+var controls_enabled: bool = true
 var _surface_provider: Node = null
 
 signal drift_started
@@ -34,6 +35,11 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	if not controls_enabled:
+		steering_input = 0.0
+		throttle_input = 0.0
+		return
+
 	steering_input = Input.get_axis("steer_right", "steer_left")
 	throttle_input = Input.get_axis("brake", "throttle")
 
@@ -50,6 +56,44 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 
 	steering_input = 0.0
 	throttle_input = 0.0
+
+
+func set_controls_enabled(is_enabled: bool) -> void:
+	controls_enabled = is_enabled
+	if not controls_enabled:
+		steering_input = 0.0
+		throttle_input = 0.0
+
+
+func apply_forward_boost(boost_speed: float) -> void:
+	if boost_speed <= 0.0:
+		return
+
+	var forward: Vector3 = -global_basis.z
+	forward.y = 0.0
+	if forward.length_squared() < 0.001:
+		forward = Vector3.FORWARD
+	else:
+		forward = forward.normalized()
+
+	var current_velocity: Vector3 = linear_velocity
+	var vertical_velocity: float = current_velocity.y
+	var planar_velocity: Vector3 = current_velocity
+	planar_velocity.y = 0.0
+
+	var current_forward_speed: float = planar_velocity.dot(forward)
+	var lateral_velocity: Vector3 = planar_velocity - forward * current_forward_speed
+	var boosted_forward_speed: float = maxf(current_forward_speed + boost_speed, boost_speed)
+	var max_boosted_speed: float = boost_speed
+	var minimum_forward_speed: float = boosted_forward_speed
+
+	if stats:
+		max_boosted_speed = maxf(stats.max_speed + boost_speed, boost_speed)
+		minimum_forward_speed = -stats.reverse_max_speed
+
+	boosted_forward_speed = clampf(boosted_forward_speed, minimum_forward_speed, max_boosted_speed)
+	linear_velocity = lateral_velocity + forward * boosted_forward_speed + Vector3.UP * vertical_velocity
+	sleeping = false
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
