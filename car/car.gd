@@ -38,6 +38,20 @@ func _process(_delta: float) -> void:
 	throttle_input = Input.get_axis("brake", "throttle")
 
 
+func reset_to_transform(spawn_transform: Transform3D) -> void:
+	linear_velocity = Vector3.ZERO
+	angular_velocity = Vector3.ZERO
+	global_transform = spawn_transform
+	sleeping = false
+
+	if is_drifting:
+		is_drifting = false
+		drift_ended.emit()
+
+	steering_input = 0.0
+	throttle_input = 0.0
+
+
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if not stats:
 		return

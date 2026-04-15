@@ -59,9 +59,9 @@ func start_run() -> void:
 	start_round()
 
 
-func start_round() -> void:
+func start_round(extra_start_time: float = 0.0) -> void:
 	round_number += 1
-	round_time_remaining = starting_round_time
+	round_time_remaining = maxf(starting_round_time + extra_start_time, 0.0)
 	current_lap_time = 0.0
 	last_lap_time = 0.0
 	current_multiplier = maxi(starting_multiplier, 1)
@@ -85,14 +85,10 @@ func reset_round() -> void:
 
 
 func add_round_time(seconds: float) -> void:
-	if seconds <= 0.0:
+	if seconds <= 0.0 or not is_round_active:
 		return
 
 	round_time_remaining += seconds
-	if not is_round_active and round_time_remaining > 0.0:
-		is_round_active = true
-		if _lap_tracker:
-			_lap_tracker.set_tracking_enabled(true)
 	round_time_changed.emit(round_time_remaining)
 
 
@@ -100,6 +96,17 @@ func add_pickup_currency(base_amount: int) -> int:
 	var reward: int = maxi(base_amount, 0) * current_multiplier
 	_add_currency(reward)
 	return reward
+
+
+func spend_currency(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	if amount > currency:
+		return false
+
+	currency -= amount
+	currency_changed.emit(currency)
+	return true
 
 
 func _resolve_lap_tracker() -> void:

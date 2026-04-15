@@ -3,8 +3,10 @@
 [ext_resource type="Script" path="res://camera/game_camera.gd" id="camera_script"]
 [ext_resource type="Script" path="res://car/car.gd" id="car_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
+[ext_resource type="Script" path="res://main.gd" id="main_script"]
 [ext_resource type="PackedScene" path="res://race/coin.tscn" id="coin_scene"]
 [ext_resource type="Script" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
+[ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
 [ext_resource type="Script" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" path="res://race/run_state.gd" id="run_state_script"]
 [ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
@@ -27,6 +29,11 @@ size = Vector3(2, 0.5, 4)
 albedo_color = Color(0.2, 0.4, 0.8, 1)
 
 [node name="Main" type="Node3D" unique_id=983565611]
+script = ExtResource("main_script")
+car_path = NodePath("Car")
+run_state_path = NodePath("RunState")
+round_end_screen_path = NodePath("RoundEndScreen")
+camera_path = NodePath("GameCamera")
 
 [node name="WorldEnv" type="WorldEnvironment" parent="." unique_id=1062281694]
 environment = SubResource("env")
@@ -97,6 +104,10 @@ layer = 1
 script = ExtResource("run_hud_script")
 lap_tracker_path = NodePath("../LapTracker")
 run_state_path = NodePath("../RunState")
+
+[node name="RoundEndScreen" parent="." instance=ExtResource("round_end_screen_scene")]
+run_state_path = NodePath("../RunState")
+lap_tracker_path = NodePath("../LapTracker")
 
 [node name="Margin" type="MarginContainer" parent="RunHUD"]
 offset_left = 20.0

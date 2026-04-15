@@ -10,14 +10,14 @@ extends Camera3D
 @export var position_smoothing := 5.0
 @export var rotation_smoothing := 3.0
 
-var target: Node3D
+var target: Node3D = null
 var _smooth_look_target := Vector3.ZERO
 
 
 func _ready() -> void:
 	target = get_node_or_null(target_path)
 	if target:
-		_snap_to_target()
+		snap_to_target()
 
 
 func _process(delta: float) -> void:
@@ -45,7 +45,10 @@ func _process(delta: float) -> void:
 	look_at(_smooth_look_target, Vector3.UP)
 
 
-func _snap_to_target() -> void:
+func snap_to_target() -> void:
+	if not target:
+		return
+
 	var car_pos := target.global_position
 	var car_forward := _get_target_forward()
 	global_position = car_pos + (-car_forward * follow_distance) + Vector3.UP * min_height

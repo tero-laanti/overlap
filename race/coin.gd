@@ -86,8 +86,8 @@ func _set_collected(is_collected: bool) -> void:
 	_is_collected = is_collected
 	visual.visible = not is_collected
 	visual.position = _base_visual_position
-	monitoring = not is_collected
-	monitorable = not is_collected
+	set_deferred("monitoring", not is_collected)
+	set_deferred("monitorable", not is_collected)
 	collision_shape.set_deferred("disabled", is_collected)
 
 

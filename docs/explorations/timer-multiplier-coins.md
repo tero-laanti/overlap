@@ -40,13 +40,13 @@ Owns the round state: timer, multiplier, currency. Not an autoload — it's a sc
 1. Round starts. Timer counts down. Multiplier is x1.
 2. Player completes a lap -> earns `base_lap_reward * current_multiplier`, multiplier increments.
 3. Player hits a coin -> earns `coin_value * current_multiplier`.
-4. Timer hits zero -> `round_finished` fires. For now, just freezes state. Pit stop comes later.
+4. Timer hits zero -> `round_finished` fires. The HUD clears, a round-end screen shows the results, and the player can buy extra starting time before beginning the next round.
 
 **Open question — timer duration:**
 Round 1 should be generous. 60 seconds? 90? This is a feel question we'll need to playtest. Make it an `@export` and try values. The track perimeter is ~353 units and max speed is 25 units/s, so a full lap takes roughly 14 seconds at top speed, probably 18-22 in practice. So 60 seconds gives ~3 laps, 90 gives ~4-5. Lean toward 90 for round 1 so the player gets to feel the multiplier ramp.
 
 **Open question — multiplier reset:**
-Per the brief, multiplier resets each round. But we only have one round right now. Build it to reset, add a `start_round()` method, but don't worry about multi-round flow yet.
+Per the brief, multiplier resets each round, and the current prototype now does that through `RunState.start_round()`. What remains open is whether later pit-stop systems should ever modify the starting multiplier.
 
 ---
 
@@ -161,7 +161,7 @@ RunState connects to LapTracker and coins via NodePaths or scene-tree lookups. R
 1. **RunState** — implemented. Timer countdown + multiplier increment on lap.
 2. **RunHUD** — implemented. Displays timer, multiplier, currency, lap, and lap times.
 3. **Coins** — implemented. Coin scene, oval placement, and multiplier-scaled rewards are wired in.
-4. **Round end** — partially implemented. `round_finished` fires when timer hits zero; explicit round-over presentation and pit stop flow are still separate tasks.
+4. **Round end** — implemented as a first-pass loop closer. `round_finished` now leads into a round-end screen with results, a repeatable timer-extension purchase, and manual continue into the next round.
 
 Each step is one scoped commit that can be tested independently.
 
@@ -169,10 +169,8 @@ Each step is one scoped commit that can be tested independently.
 
 ## What This Doesn't Cover (Yet)
 
-- Pit stop phase (buy/place items between rounds)
-- Multi-round flow (restart timer, carry currency)
+- Expanded pit stop phase (buy/place items between rounds beyond the current timer-extension purchase)
 - Coin placement by the player
-- Timer extensions as purchasable items
 - Sound / broader juice pass beyond the current drift smoke feedback
 
 Those build on top of this foundation but are separate tasks.

@@ -3,10 +3,12 @@ extends CanvasLayer
 
 const TIMER_URGENCY_THRESHOLD := 10.0
 const TIMER_URGENCY_COLOR := Color(1.0, 0.35, 0.3, 1.0)
+const ROUND_END_HIDE_DELAY := 0.65
 
 @export var lap_tracker_path: NodePath
 @export var run_state_path: NodePath
 
+@onready var content: MarginContainer = $Margin
 @onready var lap_label: Label = $Margin/VBox/LapLabel
 @onready var lap_time_label: Label = $Margin/VBox/LapTimeLabel
 @onready var last_lap_label: Label = $Margin/VBox/LastLapLabel
@@ -17,12 +19,18 @@ const TIMER_URGENCY_COLOR := Color(1.0, 0.35, 0.3, 1.0)
 var _lap_tracker: LapTracker = null
 var _run_state: RunState = null
 var _timer_default_color: Color
+var _hide_timer: Timer = null
 
 
 func _ready() -> void:
 	_lap_tracker = get_node_or_null(lap_tracker_path) as LapTracker
 	_run_state = get_node_or_null(run_state_path) as RunState
 	_timer_default_color = round_time_label.get_theme_color("font_color")
+	_hide_timer = Timer.new()
+	_hide_timer.one_shot = true
+	add_child(_hide_timer)
+	if not _hide_timer.timeout.is_connected(_on_hide_timer_timeout):
+		_hide_timer.timeout.connect(_on_hide_timer_timeout)
 
 	if not _lap_tracker:
 		push_warning("RunHUD could not find the lap tracker.")
@@ -48,9 +56,12 @@ func _ready() -> void:
 		_run_state.multiplier_changed.connect(_on_multiplier_changed)
 	if not _run_state.currency_changed.is_connected(_on_currency_changed):
 		_run_state.currency_changed.connect(_on_currency_changed)
+	if not _run_state.round_started.is_connected(_on_round_started):
+		_run_state.round_started.connect(_on_round_started)
 	if not _run_state.round_finished.is_connected(_on_round_finished):
 		_run_state.round_finished.connect(_on_round_finished)
 
+	content.visible = _run_state.is_round_active
 	_on_round_time_changed(_run_state.round_time_remaining)
 	_on_lap_time_changed(_run_state.current_lap_time)
 	_on_last_lap_time_changed(_run_state.last_lap_time)
@@ -92,7 +103,23 @@ func _on_currency_changed(currency: int) -> void:
 
 
 func _on_round_finished() -> void:
+	content.visible = true
 	round_time_label.text = "Time Up"
+	round_time_label.add_theme_color_override("font_color", TIMER_URGENCY_COLOR)
+	_hide_timer.start(ROUND_END_HIDE_DELAY)
+
+
+func _on_round_started(_round_number: int) -> void:
+	if _hide_timer:
+		_hide_timer.stop()
+
+	content.visible = true
+	round_time_label.add_theme_color_override("font_color", _timer_default_color)
+
+
+func _on_hide_timer_timeout() -> void:
+	if _run_state and not _run_state.is_round_active:
+		content.visible = false
 
 
 func _show_missing_state() -> void:
