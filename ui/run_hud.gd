@@ -7,9 +7,11 @@ const ROUND_END_HIDE_DELAY := 0.65
 
 @export var lap_tracker_path: NodePath
 @export var run_state_path: NodePath
+@export var car_path: NodePath
 
 @onready var content: MarginContainer = $Margin
 @onready var lap_label: Label = $Margin/VBox/LapLabel
+@onready var speed_label: Label = $Margin/VBox/SpeedLabel
 @onready var lap_time_label: Label = $Margin/VBox/LapTimeLabel
 @onready var last_lap_label: Label = $Margin/VBox/LastLapLabel
 @onready var round_time_label: Label = $Margin/VBox/RoundTimeLabel
@@ -18,6 +20,7 @@ const ROUND_END_HIDE_DELAY := 0.65
 
 var _lap_tracker: LapTracker = null
 var _run_state: RunState = null
+var _car: Car = null
 var _timer_default_color: Color
 var _hide_timer: Timer = null
 
@@ -25,6 +28,7 @@ var _hide_timer: Timer = null
 func _ready() -> void:
 	_lap_tracker = get_node_or_null(lap_tracker_path) as LapTracker
 	_run_state = get_node_or_null(run_state_path) as RunState
+	_car = get_node_or_null(car_path) as Car
 	_timer_default_color = round_time_label.get_theme_color("font_color")
 	_hide_timer = Timer.new()
 	_hide_timer.one_shot = true
@@ -40,10 +44,12 @@ func _ready() -> void:
 			_lap_tracker.lap_changed.connect(_on_lap_changed)
 		_on_lap_changed(_lap_tracker.current_lap)
 
+	if not _car:
+		push_warning("RunHUD could not find the car.")
+
 	if not _run_state:
 		push_warning("RunHUD could not find the run state.")
 		_show_missing_state()
-		set_process(false)
 		return
 
 	if not _run_state.round_time_changed.is_connected(_on_round_time_changed):
@@ -67,6 +73,11 @@ func _ready() -> void:
 	_on_last_lap_time_changed(_run_state.last_lap_time)
 	_on_multiplier_changed(_run_state.current_multiplier)
 	_on_currency_changed(_run_state.currency)
+	_update_speed_label()
+
+
+func _process(_delta: float) -> void:
+	_update_speed_label()
 
 
 func _on_lap_changed(current_lap: int) -> void:
@@ -124,6 +135,7 @@ func _on_hide_timer_timeout() -> void:
 
 func _show_missing_state() -> void:
 	lap_label.text = "Lap --"
+	speed_label.text = "Speed --"
 	lap_time_label.text = "Lap Time --:--.--"
 	last_lap_label.text = "Last --:--.--"
 	round_time_label.text = "Time Left --"
@@ -157,3 +169,13 @@ func _format_round_time(seconds: float) -> String:
 	var whole_seconds: int = total_seconds % 60
 	var tenths: int = int(floor(fmod(safe_seconds, 1.0) * 10.0))
 	return "%d:%02d.%01d" % [minutes, whole_seconds, tenths]
+
+
+func _update_speed_label() -> void:
+	if _car == null:
+		speed_label.text = "Speed --"
+		return
+
+	var planar_velocity: Vector3 = _car.linear_velocity
+	planar_velocity.y = 0.0
+	speed_label.text = "Speed %d" % int(roundf(planar_velocity.length()))

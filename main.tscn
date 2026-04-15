@@ -105,6 +105,7 @@ layer = 1
 script = ExtResource("run_hud_script")
 lap_tracker_path = NodePath("../LapTracker")
 run_state_path = NodePath("../RunState")
+car_path = NodePath("../Car")
 
 [node name="RoundEndScreen" parent="." instance=ExtResource("round_end_screen_scene")]
 run_state_path = NodePath("../RunState")
@@ -114,7 +115,7 @@ lap_tracker_path = NodePath("../LapTracker")
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 320.0
-offset_bottom = 220.0
+offset_bottom = 250.0
 
 [node name="VBox" type="VBoxContainer" parent="RunHUD/Margin"]
 theme_override_constants/separation = 6
@@ -125,6 +126,13 @@ theme_override_colors/font_color = Color(0.96, 0.96, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 5
 text = "Lap 1"
+
+[node name="SpeedLabel" type="Label" parent="RunHUD/Margin/VBox"]
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
+theme_override_constants/outline_size = 4
+text = "Speed 0"
 
 [node name="LapTimeLabel" type="Label" parent="RunHUD/Margin/VBox"]
 theme_override_font_sizes/font_size = 22
