@@ -1,3 +1,4 @@
+class_name GameCamera
 extends Camera3D
 
 @export var target_path: NodePath
@@ -24,12 +25,7 @@ func _process(delta: float) -> void:
 	if not target:
 		return
 
-	var car_pos := target.global_position
-	var car_forward := -target.global_basis.z
-	car_forward.y = 0.0
-	if car_forward.length_squared() < 0.001:
-		car_forward = Vector3.FORWARD
-	car_forward = car_forward.normalized()
+	var car_forward := _get_target_forward()
 
 	# Dynamic height based on speed
 	var speed := 0.0
@@ -39,6 +35,7 @@ func _process(delta: float) -> void:
 	var current_height := lerpf(min_height, max_height, speed_pct)
 
 	# Camera sits behind and above the car
+	var car_pos := target.global_position
 	var cam_offset := -car_forward * follow_distance + Vector3.UP * current_height
 	var target_pos := car_pos + cam_offset
 	global_position = global_position.lerp(target_pos, position_smoothing * delta)
@@ -51,12 +48,15 @@ func _process(delta: float) -> void:
 
 func _snap_to_target() -> void:
 	var car_pos := target.global_position
-	var car_forward := -target.global_basis.z
-	car_forward.y = 0.0
-	if car_forward.length_squared() < 0.001:
-		car_forward = Vector3.FORWARD
-	car_forward = car_forward.normalized()
-
+	var car_forward := _get_target_forward()
 	global_position = car_pos + (-car_forward * follow_distance) + Vector3.UP * min_height
 	_smooth_look_target = car_pos + car_forward * look_ahead
 	look_at(_smooth_look_target, Vector3.UP)
+
+
+func _get_target_forward() -> Vector3:
+	var fwd := -target.global_basis.z
+	fwd.y = 0.0
+	if fwd.length_squared() < 0.001:
+		return Vector3.FORWARD
+	return fwd.normalized()

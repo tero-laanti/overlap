@@ -1,3 +1,4 @@
+class_name TestTrack
 extends Node3D
 
 @export var track_width := 10.0
@@ -5,8 +6,11 @@ extends Node3D
 @export var wall_thickness := 0.5
 @export var wall_overlap := 1.0 ## Extra length on each wall segment to cover corners
 
-## Track centerline (closed loop, hand-authored)
-var track_points: Array[Vector3] = [
+## Collision layer for track walls (layer 2).
+const WALL_COLLISION_LAYER := 2
+
+## Track centerline (closed loop, hand-authored).
+const TRACK_POINTS: Array[Vector3] = [
 	Vector3(0, 0, 0),
 	Vector3(30, 0, 0),
 	Vector3(42, 0, -12),
@@ -47,11 +51,11 @@ func _generate_track_surface() -> void:
 	st.set_smooth_group(-1)
 
 	var half_w := track_width / 2.0
-	var n := track_points.size()
+	var n := TRACK_POINTS.size()
 
 	for i in range(n):
-		var p0 := track_points[i]
-		var p1 := track_points[(i + 1) % n]
+		var p0 := TRACK_POINTS[i]
+		var p1 := TRACK_POINTS[(i + 1) % n]
 		var seg_dir := (p1 - p0).normalized()
 		var perp := Vector3(-seg_dir.z, 0.0, seg_dir.x)
 
@@ -83,11 +87,11 @@ func _generate_track_surface() -> void:
 
 func _generate_walls() -> void:
 	var half_w := track_width / 2.0
-	var n := track_points.size()
+	var n := TRACK_POINTS.size()
 
 	for i in range(n):
-		var p0 := track_points[i]
-		var p1 := track_points[(i + 1) % n]
+		var p0 := TRACK_POINTS[i]
+		var p1 := TRACK_POINTS[(i + 1) % n]
 		var seg_dir := (p1 - p0).normalized()
 		var perp := Vector3(-seg_dir.z, 0.0, seg_dir.x)
 		var seg_length := p0.distance_to(p1) + wall_overlap * 2.0
@@ -95,15 +99,18 @@ func _generate_walls() -> void:
 		var angle := atan2(seg_dir.x, seg_dir.z)
 
 		# Left wall (inner)
-		_create_wall(center + perp * half_w, angle, seg_length)
+		_create_wall("Wall_L_%d" % i, center + perp * half_w, angle, seg_length)
 		# Right wall (outer)
-		_create_wall(center - perp * half_w, angle, seg_length)
+		_create_wall("Wall_R_%d" % i, center - perp * half_w, angle, seg_length)
 
 
-func _create_wall(pos: Vector3, angle: float, length: float) -> void:
+func _create_wall(wall_name: String, pos: Vector3, angle: float, length: float) -> void:
 	var wall := StaticBody3D.new()
+	wall.name = wall_name
 	wall.position = Vector3(pos.x, wall_height / 2.0, pos.z)
 	wall.rotation.y = angle
+	wall.collision_layer = WALL_COLLISION_LAYER
+	wall.collision_mask = 0
 	add_child(wall)
 
 	var shape := BoxShape3D.new()
