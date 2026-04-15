@@ -14,8 +14,11 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle parameters.
 - `car/default_stats.tres` — Default car stats instance.
 - `camera/game_camera.gd` — Dynamic follow camera with speed-based zoom.
+- `race/coin.gd` — Collectible coin pickup with multiplier-scaled payouts.
 - `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
+- `race/run_state.gd` — Round timer, lap timing, multiplier, and currency rewards.
 - `track/test_track.gd` — Procedural track generation from a hand-authored centerline.
+- `ui/run_hud.gd` — Prototype race HUD for lap/timer/economy state.
 - `main.tscn` — Main scene. Car, track, camera, lighting, environment.
 
 ## Working Rules
@@ -55,6 +58,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 | 1 | `car` | Car `RigidBody3D` |
 | 2 | `track_wall` | Track wall `StaticBody3D`s |
 | 3 | `track_surface` | Reserved for future use |
+| 4 | `collectible` | Coins and future pickups |
 
 - The layer names in `project.godot` and this table are the source of truth. When adding a new collidable type, claim the next free layer, update both, and set `collision_mask` to only the layers that object needs.
 
@@ -77,6 +81,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - Track geometry is procedural from a centerline. The wall and surface generation code is intentionally simple — it will evolve.
 - The current oval track maps world position to `SurfaceProfile` resources (`tarmac`, `sand`, `grass`) so floor regions can change car handling without per-triangle floor physics.
 - Lap counting currently uses track progress plus a virtual checkpoint halfway around the course rather than hand-placed checkpoint volumes.
+- Coins are currently hand-placed in `main.tscn` and respawn on each completed lap so multiplier-scaled pickups stay relevant across a round.
 - Track points currently live in the script. If multiple authored layouts or track-editing workflows appear, move them into a dedicated `Resource`.
 - Keep using deliberate collision layers as new collidable types are added. Do not reuse layer 1 as the default for unrelated objects.
 

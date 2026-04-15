@@ -51,6 +51,7 @@ brake={
 3d_physics/layer_1="car"
 3d_physics/layer_2="track_wall"
 3d_physics/layer_3="track_surface"
+3d_physics/layer_4="collectible"
 
 [physics]
 

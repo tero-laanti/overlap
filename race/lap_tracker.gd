@@ -1,6 +1,8 @@
 class_name LapTracker
 extends Node
 
+const LAP_TRACKER_GROUP := &"lap_tracker"
+
 signal lap_changed(current_lap: int)
 signal lap_completed(completed_laps: int)
 
@@ -19,9 +21,16 @@ var _track: TestTrack = null
 var _lap_armed: bool = false
 var _has_last_progress: bool = false
 var _last_progress: float = 0.0
+var _is_tracking_enabled: bool = true
+
+
+func _enter_tree() -> void:
+	add_to_group(LAP_TRACKER_GROUP)
 
 
 func _physics_process(_delta: float) -> void:
+	if not _is_tracking_enabled:
+		return
 	if not _resolve_references():
 		return
 
@@ -54,6 +63,20 @@ func _physics_process(_delta: float) -> void:
 		lap_changed.emit(current_lap)
 
 	_last_progress = relative_progress
+
+
+func reset_for_round() -> void:
+	current_lap = 1
+	completed_laps = 0
+	current_progress = 0.0
+	_lap_armed = false
+	_has_last_progress = false
+	_last_progress = 0.0
+	lap_changed.emit(current_lap)
+
+
+func set_tracking_enabled(is_enabled: bool) -> void:
+	_is_tracking_enabled = is_enabled
 
 
 func _resolve_references() -> bool:
