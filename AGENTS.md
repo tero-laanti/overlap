@@ -26,6 +26,14 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - Avoid speculative "not yet" state notes that will rot. Document current concrete state or a durable invariant instead.
 - When a change alters documented current-state behavior, tables, layers, or workflows, update the relevant docs in the same change.
 
+## Commits
+
+- One logical change per commit. Don't mix unrelated work.
+- If a change spans multiple files but serves one purpose (e.g., "add camera system" touches script + scene), that's one commit.
+- If a change does two things (e.g., adds a feature AND fixes an unrelated bug), split it into two commits.
+- Write commit messages that say what and why, not how. The diff shows how.
+- No WIP commits on main.
+
 ## Godot Conventions
 
 - Follow the official GDScript style guide: `snake_case` for variables and functions, `PascalCase` for classes and nodes, `CONSTANT_CASE` for constants.
