@@ -1,18 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene format=3 uid="uid://y7o50nge0q2p"]
 
-[ext_resource type="Script" path="res://car/car.gd" id="car_script"]
-[ext_resource type="Script" path="res://camera/game_camera.gd" id="camera_script"]
-[ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
+[ext_resource type="Script" uid="uid://nxpfj861gbdq" path="res://camera/game_camera.gd" id="camera_script"]
+[ext_resource type="Script" uid="uid://b16rihml1wthi" path="res://car/car.gd" id="car_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
-
-[sub_resource type="BoxMesh" id="car_mesh"]
-size = Vector3(2, 0.5, 4)
-
-[sub_resource type="StandardMaterial3D" id="car_material"]
-albedo_color = Color(0.2, 0.4, 0.8, 1)
-
-[sub_resource type="BoxShape3D" id="car_shape"]
-size = Vector3(2, 0.5, 4)
+[ext_resource type="Script" uid="uid://cpfvs67kqxbqn" path="res://track/test_track.gd" id="track_script"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -22,11 +13,35 @@ ambient_light_color = Color(0.55, 0.55, 0.6, 1)
 ambient_light_energy = 0.8
 tonemap_mode = 2
 
-[node name="Main" type="Node3D"]
+[sub_resource type="BoxShape3D" id="car_shape"]
+size = Vector3(2, 0.5, 4)
 
-[node name="Car" type="RigidBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
-collision_layer = 1
+[sub_resource type="BoxMesh" id="car_mesh"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="StandardMaterial3D" id="car_material"]
+albedo_color = Color(0.2, 0.4, 0.8, 1)
+
+[node name="Main" type="Node3D" unique_id=983565611]
+
+[node name="WorldEnv" type="WorldEnvironment" parent="." unique_id=1062281694]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1925903407]
+transform = Transform3D(1, 0, 0, 0, 0.5, -0.866, 0, 0.866, 0.5, 0, 20, 0)
+shadow_enabled = true
+
+[node name="GameCamera" type="Camera3D" parent="." unique_id=1631959102]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 10)
+current = true
+script = ExtResource("camera_script")
+target_path = NodePath("../Car")
+
+[node name="Track" type="Node3D" parent="." unique_id=2097169173]
+script = ExtResource("track_script")
+
+[node name="Car" type="RigidBody3D" parent="." unique_id=183954873]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
 collision_mask = 3
 mass = 1.5
 gravity_scale = 0.0
@@ -37,25 +52,9 @@ max_contacts_reported = 4
 script = ExtResource("car_script")
 stats = ExtResource("car_stats")
 
-[node name="Body" type="MeshInstance3D" parent="Car"]
-mesh = SubResource("car_mesh")
-surface_material_override/0 = SubResource("car_material")
-
-[node name="Collision" type="CollisionShape3D" parent="Car"]
+[node name="Collision" type="CollisionShape3D" parent="Car" unique_id=2075442314]
 shape = SubResource("car_shape")
 
-[node name="Track" type="Node3D" parent="."]
-script = ExtResource("track_script")
-
-[node name="GameCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 10)
-current = true
-script = ExtResource("camera_script")
-target_path = NodePath("../Car")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5, -0.866, 0, 0.866, 0.5, 0, 20, 0)
-shadow_enabled = true
-
-[node name="WorldEnv" type="WorldEnvironment" parent="."]
-environment = SubResource("env")
+[node name="Body" type="MeshInstance3D" parent="Car" unique_id=2086963516]
+mesh = SubResource("car_mesh")
+surface_material_override/0 = SubResource("car_material")

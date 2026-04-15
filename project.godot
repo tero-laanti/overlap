@@ -11,18 +11,13 @@ config_version=5
 [application]
 
 config/name="Overlap"
+run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
-run/main_scene="res://main.tscn"
 
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot_mcp_bridge/plugin.cfg")
-
-[physics]
-
-common/physics_ticks_per_second=120
-3d/physics_engine="Jolt Physics"
 
 [input]
 
@@ -56,6 +51,11 @@ brake={
 3d_physics/layer_1="car"
 3d_physics/layer_2="track_wall"
 3d_physics/layer_3="track_surface"
+
+[physics]
+
+common/physics_ticks_per_second=120
+3d/physics_engine="Jolt Physics"
 
 [rendering]
 
