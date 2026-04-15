@@ -3,6 +3,7 @@ extends RigidBody3D
 
 @export var stats: CarStats
 
+const SURFACE_PROVIDER_GROUP := &"surface_provider"
 ## Minimum forward speed before braking force applies (below this, reverse kicks in).
 const BRAKE_SPEED_THRESHOLD := 0.5
 ## Reverse acceleration is this fraction of forward acceleration.
@@ -14,9 +15,10 @@ const MIN_SPEED_FOR_FULL_TURN := 5.0
 ## Y position the car is locked to (ground plane).
 const GROUND_Y := 0.25
 
-var steering_input := 0.0
-var throttle_input := 0.0
-var is_drifting := false
+var steering_input: float = 0.0
+var throttle_input: float = 0.0
+var is_drifting: bool = false
+var _surface_provider: Node = null
 
 signal drift_started
 signal drift_ended
@@ -25,7 +27,7 @@ signal drift_ended
 func _ready() -> void:
 	if not stats:
 		stats = load("res://car/default_stats.tres")
-	print("Car ready. Stats: ", stats, " Position: ", global_position)
+	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
 
 
 func _process(_delta: float) -> void:
@@ -37,6 +39,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if not stats:
 		return
 
+	var surface_profile: SurfaceProfile = _get_surface_profile(state.transform.origin)
 	var body_basis: Basis = state.transform.basis
 	var forward := -body_basis.z
 	var right := body_basis.x
@@ -45,21 +48,38 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	vel.y = 0.0
 	var fwd_speed := vel.dot(forward)
 	var lat_speed := vel.dot(right)
+	var acceleration_multiplier: float = surface_profile.acceleration_multiplier if surface_profile else 1.0
+	var max_speed_multiplier: float = surface_profile.max_speed_multiplier if surface_profile else 1.0
+	var drift_boost_multiplier: float = surface_profile.drift_boost_multiplier if surface_profile else 1.0
+	var turn_speed_multiplier: float = surface_profile.turn_speed_multiplier if surface_profile else 1.0
+	var grip_multiplier: float = surface_profile.grip_multiplier if surface_profile else 1.0
+	var drift_grip_multiplier: float = surface_profile.drift_grip_multiplier if surface_profile else 1.0
+	var drift_threshold_multiplier: float = surface_profile.drift_threshold_multiplier if surface_profile else 1.0
+	var linear_drag_multiplier: float = surface_profile.linear_drag_multiplier if surface_profile else 1.0
+	var acceleration_force: float = stats.acceleration_force * acceleration_multiplier
+	var max_speed: float = stats.max_speed * max_speed_multiplier
+	var reverse_max_speed: float = stats.reverse_max_speed * max_speed_multiplier
+	var drift_threshold: float = stats.drift_threshold * drift_threshold_multiplier
+	var grip: float = stats.grip * grip_multiplier
+	var drift_grip: float = stats.drift_grip * drift_grip_multiplier
+	var drift_boost_force: float = stats.drift_boost_force * drift_boost_multiplier
+	var linear_drag: float = stats.linear_drag * linear_drag_multiplier
+	var turn_speed: float = stats.turn_speed * turn_speed_multiplier
 
 	var total_force := Vector3.ZERO
 
 	# --- Throttle / Brake ---
-	if throttle_input > 0.0 and fwd_speed < stats.max_speed:
-		total_force += forward * stats.acceleration_force * throttle_input
+	if throttle_input > 0.0 and fwd_speed < max_speed:
+		total_force += forward * acceleration_force * throttle_input
 	elif throttle_input < 0.0:
 		if fwd_speed > BRAKE_SPEED_THRESHOLD:
 			total_force += forward * stats.brake_force * throttle_input
-		elif fwd_speed > -stats.reverse_max_speed:
-			total_force += forward * stats.acceleration_force * REVERSE_ACCEL_FACTOR * throttle_input
+		elif fwd_speed > -reverse_max_speed:
+			total_force += forward * acceleration_force * REVERSE_ACCEL_FACTOR * throttle_input
 
 	# --- Drift detection ---
 	var was_drifting := is_drifting
-	is_drifting = absf(lat_speed) > stats.drift_threshold and absf(fwd_speed) > stats.drift_min_speed
+	is_drifting = absf(lat_speed) > drift_threshold and absf(fwd_speed) > stats.drift_min_speed
 
 	if is_drifting and not was_drifting:
 		drift_started.emit()
@@ -67,22 +87,22 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		drift_ended.emit()
 
 	# --- Grip (kill lateral velocity) ---
-	var current_grip: float = stats.drift_grip if is_drifting else stats.grip
+	var current_grip: float = drift_grip if is_drifting else grip
 	total_force += -right * lat_speed * current_grip
 
 	# --- Drift boost (the Big Lie: drifting preserves/adds speed) ---
 	if is_drifting:
-		total_force += forward * stats.drift_boost_force
+		total_force += forward * drift_boost_force
 
 	# --- Linear drag when coasting ---
 	if absf(throttle_input) < THROTTLE_DEAD_ZONE:
-		total_force += -vel * stats.linear_drag
+		total_force += -vel * linear_drag
 
 	state.apply_central_force(total_force)
 
 	# --- Steering: set angular velocity directly for snappy feel ---
 	var speed_factor := clampf(absf(fwd_speed) / MIN_SPEED_FOR_FULL_TURN, 0.0, 1.0)
-	var steer: float = steering_input * stats.turn_speed * speed_factor
+	var steer: float = steering_input * turn_speed * speed_factor
 	if fwd_speed < -1.0:
 		steer *= -1.0
 	state.angular_velocity = Vector3(0.0, steer, 0.0)
@@ -94,3 +114,13 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var yaw := xform.basis.get_euler().y
 	xform.basis = Basis.from_euler(Vector3(0.0, yaw, 0.0))
 	state.transform = xform
+
+
+func _get_surface_profile(world_position: Vector3) -> SurfaceProfile:
+	if not is_instance_valid(_surface_provider):
+		_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
+
+	if _surface_provider and _surface_provider.has_method("get_surface_profile_at_position"):
+		return _surface_provider.call("get_surface_profile_at_position", world_position) as SurfaceProfile
+
+	return null

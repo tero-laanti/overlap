@@ -1,9 +1,11 @@
-[gd_scene format=3 uid="uid://y7o50nge0q2p"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://nxpfj861gbdq" path="res://camera/game_camera.gd" id="camera_script"]
-[ext_resource type="Script" uid="uid://b16rihml1wthi" path="res://car/car.gd" id="car_script"]
+[ext_resource type="Script" path="res://camera/game_camera.gd" id="camera_script"]
+[ext_resource type="Script" path="res://car/car.gd" id="car_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
-[ext_resource type="Script" uid="uid://cpfvs67kqxbqn" path="res://track/test_track.gd" id="track_script"]
+[ext_resource type="Script" path="res://ui/lap_counter.gd" id="lap_counter_script"]
+[ext_resource type="Script" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
+[ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -40,6 +42,11 @@ target_path = NodePath("../Car")
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
 
+[node name="LapTracker" type="Node" parent="."]
+script = ExtResource("lap_tracker_script")
+car_path = NodePath("../Car")
+track_path = NodePath("../Track")
+
 [node name="Car" type="RigidBody3D" parent="." unique_id=183954873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
 collision_mask = 3
@@ -58,3 +65,20 @@ shape = SubResource("car_shape")
 [node name="Body" type="MeshInstance3D" parent="Car" unique_id=2086963516]
 mesh = SubResource("car_mesh")
 surface_material_override/0 = SubResource("car_material")
+
+[node name="LapCounter" type="CanvasLayer" parent="."]
+layer = 1
+script = ExtResource("lap_counter_script")
+tracker_path = NodePath("../LapTracker")
+label_path = NodePath("Label")
+
+[node name="Label" type="Label" parent="LapCounter"]
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 220.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(0.96, 0.96, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
+theme_override_constants/outline_size = 5
+text = "Lap 1"

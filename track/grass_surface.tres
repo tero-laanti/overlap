@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SurfaceProfile" format=3]
+
+[ext_resource type="Script" path="res://track/surface_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Grass"
+acceleration_multiplier = 0.7
+max_speed_multiplier = 0.8
+drift_boost_multiplier = 0.5
+turn_speed_multiplier = 0.85
+grip_multiplier = 0.8
+drift_grip_multiplier = 0.85
+drift_threshold_multiplier = 0.9
+linear_drag_multiplier = 1.8

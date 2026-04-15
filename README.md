@@ -5,7 +5,9 @@ Overlap is an early-stage Godot 4.6 arcade racing game prototype. The current fo
 ## Current State
 
 - Arcade car controller with drift system (the "Big Lie" — drifting preserves and adds speed)
+- Surface-dependent handling for tarmac, sand, and grass
 - Procedural test track with walls and a closed-loop centerline
+- Progress-based lap counter with a virtual checkpoint and HUD
 - Dynamic follow camera with speed-based zoom
 - Jolt Physics at 120Hz tick rate
 - Godot MCP Bridge for editor automation
@@ -19,7 +21,9 @@ Requires Godot 4.6 with Jolt Physics (built-in). Clone the repo, open `project.g
 ```
 car/          Car controller, stats resource, and tuning data
 camera/       Camera systems
+race/         Race-state systems such as lap tracking
 track/        Track generation and layout
+ui/           HUD and prototype overlays
 addons/       Editor plugins (MCP bridge)
 docs/         Design notes and explorations (planned)
 ```

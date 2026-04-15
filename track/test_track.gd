@@ -2,33 +2,63 @@
 class_name TestTrack
 extends Node3D
 
+class ClosestSegmentResult:
+	var distance: float
+	var segment_index: int
+	var segment_t: float
+
+	func _init(new_distance: float = INF, new_segment_index: int = 0, new_segment_t: float = 0.0) -> void:
+		distance = new_distance
+		segment_index = new_segment_index
+		segment_t = new_segment_t
+
+
+const SURFACE_PROVIDER_GROUP := &"surface_provider"
 ## Oval shape.
-@export var semi_major_x := 60.0
-@export var semi_minor_z := 40.0
-@export var oval_segments := 64
+@export var semi_major_x: float = 60.0
+@export var semi_minor_z: float = 40.0
+@export var oval_segments: int = 64
 
 ## Track dimensions.
-@export var track_width := 12.0
-@export var sand_width := 8.0
+@export var track_width: float = 12.0
+@export var sand_width: float = 8.0
 
 ## Wall dimensions.
-@export var wall_height := 1.2
-@export var wall_thickness := 0.4
+@export var wall_height: float = 1.2
+@export var wall_thickness: float = 0.4
+
+@export_group("Surface Profiles")
+@export var tarmac_surface: SurfaceProfile = preload("res://track/tarmac_surface.tres")
+@export var sand_surface: SurfaceProfile = preload("res://track/sand_surface.tres")
+@export var grass_surface: SurfaceProfile = preload("res://track/grass_surface.tres")
+
+@export_group("Lap")
+@export_range(0.0, 1.0, 0.01) var lap_start_progress: float = 0.5
 
 const WALL_COLLISION_LAYER := 2
 const TARMAC_COLOR := Color(0.20, 0.20, 0.25)
 const SAND_COLOR := Color(0.76, 0.70, 0.50)
 const GRASS_COLOR := Color(0.30, 0.45, 0.22)
 const BARRIER_COLOR := Color(0.60, 0.60, 0.62)
+const START_LINE_COLOR := Color(0.95, 0.95, 0.95)
+const START_LINE_LENGTH := 0.8
+const START_LINE_HEIGHT := 0.04
+const START_LINE_Y_OFFSET := 0.03
+const TRACK_EDGE_PADDING := 0.6
 
 var _points: Array[Vector3] = []
+var _segment_lengths: Array[float] = []
+var _cumulative_lengths: Array[float] = []
+var _track_length: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(SURFACE_PROVIDER_GROUP)
 	_build_centerline()
 	_add_ground()
 	_add_ring_mesh("SandSurface", track_width / 2.0 + sand_width, 0.005, SAND_COLOR)
 	_add_ring_mesh("TrackSurface", track_width / 2.0, 0.01, TARMAC_COLOR)
+	_add_start_finish_line()
 	_add_walls()
 
 
@@ -37,6 +67,7 @@ func _build_centerline() -> void:
 	for i in range(oval_segments):
 		var t := float(i) / float(oval_segments) * TAU
 		_points.append(Vector3(semi_major_x * cos(t), 0.0, semi_minor_z * sin(t)))
+	_rebuild_length_cache()
 
 
 ## Returns the inward-pointing perpendicular at the given centerline index.
@@ -57,6 +88,38 @@ func _add_ground() -> void:
 	mat.albedo_color = GRASS_COLOR
 	mi.material_override = mat
 	add_child(mi)
+
+
+func get_surface_profile_at_position(world_position: Vector3) -> SurfaceProfile:
+	if _points.is_empty():
+		_build_centerline()
+
+	var point: Vector2 = _get_local_track_point(world_position)
+	var distance_to_centerline: float = _get_closest_segment(point).distance
+	var track_half_width: float = track_width / 2.0
+	var sand_boundary: float = track_half_width + sand_width
+
+	if distance_to_centerline <= track_half_width:
+		return tarmac_surface
+	if distance_to_centerline <= sand_boundary:
+		return sand_surface
+	return grass_surface
+
+
+func get_progress_at_position(world_position: Vector3) -> float:
+	if _points.is_empty():
+		_build_centerline()
+	if is_zero_approx(_track_length):
+		return 0.0
+
+	var point: Vector2 = _get_local_track_point(world_position)
+	var closest: ClosestSegmentResult = _get_closest_segment(point)
+	var distance_along_track: float = _cumulative_lengths[closest.segment_index] + _segment_lengths[closest.segment_index] * closest.segment_t
+	return wrapf(distance_along_track / _track_length, 0.0, 1.0)
+
+
+func get_lap_start_progress() -> float:
+	return wrapf(lap_start_progress, 0.0, 1.0)
 
 
 ## Generates a filled band of given half-width around the centerline.
@@ -96,6 +159,81 @@ func _add_ring_mesh(mesh_name: String, half_w: float, y_offset: float, color: Co
 	mat.albedo_color = color
 	mi.material_override = mat
 	add_child(mi)
+
+
+func _add_start_finish_line() -> void:
+	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
+		return
+
+	var distance_along_track: float = get_lap_start_progress() * _track_length
+	var segment_index: int = _segment_lengths.size() - 1
+	var segment_t: float = 0.0
+
+	for i in range(_segment_lengths.size()):
+		var segment_start_distance: float = _cumulative_lengths[i]
+		var segment_length: float = _segment_lengths[i]
+		if distance_along_track <= segment_start_distance + segment_length:
+			segment_index = i
+			segment_t = 0.0 if is_zero_approx(segment_length) else (distance_along_track - segment_start_distance) / segment_length
+			break
+
+	var from: Vector3 = _points[segment_index]
+	var to: Vector3 = _points[(segment_index + 1) % _points.size()]
+	var tangent: Vector3 = (to - from).normalized()
+	var across: Vector3 = Vector3(-tangent.z, 0.0, tangent.x).normalized()
+	var line := MeshInstance3D.new()
+	line.name = "StartFinishLine"
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(maxf(track_width - TRACK_EDGE_PADDING, 0.2), START_LINE_HEIGHT, START_LINE_LENGTH)
+	line.mesh = mesh
+	line.position = from.lerp(to, segment_t) + Vector3.UP * START_LINE_Y_OFFSET
+	line.basis = Basis(across, Vector3.UP, tangent).orthonormalized()
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = START_LINE_COLOR
+	line.material_override = mat
+	add_child(line)
+
+
+func _rebuild_length_cache() -> void:
+	_segment_lengths.clear()
+	_cumulative_lengths.clear()
+	_track_length = 0.0
+
+	for i in range(_points.size()):
+		_cumulative_lengths.append(_track_length)
+		var next_index: int = (i + 1) % _points.size()
+		var segment_length: float = _points[i].distance_to(_points[next_index])
+		_segment_lengths.append(segment_length)
+		_track_length += segment_length
+
+
+func _get_local_track_point(world_position: Vector3) -> Vector2:
+	var local_position: Vector3 = to_local(world_position)
+	return Vector2(local_position.x, local_position.z)
+
+
+func _get_closest_segment(point: Vector2) -> ClosestSegmentResult:
+	var nearest: ClosestSegmentResult = ClosestSegmentResult.new()
+	var point_count: int = _points.size()
+
+	for i in range(point_count):
+		var j: int = (i + 1) % point_count
+		var from := Vector2(_points[i].x, _points[i].z)
+		var to := Vector2(_points[j].x, _points[j].z)
+		var segment: Vector2 = to - from
+		var length_squared: float = segment.length_squared()
+		var segment_t: float = 0.0
+		if not is_zero_approx(length_squared):
+			segment_t = clampf((point - from).dot(segment) / length_squared, 0.0, 1.0)
+
+		var projected_point: Vector2 = from + segment * segment_t
+		var distance: float = point.distance_to(projected_point)
+		if distance < nearest.distance:
+			nearest.distance = distance
+			nearest.segment_index = i
+			nearest.segment_t = segment_t
+
+	return nearest
 
 
 func _add_walls() -> void:

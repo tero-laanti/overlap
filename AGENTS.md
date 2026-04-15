@@ -14,6 +14,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle parameters.
 - `car/default_stats.tres` — Default car stats instance.
 - `camera/game_camera.gd` — Dynamic follow camera with speed-based zoom.
+- `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
 - `track/test_track.gd` — Procedural track generation from a hand-authored centerline.
 - `main.tscn` — Main scene. Car, track, camera, lighting, environment.
 
@@ -74,6 +75,8 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 ## Track and Level Design
 
 - Track geometry is procedural from a centerline. The wall and surface generation code is intentionally simple — it will evolve.
+- The current oval track maps world position to `SurfaceProfile` resources (`tarmac`, `sand`, `grass`) so floor regions can change car handling without per-triangle floor physics.
+- Lap counting currently uses track progress plus a virtual checkpoint halfway around the course rather than hand-placed checkpoint volumes.
 - Track points currently live in the script. If multiple authored layouts or track-editing workflows appear, move them into a dedicated `Resource`.
 - Keep using deliberate collision layers as new collidable types are added. Do not reuse layer 1 as the default for unrelated objects.
 
