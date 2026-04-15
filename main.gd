@@ -3,6 +3,7 @@ extends Node3D
 
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
+const BOOST_PAD_FOOTPRINT_RADIUS := 2.3
 
 @export var track_path: NodePath
 @export var car_path: NodePath
@@ -195,11 +196,7 @@ func _confirm_boost_pad_placement() -> void:
 	if not _track or not _placement_preview:
 		return
 
-	var can_place: bool = _track.is_boost_pad_position_valid(
-		_placement_progress,
-		_placement_lateral_offset,
-		boost_pad_track_clearance
-	)
+	var can_place: bool = _can_place_boost_pad(_placement_progress, _placement_lateral_offset)
 	if not can_place:
 		return
 
@@ -239,11 +236,7 @@ func _update_placement_preview() -> void:
 		return
 
 	var preview_transform: Transform3D = _track.get_track_transform(_placement_progress, _placement_lateral_offset)
-	var can_place: bool = _track.is_boost_pad_position_valid(
-		_placement_progress,
-		_placement_lateral_offset,
-		boost_pad_track_clearance
-	)
+	var can_place: bool = _can_place_boost_pad(_placement_progress, _placement_lateral_offset)
 	_placement_preview.global_transform = preview_transform
 	_placement_preview.set_preview_valid(can_place)
 	_update_placement_overlay()
@@ -314,15 +307,23 @@ func _update_placement_overlay() -> void:
 	if not _is_placement_active:
 		return
 
-	var can_place: bool = _track != null and _track.is_boost_pad_position_valid(
+	var is_on_valid_track: bool = _track != null and _track.is_boost_pad_position_valid(
 		_placement_progress,
 		_placement_lateral_offset,
 		boost_pad_track_clearance
 	)
+	var is_overlapping_existing_pad: bool = false
+	if is_on_valid_track and _track != null:
+		var placement_position: Vector3 = _track.get_track_transform(_placement_progress, _placement_lateral_offset).origin
+		is_overlapping_existing_pad = _does_boost_pad_overlap_existing(placement_position)
+
+	var can_place: bool = is_on_valid_track and not is_overlapping_existing_pad
 	var remaining_after_place: int = maxi(_pending_boost_pad_count - 1, 0)
 	var status_text: String = "Ready to place on tarmac"
-	if not can_place:
+	if not is_on_valid_track:
 		status_text = "Move onto the tarmac to place"
+	elif is_overlapping_existing_pad:
+		status_text = "Move away from another boost pad"
 
 	_placement_label.text = "Place Boost Pad\nThrottle / Brake: move around the track\nSteer: shift across the lane\nSpace / Enter: place\n%s\nPads left after this: %d" % [
 		status_text,
@@ -346,6 +347,35 @@ func _focus_camera_on(target: Node3D, snap: bool) -> void:
 	_camera.target = target
 	if snap:
 		_camera.snap_to_target()
+
+
+func _can_place_boost_pad(progress: float, lateral_offset: float) -> bool:
+	if _track == null:
+		return false
+	if not _track.is_boost_pad_position_valid(progress, lateral_offset, boost_pad_track_clearance):
+		return false
+
+	var placement_position: Vector3 = _track.get_track_transform(progress, lateral_offset).origin
+	return not _does_boost_pad_overlap_existing(placement_position)
+
+
+func _does_boost_pad_overlap_existing(placement_position: Vector3) -> bool:
+	if _boost_pad_root == null:
+		return false
+
+	var minimum_center_distance: float = BOOST_PAD_FOOTPRINT_RADIUS * 2.0
+	var placement_point: Vector2 = Vector2(placement_position.x, placement_position.z)
+	for child in _boost_pad_root.get_children():
+		var existing_pad: BoostPad = child as BoostPad
+		if existing_pad == null or existing_pad == _placement_preview:
+			continue
+
+		var existing_position: Vector3 = existing_pad.global_transform.origin
+		var existing_point: Vector2 = Vector2(existing_position.x, existing_position.z)
+		if placement_point.distance_to(existing_point) < minimum_center_distance:
+			return true
+
+	return false
 
 
 func _get_car_start_transform() -> Transform3D:
