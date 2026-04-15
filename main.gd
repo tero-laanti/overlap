@@ -161,7 +161,7 @@ func _start_next_round() -> void:
 		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
 		_round_end_screen.set_pending_boost_pad_count(_pending_boost_pad_count)
 
-	_car.reset_to_transform(_car_spawn_transform)
+	_car.reset_to_transform(_get_car_start_transform())
 	_focus_camera_on(_car, true)
 	_run_state.start_round(extra_start_time)
 
@@ -179,7 +179,7 @@ func _begin_boost_pad_placement() -> void:
 	)
 
 	if _car:
-		_car.reset_to_transform(_car_spawn_transform)
+		_car.reset_to_transform(_get_car_start_transform())
 
 	if _round_end_screen:
 		_round_end_screen.visible = false
@@ -346,3 +346,9 @@ func _focus_camera_on(target: Node3D, snap: bool) -> void:
 	_camera.target = target
 	if snap:
 		_camera.snap_to_target()
+
+
+func _get_car_start_transform() -> Transform3D:
+	if _track != null:
+		return _track.get_start_transform(_car_spawn_transform.origin.y)
+	return _car_spawn_transform

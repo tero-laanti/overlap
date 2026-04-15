@@ -145,6 +145,10 @@ func get_track_transform(progress: float, lateral_offset: float = 0.0, y_offset:
 	return Transform3D(global_basis * local_basis, to_global(local_position))
 
 
+func get_start_transform(y_offset: float = START_LINE_Y_OFFSET) -> Transform3D:
+	return get_track_transform(get_lap_start_progress(), 0.0, y_offset)
+
+
 func get_boost_pad_max_lateral_offset(clearance: float = 0.0) -> float:
 	return maxf(track_width * 0.5 - clearance, 0.0)
 
@@ -200,29 +204,12 @@ func _add_start_finish_line() -> void:
 	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
 		return
 
-	var distance_along_track: float = get_lap_start_progress() * _track_length
-	var segment_index: int = _segment_lengths.size() - 1
-	var segment_t: float = 0.0
-
-	for i in range(_segment_lengths.size()):
-		var segment_start_distance: float = _cumulative_lengths[i]
-		var segment_length: float = _segment_lengths[i]
-		if distance_along_track <= segment_start_distance + segment_length:
-			segment_index = i
-			segment_t = 0.0 if is_zero_approx(segment_length) else (distance_along_track - segment_start_distance) / segment_length
-			break
-
-	var from: Vector3 = _points[segment_index]
-	var to: Vector3 = _points[(segment_index + 1) % _points.size()]
-	var tangent: Vector3 = (to - from).normalized()
-	var across: Vector3 = Vector3(-tangent.z, 0.0, tangent.x).normalized()
 	var line := MeshInstance3D.new()
 	line.name = "StartFinishLine"
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(maxf(track_width - TRACK_EDGE_PADDING, 0.2), START_LINE_HEIGHT, START_LINE_LENGTH)
 	line.mesh = mesh
-	line.position = from.lerp(to, segment_t) + Vector3.UP * START_LINE_Y_OFFSET
-	line.basis = Basis(across, Vector3.UP, tangent).orthonormalized()
+	line.global_transform = get_start_transform()
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = START_LINE_COLOR
 	line.material_override = mat
