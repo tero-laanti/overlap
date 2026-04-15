@@ -18,7 +18,6 @@ func _ready() -> void:
 	target = get_node_or_null(target_path)
 	if target:
 		_snap_to_target()
-	print("Camera ready. Target: ", target, " Position: ", global_position, " Current: ", current)
 
 
 func _process(delta: float) -> void:
