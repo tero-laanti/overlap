@@ -77,7 +77,8 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	_update_speed_label()
+	if content.visible:
+		_update_speed_label()
 
 
 func _on_lap_changed(current_lap: int) -> void:

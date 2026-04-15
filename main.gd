@@ -3,6 +3,7 @@ extends Node3D
 
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
+## Approximate radius of a boost pad for overlap checks (half the pad's longest extent).
 const BOOST_PAD_FOOTPRINT_RADIUS := 2.3
 
 @export var track_path: NodePath
@@ -313,7 +314,7 @@ func _update_placement_overlay() -> void:
 		boost_pad_track_clearance
 	)
 	var is_overlapping_existing_pad: bool = false
-	if is_on_valid_track and _track != null:
+	if is_on_valid_track:
 		var placement_position: Vector3 = _track.get_track_transform(_placement_progress, _placement_lateral_offset).origin
 		is_overlapping_existing_pad = _does_boost_pad_overlap_existing(placement_position)
 
