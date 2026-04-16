@@ -19,12 +19,18 @@ var _interior_points: PackedVector3Array = PackedVector3Array()
 	set(value):
 		_display_name = value
 		emit_changed()
+## Heading for the entry socket. Multi-cell tiles (footprint larger than 1x1) only
+## support cardinal directions (N/E/S/W). Diagonals (NE/SE/SW/NW) will fail layout
+## validation because multi-cell footprints rotate in 90-degree quarter turns only.
 @export_enum("N:0", "NE:1", "E:2", "SE:3", "S:4", "SW:5", "W:6", "NW:7") var entry_direction: int:
 	get:
 		return _entry_direction
 	set(value):
 		_entry_direction = value
 		emit_changed()
+## Heading for the exit socket. Multi-cell tiles (footprint larger than 1x1) only
+## support cardinal directions (N/E/S/W). Diagonals (NE/SE/SW/NW) will fail layout
+## validation because multi-cell footprints rotate in 90-degree quarter turns only.
 @export_enum("N:0", "NE:1", "E:2", "SE:3", "S:4", "SW:5", "W:6", "NW:7") var exit_direction: int:
 	get:
 		return _exit_direction
