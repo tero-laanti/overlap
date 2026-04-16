@@ -78,9 +78,10 @@ Coins need a new collision layer. Per AGENTS.md, claim the next free one:
 | Layer | Name | Used by |
 |-------|------|---------|
 | 1 | car | Car RigidBody3D |
-| 2 | track_wall | Track wall StaticBody3Ds |
+| 2 | track_wall | Track wall StaticBody3Ds and placed wall barriers |
 | 3 | track_surface | Reserved |
 | 4 | collectible | Coins, pickups |
+| 5 | track_modifier | Boost pads, oil slicks, slow zones, future track effects |
 
 Coins set `collision_layer = 4`, `collision_mask = 1` (detect car only). Car already has `collision_layer = 1`.
 Actually — since coins are Area3D, not physics bodies, they use `monitoring` and connect to `body_entered`. The car's RigidBody3D will trigger Area3D overlap as long as the Area3D's collision mask includes the car's layer. So: coin `collision_layer = 4`, coin `collision_mask = 1`.

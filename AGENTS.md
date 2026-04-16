@@ -10,12 +10,15 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 
 ## Key Files
 
+- `main.gd` — Round flow orchestration, pit stop sequencing, and track placement state.
 - `car/car.gd` — Car physics controller. Drift state machine, throttle/brake, steering. All physics in `_integrate_forces`.
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle parameters.
 - `car/default_stats.tres` — Default car stats instance.
 - `car/drift_feedback.gd` — Drift smoke particles. Signal-driven by car drift state, created at runtime.
 - `camera/game_camera.gd` — Dynamic follow camera with speed-based zoom.
 - `race/coin.gd` — Collectible coin pickup with multiplier-scaled payouts.
+- `race/hazard_type.gd` — Hazard registry for scene paths, names, and descriptions.
+- `race/hazards/*.gd` — Persistent track hazards. Preview visuals and hazard effects.
 - `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
 - `race/run_state.gd` — Round timer, lap timing, multiplier, and currency rewards.
 - `track/test_track.gd` — Procedural track generation from a hand-authored centerline.
@@ -57,10 +60,10 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 | Layer | Name | Used by |
 |-------|------|---------|
 | 1 | `car` | Car `RigidBody3D` |
-| 2 | `track_wall` | Track wall `StaticBody3D`s |
+| 2 | `track_wall` | Track wall `StaticBody3D`s and placed wall barriers |
 | 3 | `track_surface` | Reserved for future use |
 | 4 | `collectible` | Coins and future pickups |
-| 5 | `track_modifier` | Boost Pad `Area3D`s and future placed track effects |
+| 5 | `track_modifier` | Boost pads, oil slicks, slow zones, and future placed track effects |
 
 - The layer names in `project.godot` and this table are the source of truth. When adding a new collidable type, claim the next free layer, update both, and set `collision_mask` to only the layers that object needs.
 
