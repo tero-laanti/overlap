@@ -47,12 +47,6 @@ const START_LINE_Y_OFFSET := 0.03
 const TRACK_EDGE_PADDING := 0.6
 const PLACEMENT_SURFACE_Y_OFFSET := 0.02
 const GENERATED_ROOT_NAME := "GeneratedTrack"
-const LEGACY_GENERATED_CHILD_NAMES := [
-	"Ground",
-	"SandSurface",
-	"TrackSurface",
-	"StartFinishLine",
-]
 
 var _points: Array[Vector3] = []
 var _segment_lengths: Array[float] = []
@@ -343,10 +337,6 @@ func _clear_generated_track() -> void:
 	if existing_generated_root != null:
 		existing_generated_root.free()
 
-	for child in get_children():
-		if _is_legacy_generated_child(child):
-			child.free()
-
 	_generated_root = null
 
 
@@ -366,11 +356,3 @@ func _get_or_create_generated_root() -> Node3D:
 
 func _add_generated_child(child: Node) -> void:
 	_get_or_create_generated_root().add_child(child)
-
-
-func _is_legacy_generated_child(child: Node) -> bool:
-	if child.name == GENERATED_ROOT_NAME:
-		return false
-	if LEGACY_GENERATED_CHILD_NAMES.has(child.name):
-		return true
-	return child.name.begins_with("WallOuter_") or child.name.begins_with("WallInner_")

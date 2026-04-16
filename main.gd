@@ -4,9 +4,15 @@ extends Node3D
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
+const PLACEMENT_PANEL_MIN_WIDTH := 360.0
 const HAZARD_DRAFT_OPTION_COUNT := 2
 const HAZARD_POSITION_CANDIDATE_COUNT := 3
 const HAZARD_POSITION_MAX_ATTEMPTS := 96
+const PLACEMENT_PANEL_BG := Color(0.08, 0.1, 0.14, 0.9)
+const PLACEMENT_PANEL_BORDER := Color(0.48, 0.58, 0.72, 0.5)
+const PLACEMENT_WARNING_BORDER := Color(1.0, 0.45, 0.35, 0.9)
+const PLACEMENT_TEXT_COLOR := Color(0.95, 0.97, 1.0, 1.0)
+const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 
 @export var track_path: NodePath
 @export var car_path: NodePath
@@ -33,6 +39,7 @@ var _pending_hazard_type: int = HazardTypeRegistry.NONE
 var _boost_pad_root: Node3D = null
 var _hazard_root: Node3D = null
 var _placement_overlay: CanvasLayer = null
+var _placement_panel: PanelContainer = null
 var _placement_label: Label = null
 var _placement_preview: BoostPad = null
 var _placement_progress: float = 0.0
@@ -513,7 +520,7 @@ func _ensure_hazard_root() -> void:
 
 
 func _ensure_placement_overlay() -> void:
-	if _placement_overlay != null and _placement_label != null:
+	if _placement_overlay != null and _placement_panel != null and _placement_label != null:
 		return
 
 	_placement_overlay = CanvasLayer.new()
@@ -521,21 +528,37 @@ func _ensure_placement_overlay() -> void:
 	_placement_overlay.layer = 3
 	add_child(_placement_overlay)
 
+	_placement_panel = PanelContainer.new()
+	_placement_panel.name = "PlacementPanel"
+	_placement_panel.position = PLACEMENT_LABEL_MARGIN
+	_placement_panel.custom_minimum_size = Vector2(PLACEMENT_PANEL_MIN_WIDTH, 0.0)
+	_placement_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_placement_panel.add_theme_stylebox_override("panel", _create_placement_panel_style(PLACEMENT_PANEL_BORDER))
+	_placement_overlay.add_child(_placement_panel)
+
+	var panel_margin: MarginContainer = MarginContainer.new()
+	panel_margin.add_theme_constant_override("margin_left", 16)
+	panel_margin.add_theme_constant_override("margin_top", 14)
+	panel_margin.add_theme_constant_override("margin_right", 16)
+	panel_margin.add_theme_constant_override("margin_bottom", 14)
+	_placement_panel.add_child(panel_margin)
+
 	_placement_label = Label.new()
 	_placement_label.name = "PlacementLabel"
-	_placement_label.position = PLACEMENT_LABEL_MARGIN
-	_placement_label.add_theme_font_size_override("font_size", 22)
-	_placement_label.add_theme_color_override("font_color", Color(0.95, 0.97, 1.0, 1.0))
-	_placement_label.add_theme_color_override("font_outline_color", Color(0.05, 0.06, 0.08, 0.95))
-	_placement_label.add_theme_constant_override("outline_size", 5)
-	_placement_overlay.add_child(_placement_label)
+	_placement_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_placement_label.add_theme_font_size_override("font_size", 20)
+	_placement_label.add_theme_color_override("font_color", PLACEMENT_TEXT_COLOR)
+	_placement_label.add_theme_constant_override("line_spacing", 6)
+	_placement_label.add_theme_constant_override("outline_size", 0)
+	panel_margin.add_child(_placement_label)
 
 
 func _update_placement_overlay() -> void:
-	if _placement_overlay == null or _placement_label == null:
+	if _placement_overlay == null or _placement_panel == null or _placement_label == null:
 		return
 
 	_placement_overlay.visible = _is_placement_active or _is_hazard_position_selection_active
+	_placement_panel.visible = _placement_overlay.visible
 	if not _placement_overlay.visible:
 		return
 
@@ -562,7 +585,14 @@ func _update_placement_overlay() -> void:
 			status_text,
 			remaining_after_place,
 		]
-		_placement_label.modulate = Color(0.95, 0.97, 1.0, 1.0) if can_place else Color(1.0, 0.72, 0.68, 1.0)
+		_placement_label.add_theme_color_override(
+			"font_color",
+			PLACEMENT_TEXT_COLOR if can_place else PLACEMENT_WARNING_TEXT_COLOR
+		)
+		_placement_panel.add_theme_stylebox_override(
+			"panel",
+			_create_placement_panel_style(PLACEMENT_PANEL_BORDER if can_place else PLACEMENT_WARNING_BORDER)
+		)
 		return
 
 	var total_positions: int = maxi(_hazard_position_data.size(), 1)
@@ -573,7 +603,25 @@ func _update_placement_overlay() -> void:
 		total_positions,
 		total_positions,
 	]
-	_placement_label.modulate = Color(1.0, 0.9, 0.72, 1.0)
+	_placement_label.add_theme_color_override("font_color", PLACEMENT_TEXT_COLOR)
+	_placement_panel.add_theme_stylebox_override("panel", _create_placement_panel_style(PLACEMENT_PANEL_BORDER))
+
+
+func _create_placement_panel_style(border_color: Color) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = PLACEMENT_PANEL_BG
+	style.corner_radius_top_left = 18
+	style.corner_radius_top_right = 18
+	style.corner_radius_bottom_right = 18
+	style.corner_radius_bottom_left = 18
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = border_color
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
+	style.shadow_size = 18
+	return style
 
 
 func _update_car_controls() -> void:

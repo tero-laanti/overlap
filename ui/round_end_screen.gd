@@ -4,34 +4,58 @@ extends CanvasLayer
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
 const COMPACT_LAYOUT_MIN_VIEWPORT_HEIGHT := 760.0
 const COMPACT_LAYOUT_MIN_VIEWPORT_WIDTH := 1366.0
-const DEFAULT_PANEL_MIN_WIDTH := 360.0
-const MIN_PANEL_WIDTH := 280.0
-const DEFAULT_PANEL_MARGIN := 28
-const COMPACT_PANEL_MARGIN := 20
-const DEFAULT_SECTION_SEPARATION := 14
-const COMPACT_SECTION_SEPARATION := 10
-const DEFAULT_ACTION_BUTTON_HEIGHT := 54.0
-const COMPACT_ACTION_BUTTON_HEIGHT := 46.0
-const DEFAULT_HAZARD_BUTTON_HEIGHT := 70.0
-const COMPACT_HAZARD_BUTTON_HEIGHT := 58.0
-const DEFAULT_TITLE_FONT_SIZE := 36
-const COMPACT_TITLE_FONT_SIZE := 30
-const DEFAULT_STATS_FONT_SIZE := 22
-const COMPACT_STATS_FONT_SIZE := 19
-const DEFAULT_NEXT_ROUND_FONT_SIZE := 20
-const COMPACT_NEXT_ROUND_FONT_SIZE := 18
-const DEFAULT_ACTION_FONT_SIZE := 22
-const COMPACT_ACTION_FONT_SIZE := 19
-const DEFAULT_PENDING_FONT_SIZE := 18
-const COMPACT_PENDING_FONT_SIZE := 16
+const DEFAULT_PANEL_MIN_WIDTH := 520.0
+const MIN_PANEL_WIDTH := 360.0
+const DEFAULT_PANEL_MARGIN := 32
+const COMPACT_PANEL_MARGIN := 22
+const DEFAULT_SECTION_SEPARATION := 18
+const COMPACT_SECTION_SEPARATION := 12
+const DEFAULT_ACTION_BUTTON_HEIGHT := 78.0
+const COMPACT_ACTION_BUTTON_HEIGHT := 64.0
+const DEFAULT_HAZARD_BUTTON_HEIGHT := 94.0
+const COMPACT_HAZARD_BUTTON_HEIGHT := 78.0
+const DEFAULT_TITLE_FONT_SIZE := 40
+const COMPACT_TITLE_FONT_SIZE := 34
+const DEFAULT_SUBTITLE_FONT_SIZE := 18
+const COMPACT_SUBTITLE_FONT_SIZE := 16
+const DEFAULT_SECTION_TITLE_FONT_SIZE := 15
+const COMPACT_SECTION_TITLE_FONT_SIZE := 13
+const DEFAULT_STATS_FONT_SIZE := 20
+const COMPACT_STATS_FONT_SIZE := 18
+const DEFAULT_NEXT_ROUND_FONT_SIZE := 18
+const COMPACT_NEXT_ROUND_FONT_SIZE := 16
+const DEFAULT_ACTION_FONT_SIZE := 20
+const COMPACT_ACTION_FONT_SIZE := 18
+const DEFAULT_PENDING_FONT_SIZE := 16
+const COMPACT_PENDING_FONT_SIZE := 15
 const DEFAULT_CONTINUE_FONT_SIZE := 18
 const COMPACT_CONTINUE_FONT_SIZE := 16
-const DEFAULT_HAZARD_TITLE_FONT_SIZE := 24
+const DEFAULT_HAZARD_TITLE_FONT_SIZE := 22
 const COMPACT_HAZARD_TITLE_FONT_SIZE := 20
-const DEFAULT_HAZARD_SECTION_SEPARATION := 8
-const COMPACT_HAZARD_SECTION_SEPARATION := 6
-const DEFAULT_HAZARD_BUTTON_FONT_SIZE := 18
-const COMPACT_HAZARD_BUTTON_FONT_SIZE := 16
+const DEFAULT_HAZARD_SECTION_SEPARATION := 10
+const COMPACT_HAZARD_SECTION_SEPARATION := 8
+const DEFAULT_HAZARD_BUTTON_FONT_SIZE := 17
+const COMPACT_HAZARD_BUTTON_FONT_SIZE := 15
+
+const PANEL_BG := Color(0.1, 0.12, 0.16, 0.96)
+const PANEL_BORDER := Color(1.0, 0.89, 0.64, 0.38)
+const PANEL_SHADOW_COLOR := Color(0.0, 0.0, 0.0, 0.34)
+const SUMMARY_BG := Color(0.13, 0.16, 0.22, 0.98)
+const SUMMARY_BORDER := Color(0.55, 0.71, 0.92, 0.34)
+const QUEUE_BG := Color(0.11, 0.18, 0.15, 0.98)
+const QUEUE_BORDER := Color(0.62, 0.94, 0.75, 0.28)
+const FOOTER_BG := Color(0.12, 0.14, 0.18, 0.98)
+const FOOTER_BORDER := Color(0.56, 0.65, 0.8, 0.24)
+const PRIMARY_TEXT_COLOR := Color(0.94, 0.95, 0.98, 1.0)
+const SUBTITLE_TEXT_COLOR := Color(0.73, 0.82, 0.9, 1.0)
+const SECTION_TEXT_COLOR := Color(1.0, 0.86, 0.7, 1.0)
+const SUMMARY_TEXT_COLOR := Color(0.93, 0.95, 0.98, 1.0)
+const NEXT_ROUND_TEXT_COLOR := Color(0.78, 0.92, 1.0, 1.0)
+const CONTINUE_TEXT_COLOR := Color(0.84, 0.87, 0.92, 1.0)
+const BLOCKED_TEXT_COLOR := Color(1.0, 0.72, 0.68, 1.0)
+const BUY_TIME_ACCENT := Color(0.47, 0.76, 1.0, 1.0)
+const BOOST_PAD_ACCENT := Color(1.0, 0.82, 0.45, 1.0)
+const HAZARD_ACCENT := Color(1.0, 0.68, 0.56, 1.0)
 
 signal buy_time_requested
 signal buy_boost_pad_requested
@@ -41,6 +65,7 @@ signal continue_requested
 @export var run_state_path: NodePath
 @export var lap_tracker_path: NodePath
 
+@onready var overlay: ColorRect = $Overlay
 @onready var panel: PanelContainer = $Center/Panel
 @onready var panel_margin: MarginContainer = $Center/Panel/Margin
 @onready var options_box: VBoxContainer = $Center/Panel/Margin/VBox
@@ -65,11 +90,19 @@ var _hazard_draft_buttons: Array[Button] = []
 var _hazard_draft_options: Array[int] = []
 var _selected_hazard_type: int = HazardTypeRegistry.NONE
 var _requires_hazard_draft: bool = false
+var _subtitle_label: Label = null
+var _shop_section_label: Label = null
+var _summary_panel: PanelContainer = null
+var _summary_content: VBoxContainer = null
+var _queued_panel: PanelContainer = null
+var _footer_panel: PanelContainer = null
+var _layout_built: bool = false
 
 
 func _ready() -> void:
 	visible = false
 	_ensure_dynamic_controls()
+	_build_visual_layout()
 	_run_state = get_node_or_null(run_state_path) as RunState
 	_lap_tracker = get_node_or_null(lap_tracker_path) as LapTracker
 
@@ -219,6 +252,90 @@ func _ensure_dynamic_controls() -> void:
 	_reorder_dynamic_controls()
 
 
+func _build_visual_layout() -> void:
+	if _layout_built:
+		return
+
+	overlay.color = Color(0.02, 0.03, 0.05, 0.8)
+	panel.add_theme_stylebox_override("panel", _create_panel_style(PANEL_BG, PANEL_BORDER))
+	title_label.text = "Pit Stop"
+	title_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82, 1.0))
+
+	if _subtitle_label == null:
+		_subtitle_label = Label.new()
+		_subtitle_label.name = "SubtitleLabel"
+		_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_subtitle_label.text = "Spend cash, queue placements, then draft the next problem."
+		_subtitle_label.add_theme_color_override("font_color", SUBTITLE_TEXT_COLOR)
+		options_box.add_child(_subtitle_label)
+
+	if _summary_panel == null:
+		_summary_panel = PanelContainer.new()
+		_summary_panel.name = "SummaryPanel"
+		_summary_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_summary_panel.add_theme_stylebox_override("panel", _create_panel_style(SUMMARY_BG, SUMMARY_BORDER))
+		options_box.add_child(_summary_panel)
+
+		var summary_margin: MarginContainer = MarginContainer.new()
+		summary_margin.add_theme_constant_override("margin_left", 18)
+		summary_margin.add_theme_constant_override("margin_top", 16)
+		summary_margin.add_theme_constant_override("margin_right", 18)
+		summary_margin.add_theme_constant_override("margin_bottom", 16)
+		_summary_panel.add_child(summary_margin)
+
+		_summary_content = VBoxContainer.new()
+		_summary_content.name = "SummaryContent"
+		_summary_content.add_theme_constant_override("separation", 8)
+		summary_margin.add_child(_summary_content)
+		_move_control(stats_label, _summary_content)
+		_move_control(next_round_label, _summary_content)
+		stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		next_round_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+	if _shop_section_label == null:
+		_shop_section_label = Label.new()
+		_shop_section_label.name = "ShopSectionLabel"
+		_shop_section_label.text = "1. Buy Track Setup"
+		_shop_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		_shop_section_label.add_theme_color_override("font_color", SECTION_TEXT_COLOR)
+		options_box.add_child(_shop_section_label)
+
+	if _queued_panel == null:
+		_queued_panel = PanelContainer.new()
+		_queued_panel.name = "QueuedPanel"
+		_queued_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_queued_panel.add_theme_stylebox_override("panel", _create_panel_style(QUEUE_BG, QUEUE_BORDER))
+		options_box.add_child(_queued_panel)
+
+		var queued_margin: MarginContainer = MarginContainer.new()
+		queued_margin.add_theme_constant_override("margin_left", 14)
+		queued_margin.add_theme_constant_override("margin_top", 12)
+		queued_margin.add_theme_constant_override("margin_right", 14)
+		queued_margin.add_theme_constant_override("margin_bottom", 12)
+		_queued_panel.add_child(queued_margin)
+		_move_control(_pending_items_label, queued_margin)
+		_pending_items_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+	if _footer_panel == null:
+		_footer_panel = PanelContainer.new()
+		_footer_panel.name = "FooterPanel"
+		_footer_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_footer_panel.add_theme_stylebox_override("panel", _create_panel_style(FOOTER_BG, FOOTER_BORDER))
+		options_box.add_child(_footer_panel)
+
+		var footer_margin: MarginContainer = MarginContainer.new()
+		footer_margin.add_theme_constant_override("margin_left", 14)
+		footer_margin.add_theme_constant_override("margin_top", 12)
+		footer_margin.add_theme_constant_override("margin_right", 14)
+		footer_margin.add_theme_constant_override("margin_bottom", 12)
+		_footer_panel.add_child(footer_margin)
+		_move_control(continue_label, footer_margin)
+
+	_reorder_static_sections()
+	_layout_built = true
+
+
 func _apply_responsive_layout() -> void:
 	if not is_node_ready():
 		return
@@ -242,10 +359,13 @@ func _apply_responsive_layout() -> void:
 	options_box.add_theme_constant_override("separation", section_separation)
 	title_label.add_theme_font_size_override("font_size", COMPACT_TITLE_FONT_SIZE if use_compact_layout else DEFAULT_TITLE_FONT_SIZE)
 	stats_label.add_theme_font_size_override("font_size", COMPACT_STATS_FONT_SIZE if use_compact_layout else DEFAULT_STATS_FONT_SIZE)
+	stats_label.add_theme_color_override("font_color", SUMMARY_TEXT_COLOR)
 	next_round_label.add_theme_font_size_override("font_size", COMPACT_NEXT_ROUND_FONT_SIZE if use_compact_layout else DEFAULT_NEXT_ROUND_FONT_SIZE)
+	next_round_label.add_theme_color_override("font_color", NEXT_ROUND_TEXT_COLOR)
 	buy_time_button.custom_minimum_size = Vector2(0.0, action_button_height)
 	buy_time_button.add_theme_font_size_override("font_size", COMPACT_ACTION_FONT_SIZE if use_compact_layout else DEFAULT_ACTION_FONT_SIZE)
 	continue_label.add_theme_font_size_override("font_size", COMPACT_CONTINUE_FONT_SIZE if use_compact_layout else DEFAULT_CONTINUE_FONT_SIZE)
+	continue_label.add_theme_color_override("font_color", CONTINUE_TEXT_COLOR)
 
 	if _buy_boost_pad_button:
 		_buy_boost_pad_button.custom_minimum_size = Vector2(0.0, action_button_height)
@@ -253,6 +373,7 @@ func _apply_responsive_layout() -> void:
 
 	if _pending_items_label:
 		_pending_items_label.add_theme_font_size_override("font_size", COMPACT_PENDING_FONT_SIZE if use_compact_layout else DEFAULT_PENDING_FONT_SIZE)
+		_pending_items_label.add_theme_color_override("font_color", Color(0.87, 1.0, 0.86, 1.0))
 
 	if _hazard_draft_section:
 		_hazard_draft_section.add_theme_constant_override(
@@ -264,11 +385,24 @@ func _apply_responsive_layout() -> void:
 			"font_size",
 			COMPACT_HAZARD_TITLE_FONT_SIZE if use_compact_layout else DEFAULT_HAZARD_TITLE_FONT_SIZE
 		)
+		_hazard_draft_title.add_theme_color_override("font_color", SECTION_TEXT_COLOR)
 	for hazard_button in _hazard_draft_buttons:
 		hazard_button.custom_minimum_size = Vector2(0.0, hazard_button_height)
 		hazard_button.add_theme_font_size_override(
 			"font_size",
 			COMPACT_HAZARD_BUTTON_FONT_SIZE if use_compact_layout else DEFAULT_HAZARD_BUTTON_FONT_SIZE
+		)
+
+	if _subtitle_label:
+		_subtitle_label.add_theme_font_size_override(
+			"font_size",
+			COMPACT_SUBTITLE_FONT_SIZE if use_compact_layout else DEFAULT_SUBTITLE_FONT_SIZE
+		)
+
+	if _shop_section_label:
+		_shop_section_label.add_theme_font_size_override(
+			"font_size",
+			COMPACT_SECTION_TITLE_FONT_SIZE if use_compact_layout else DEFAULT_SECTION_TITLE_FONT_SIZE
 		)
 
 
@@ -281,11 +415,88 @@ func _reorder_dynamic_controls() -> void:
 	if _buy_boost_pad_button:
 		options_box.move_child(_buy_boost_pad_button, next_index)
 		next_index += 1
+	if _queued_panel:
+		options_box.move_child(_queued_panel, next_index)
+		next_index += 1
 	if _hazard_draft_section:
 		options_box.move_child(_hazard_draft_section, next_index)
 		next_index += 1
-	if _pending_items_label:
-		options_box.move_child(_pending_items_label, next_index)
+	if _footer_panel:
+		options_box.move_child(_footer_panel, next_index)
+
+
+func _reorder_static_sections() -> void:
+	var next_index: int = title_label.get_index() + 1
+	if _subtitle_label:
+		options_box.move_child(_subtitle_label, next_index)
+		next_index += 1
+	if _summary_panel:
+		options_box.move_child(_summary_panel, next_index)
+		next_index += 1
+	if _shop_section_label:
+		options_box.move_child(_shop_section_label, next_index)
+
+	_reorder_dynamic_controls()
+
+
+func _move_control(control: Control, new_parent: Node) -> void:
+	var old_parent: Node = control.get_parent()
+	if old_parent == new_parent:
+		return
+	if old_parent != null:
+		old_parent.remove_child(control)
+	new_parent.add_child(control)
+
+
+func _create_panel_style(background_color: Color, border_color: Color) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = background_color
+	style.corner_radius_top_left = 16
+	style.corner_radius_top_right = 16
+	style.corner_radius_bottom_right = 16
+	style.corner_radius_bottom_left = 16
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = border_color
+	style.shadow_color = PANEL_SHADOW_COLOR
+	style.shadow_size = 18
+	return style
+
+
+func _apply_action_button_theme(button: Button, accent_color: Color, is_enabled: bool) -> void:
+	var normal_color: Color = accent_color.darkened(0.7)
+	var hover_color: Color = accent_color.darkened(0.62)
+	var pressed_color: Color = accent_color.darkened(0.76)
+	var disabled_color: Color = Color(0.15, 0.17, 0.21, 0.92)
+
+	button.add_theme_stylebox_override("normal", _create_panel_style(normal_color, accent_color))
+	button.add_theme_stylebox_override("hover", _create_panel_style(hover_color, accent_color.lightened(0.12)))
+	button.add_theme_stylebox_override("pressed", _create_panel_style(pressed_color, accent_color))
+	button.add_theme_stylebox_override("disabled", _create_panel_style(disabled_color, Color(0.33, 0.37, 0.45, 0.4)))
+	button.add_theme_stylebox_override("focus", _create_panel_style(normal_color, accent_color))
+	button.add_theme_color_override("font_color", PRIMARY_TEXT_COLOR)
+	button.add_theme_color_override("font_hover_color", PRIMARY_TEXT_COLOR)
+	button.add_theme_color_override("font_pressed_color", PRIMARY_TEXT_COLOR)
+	button.add_theme_color_override(
+		"font_disabled_color",
+		Color(0.56, 0.61, 0.68, 1.0) if not is_enabled else PRIMARY_TEXT_COLOR
+	)
+
+
+func _apply_hazard_button_theme(button: Button, is_selected: bool) -> void:
+	var border_color: Color = HAZARD_ACCENT if is_selected else Color(0.4, 0.45, 0.55, 0.58)
+	var base_color: Color = Color(0.18, 0.12, 0.11, 0.96) if is_selected else Color(0.13, 0.15, 0.19, 0.96)
+	var hover_color: Color = base_color.lightened(0.05)
+
+	button.add_theme_stylebox_override("normal", _create_panel_style(base_color, border_color))
+	button.add_theme_stylebox_override("hover", _create_panel_style(hover_color, border_color))
+	button.add_theme_stylebox_override("pressed", _create_panel_style(base_color.darkened(0.05), border_color))
+	button.add_theme_stylebox_override("focus", _create_panel_style(base_color, border_color))
+	button.add_theme_color_override("font_color", PRIMARY_TEXT_COLOR)
+	button.add_theme_color_override("font_hover_color", PRIMARY_TEXT_COLOR)
+	button.add_theme_color_override("font_pressed_color", PRIMARY_TEXT_COLOR)
 
 
 func _refresh_display() -> void:
@@ -301,18 +512,18 @@ func _refresh_display() -> void:
 		_run_state.starting_round_time + _pending_start_time_bonus if _run_state else _pending_start_time_bonus
 	)
 
-	stats_label.text = "Round %d\nLaps %d\nEnding Multiplier x%d\nRound Cash $%d\nTotal Cash $%d" % [
+	stats_label.text = "Round %d\nLaps cleared %d\nEnding multi x%d\nRound cash +$%d\nTotal bank $%d" % [
 		round_number,
 		completed_laps,
 		multiplier,
 		round_earnings,
 		currency,
 	]
-	next_round_label.text = "Next Round Starts With %s" % _format_round_time(next_round_time)
+	next_round_label.text = "Starting timer %s" % _format_round_time(next_round_time)
 	if _pending_start_time_bonus > 0.0:
-		next_round_label.text += " (%s bonus)" % _format_bonus_seconds(_pending_start_time_bonus)
+		next_round_label.text += " (%s queued)" % _format_bonus_seconds(_pending_start_time_bonus)
 
-	buy_time_button.text = "[B] Buy +%s Next Round ($%d)" % [
+	buy_time_button.text = "[B] Add +%s to next round\nCost $%d" % [
 		_format_bonus_seconds(_buy_time_seconds),
 		_buy_time_cost,
 	]
@@ -322,14 +533,16 @@ func _refresh_display() -> void:
 		or _buy_time_seconds <= 0.0
 		or currency < _buy_time_cost
 	)
+	_apply_action_button_theme(buy_time_button, BUY_TIME_ACCENT, not buy_time_button.disabled)
 
 	if _buy_boost_pad_button:
-		_buy_boost_pad_button.text = "[P] Buy Boost Pad ($%d)" % _buy_boost_pad_cost
+		_buy_boost_pad_button.text = "[P] Queue 1 Boost Pad\nCost $%d" % _buy_boost_pad_cost
 		_buy_boost_pad_button.disabled = (
 			_run_state == null
 			or _buy_boost_pad_cost <= 0
 			or currency < _buy_boost_pad_cost
 		)
+		_apply_action_button_theme(_buy_boost_pad_button, BOOST_PAD_ACCENT, not _buy_boost_pad_button.disabled)
 
 	if _pending_items_label:
 		var pending_parts: Array[String] = []
@@ -341,13 +554,16 @@ func _refresh_display() -> void:
 				"" if _pending_boost_pad_count == 1 else "s",
 			])
 
-		_pending_items_label.visible = not pending_parts.is_empty()
-		_pending_items_label.text = "Queued: %s" % ", ".join(pending_parts)
+		_pending_items_label.text = "Queued for next round: %s" % ", ".join(pending_parts)
+		if _queued_panel:
+			_queued_panel.visible = not pending_parts.is_empty()
+		else:
+			_pending_items_label.visible = not pending_parts.is_empty()
 
 	if _hazard_draft_section:
 		_hazard_draft_section.visible = _requires_hazard_draft
 		if _hazard_draft_title:
-			_hazard_draft_title.text = "Draft a Hazard"
+			_hazard_draft_title.text = "2. Draft the Lesser Evil"
 		for button_index in range(_hazard_draft_buttons.size()):
 			var hazard_button: Button = _hazard_draft_buttons[button_index]
 			var has_option: bool = button_index < _hazard_draft_options.size()
@@ -363,20 +579,17 @@ func _refresh_display() -> void:
 				" (Selected)" if is_selected else "",
 				HazardTypeRegistry.get_description(hazard_type),
 			]
-			if is_selected:
-				hazard_button.modulate = Color(1.0, 0.92, 0.78, 1.0)
-			else:
-				hazard_button.modulate = Color(1.0, 1.0, 1.0, 1.0)
-
 			hazard_button.text = button_text
+			_apply_hazard_button_theme(hazard_button, is_selected)
 
-	continue_label.modulate = Color(0.84, 0.86, 0.9, 1.0)
+	continue_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	continue_label.add_theme_color_override("font_color", CONTINUE_TEXT_COLOR)
 	continue_label.text = "Space / Enter to continue"
 	if _requires_hazard_draft and _selected_hazard_type == HazardTypeRegistry.NONE:
 		continue_label.text = "Pick a hazard with %s before continuing" % _format_hazard_shortcuts()
-		continue_label.modulate = Color(1.0, 0.72, 0.68, 1.0)
+		continue_label.add_theme_color_override("font_color", BLOCKED_TEXT_COLOR)
 	elif _pending_boost_pad_count > 0:
-		continue_label.text = "Space / Enter to place before the next round"
+		continue_label.text = "Space / Enter to place queued items"
 	elif _requires_hazard_draft:
 		continue_label.text = "Space / Enter to place the drafted hazard"
 
