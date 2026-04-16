@@ -3,7 +3,15 @@ extends Node3D
 
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
+const COIN_SCENE: PackedScene = preload("res://race/coin.tscn")
 const TRACK_COIN_ROOT_NAME := "Coins"
+const COIN_TRACK_Y_OFFSET := 0.01
+const COIN_PLACEMENT_BAND_ATTEMPTS := 5
+const COIN_PLACEMENT_FALLBACK_ATTEMPTS := 48
+const COIN_PROGRESS_JITTER_RATIO := 0.35
+const COIN_TRACK_CLEARANCE := 1.25
+const COIN_MIN_OCCUPIED_DISTANCE := 3.0
+const COIN_LATERAL_OFFSET_RATIO := 0.2
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
 const PLACEMENT_PANEL_MIN_WIDTH := 360.0
 const HAZARD_DRAFT_OPTION_COUNT := 2
@@ -23,6 +31,7 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var buy_time_cost: int = 20
 @export var buy_time_seconds: float = 15.0
 @export var buy_boost_pad_cost: int = 30
+@export_range(0, 32, 1) var coin_count: int = 6
 @export var placement_progress_speed: float = 0.18
 @export var placement_lateral_speed: float = 7.0
 @export var boost_pad_track_clearance: float = 1.5
@@ -76,10 +85,9 @@ func _ready() -> void:
 	if not _camera:
 		push_warning("MainSceneController could not find the camera.")
 
-	_position_coins_on_track()
-
 	_ensure_boost_pad_root()
 	_ensure_hazard_root()
+	_rebuild_track_coins()
 	_ensure_placement_overlay()
 
 	if _round_end_screen:
@@ -223,6 +231,7 @@ func _on_round_started(_round_number: int) -> void:
 	_clear_placement_preview()
 	_clear_hazard_position_selection()
 	_pending_hazard_type = HazardTypeRegistry.NONE
+	call_deferred("_rebuild_track_coins")
 	if _round_end_screen:
 		_round_end_screen.clear_hazard_draft()
 	_update_car_controls()
@@ -755,21 +764,144 @@ func _get_car_start_transform() -> Transform3D:
 	return _car_spawn_transform
 
 
-func _position_coins_on_track() -> void:
+func _rebuild_track_coins() -> void:
 	if _track == null:
 		return
 
-	var coin_root: Node3D = _track.get_node_or_null(TRACK_COIN_ROOT_NAME) as Node3D
+	var coin_root: Node3D = _ensure_coin_root()
 	if coin_root == null:
 		return
 
-	var coin_slots: PackedVector2Array = _track.get_default_coin_slots()
-	var slot_index: int = 0
 	for child in coin_root.get_children():
-		var coin: Coin = child as Coin
-		if coin == null or slot_index >= coin_slots.size():
+		child.free()
+
+	if coin_count <= 0 or COIN_SCENE == null:
+		return
+
+	var coin_transforms: Array[Transform3D] = _build_coin_transforms()
+	for coin_index in range(coin_transforms.size()):
+		var coin: Coin = COIN_SCENE.instantiate() as Coin
+		if coin == null:
+			push_warning("MainSceneController failed to instantiate a coin.")
 			continue
 
-		var coin_slot: Vector2 = coin_slots[slot_index]
-		coin.global_transform = _track.get_track_transform(coin_slot.x, coin_slot.y, coin.global_position.y)
-		slot_index += 1
+		coin.name = "Coin%d" % (coin_index + 1)
+		coin_root.add_child(coin)
+		coin.global_transform = coin_transforms[coin_index]
+
+	if coin_transforms.size() < coin_count:
+		push_warning(
+			"MainSceneController placed %d/%d coins on the current track." % [
+				coin_transforms.size(),
+				coin_count,
+			]
+		)
+
+
+func _ensure_coin_root() -> Node3D:
+	if _track == null:
+		return null
+
+	var coin_root: Node3D = _track.get_node_or_null(TRACK_COIN_ROOT_NAME) as Node3D
+	if coin_root != null:
+		return coin_root
+
+	coin_root = Node3D.new()
+	coin_root.name = TRACK_COIN_ROOT_NAME
+	_track.add_child(coin_root)
+	return coin_root
+
+
+func _build_coin_transforms() -> Array[Transform3D]:
+	var coin_transforms: Array[Transform3D] = []
+	if _track == null or coin_count <= 0:
+		return coin_transforms
+
+	var occupied_positions: Array[Vector3] = _get_occupied_track_item_positions()
+	var lateral_candidates: Array[float] = _get_coin_lateral_candidates()
+	var spacing: float = 1.0 / float(coin_count)
+	var lap_start_progress: float = _track.get_lap_start_progress()
+
+	for coin_index in range(coin_count):
+		var band_center_progress: float = wrapf(
+			lap_start_progress + spacing * (float(coin_index) + 0.5),
+			0.0,
+			1.0
+		)
+		for attempt in range(COIN_PLACEMENT_BAND_ATTEMPTS):
+			var attempt_ratio: float = 0.0
+			if COIN_PLACEMENT_BAND_ATTEMPTS > 1:
+				attempt_ratio = float(attempt) / float(COIN_PLACEMENT_BAND_ATTEMPTS - 1)
+			var progress_offset: float = lerpf(
+				-spacing * COIN_PROGRESS_JITTER_RATIO,
+				spacing * COIN_PROGRESS_JITTER_RATIO,
+				attempt_ratio
+			)
+			var candidate_progress: float = wrapf(band_center_progress + progress_offset, 0.0, 1.0)
+			if _append_coin_transform_if_valid(
+				candidate_progress,
+				lateral_candidates,
+				occupied_positions,
+				coin_transforms
+			):
+				break
+
+	var fallback_attempts: int = 0
+	while coin_transforms.size() < coin_count and fallback_attempts < COIN_PLACEMENT_FALLBACK_ATTEMPTS:
+		fallback_attempts += 1
+		var candidate_progress: float = randf()
+		_append_coin_transform_if_valid(
+			candidate_progress,
+			lateral_candidates,
+			occupied_positions,
+			coin_transforms
+		)
+
+	return coin_transforms
+
+
+func _append_coin_transform_if_valid(
+	progress: float,
+	lateral_candidates: Array[float],
+	occupied_positions: Array[Vector3],
+	coin_transforms: Array[Transform3D]
+) -> bool:
+	if _track == null:
+		return false
+
+	for lateral_offset in lateral_candidates:
+		if not _track.is_track_position_valid(progress, lateral_offset, COIN_TRACK_CLEARANCE):
+			continue
+
+		var coin_transform: Transform3D = _track.get_track_transform(progress, lateral_offset, COIN_TRACK_Y_OFFSET)
+		var coin_position: Vector3 = coin_transform.origin
+		if _is_coin_position_blocked(coin_position, occupied_positions):
+			continue
+
+		occupied_positions.append(coin_position)
+		coin_transforms.append(coin_transform)
+		return true
+
+	return false
+
+
+func _get_coin_lateral_candidates() -> Array[float]:
+	var lateral_candidates: Array[float] = [0.0]
+	if _track == null:
+		return lateral_candidates
+
+	var max_lateral_offset: float = _track.get_max_lateral_offset(COIN_TRACK_CLEARANCE)
+	var lane_offset: float = minf(max_lateral_offset, _track.track_width * COIN_LATERAL_OFFSET_RATIO)
+	if is_zero_approx(lane_offset):
+		return lateral_candidates
+
+	lateral_candidates.append(lane_offset)
+	lateral_candidates.append(-lane_offset)
+	return lateral_candidates
+
+
+func _is_coin_position_blocked(candidate_position: Vector3, occupied_positions: Array[Vector3]) -> bool:
+	for occupied_position in occupied_positions:
+		if occupied_position.distance_to(candidate_position) < COIN_MIN_OCCUPIED_DISTANCE:
+			return true
+	return false

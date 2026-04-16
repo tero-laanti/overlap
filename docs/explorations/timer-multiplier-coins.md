@@ -68,9 +68,7 @@ Coin (Area3D)
 - Coin value is exported on the coin itself (default: 1 or maybe 10)
 
 **Placement:**
-For now, manually place 4-6 coins around the oval. Put them on the racing line — the player should collect them naturally when driving well, not by swerving dangerously. The "hard" coins that require risky lines come later when we have more track variety.
-
-Later, coins will be placed by the player during the pit stop phase. For now they're just static scene children.
+Coins are instantiated at round start and distributed around the active track. Keep them close enough to the racing line that good driving collects them naturally; the "hard" coins that require risky lines come later when we have more track variety.
 
 **Collision layer:**
 Coins need a new collision layer. Per AGENTS.md, claim the next free one:
@@ -161,7 +159,7 @@ RunState connects to LapTracker and coins via NodePaths or scene-tree lookups. R
 
 1. **RunState** — implemented. Timer countdown + multiplier increment on lap.
 2. **RunHUD** — implemented. Displays timer, multiplier, currency, lap, and lap times.
-3. **Coins** — implemented. Coin scene, oval placement, and multiplier-scaled rewards are wired in.
+3. **Coins** — implemented. Coin scene, runtime track placement, and multiplier-scaled rewards are wired in.
 4. **Round end** — implemented as a first-pass loop closer. `round_finished` now leads into a round-end screen with results, repeatable timer-extension purchases, and a purchasable Boost Pad that routes into placement before the next round starts.
 
 Each step is one scoped commit that can be tested independently.

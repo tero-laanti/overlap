@@ -78,14 +78,6 @@ var _track_length: float = 0.0
 var _generated_root: Node3D = null
 var _is_rebuild_queued: bool = false
 var _observed_layouts: Array[TrackLayoutResource] = []
-var _default_coin_slots: PackedVector2Array = PackedVector2Array([
-	Vector2(0.05, 0.0),
-	Vector2(0.2, 0.0),
-	Vector2(0.36, 0.0),
-	Vector2(0.52, 0.0),
-	Vector2(0.68, 0.0),
-	Vector2(0.84, 0.0),
-])
 
 
 func _enter_tree() -> void:
@@ -209,13 +201,6 @@ func get_start_transform(y_offset: float = START_LINE_Y_OFFSET) -> Transform3D:
 
 func get_max_lateral_offset(clearance: float = 0.0) -> float:
 	return maxf(track_width * 0.5 - clearance, 0.0)
-
-
-func get_default_coin_slots() -> PackedVector2Array:
-	var active_layout: TrackLayoutResource = _get_active_layout()
-	if active_layout != null and not active_layout.coin_slots.is_empty():
-		return active_layout.coin_slots
-	return _default_coin_slots
 
 
 func is_track_position_valid(progress: float, lateral_offset: float, clearance: float = 0.0) -> bool:

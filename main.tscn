@@ -1,17 +1,17 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://lmtexuwms5fj"]
 
-[ext_resource type="Script" path="res://camera/game_camera.gd" id="camera_script"]
-[ext_resource type="Script" path="res://car/car.gd" id="car_script"]
+[ext_resource type="Script" uid="uid://2egkjeuemcpk" path="res://track/track_layout.gd" id="4_dg77c"]
+[ext_resource type="Script" uid="uid://nxpfj861gbdq" path="res://camera/game_camera.gd" id="camera_script"]
+[ext_resource type="Script" uid="uid://b16rihml1wthi" path="res://car/car.gd" id="car_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
-[ext_resource type="Script" path="res://main.gd" id="main_script"]
-[ext_resource type="PackedScene" path="res://race/coin.tscn" id="coin_scene"]
-[ext_resource type="Script" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
+[ext_resource type="Script" uid="uid://437ebgb8puho" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
+[ext_resource type="Script" uid="uid://cbkha778a3etd" path="res://main.gd" id="main_script"]
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
-[ext_resource type="Script" path="res://ui/run_hud.gd" id="run_hud_script"]
-[ext_resource type="Script" path="res://race/run_state.gd" id="run_state_script"]
-[ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
-[ext_resource type="Resource" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
-[ext_resource type="Resource" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
+[ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
+[ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
+[ext_resource type="Resource" uid="uid://cyiogqjoaufgp" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
+[ext_resource type="Resource" uid="uid://cpuh6760p7w1p" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
+[ext_resource type="Script" uid="uid://cpfvs67kqxbqn" path="res://track/test_track.gd" id="track_script"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -53,20 +53,21 @@ target_path = NodePath("../Car")
 
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
-starter_layouts = Array[Resource]([ExtResource("starter_rectangle_layout"), ExtResource("starter_octagon_layout")])
+starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_octagon_layout")])
 
-[node name="LapTracker" type="Node" parent="."]
+[node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
+
+[node name="LapTracker" type="Node" parent="." unique_id=248903443]
 script = ExtResource("lap_tracker_script")
 car_path = NodePath("../Car")
 track_path = NodePath("../Track")
 
-[node name="RunState" type="Node" parent="."]
+[node name="RunState" type="Node" parent="." unique_id=211747239]
 script = ExtResource("run_state_script")
 lap_tracker_path = NodePath("../LapTracker")
 
 [node name="Car" type="RigidBody3D" parent="." unique_id=183954873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
-collision_layer = 1
 collision_mask = 2
 mass = 1.5
 gravity_scale = 0.0
@@ -84,91 +85,78 @@ shape = SubResource("car_shape")
 mesh = SubResource("car_mesh")
 surface_material_override/0 = SubResource("car_material")
 
-[node name="Coins" type="Node3D" parent="Track"]
-
-[node name="CoinEast" parent="Track/Coins" instance=ExtResource("coin_scene")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.57, 0.01, 19.27)
-
-[node name="CoinNorthEast" parent="Track/Coins" instance=ExtResource("coin_scene")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.28, 0.01, 39.3)
-
-[node name="CoinNorthWest" parent="Track/Coins" instance=ExtResource("coin_scene")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.71, 0.01, 27.38)
-
-[node name="CoinSouthWest" parent="Track/Coins" instance=ExtResource("coin_scene")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -52.57, 0.01, -19.27)
-
-[node name="CoinSouth" parent="Track/Coins" instance=ExtResource("coin_scene")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.28, 0.01, -39.3)
-
-[node name="CoinSouthEast" parent="Track/Coins" instance=ExtResource("coin_scene")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.71, 0.01, -27.38)
-
-[node name="RunHUD" type="CanvasLayer" parent="."]
-layer = 1
+[node name="RunHUD" type="CanvasLayer" parent="." unique_id=1952709169]
 script = ExtResource("run_hud_script")
 lap_tracker_path = NodePath("../LapTracker")
 run_state_path = NodePath("../RunState")
 car_path = NodePath("../Car")
 
-[node name="RoundEndScreen" parent="." instance=ExtResource("round_end_screen_scene")]
-run_state_path = NodePath("../RunState")
-lap_tracker_path = NodePath("../LapTracker")
-
-[node name="Margin" type="MarginContainer" parent="RunHUD"]
+[node name="Margin" type="MarginContainer" parent="RunHUD" unique_id=1857557499]
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 320.0
 offset_bottom = 250.0
 
-[node name="VBox" type="VBoxContainer" parent="RunHUD/Margin"]
+[node name="VBox" type="VBoxContainer" parent="RunHUD/Margin" unique_id=404581607]
+layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LapLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 30
+[node name="LapLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=345752721]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.96, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 30
 text = "Lap 1"
 
-[node name="SpeedLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 20
+[node name="SpeedLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=1811760395]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
 text = "Speed 0"
 
-[node name="LapTimeLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 22
+[node name="LapTimeLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=1012796349]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.94, 0.92, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
 text = "Lap Time 0:00.00"
 
-[node name="LastLapLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 22
+[node name="LastLapLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=251873716]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.94, 0.92, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
 text = "Last --:--.--"
 
-[node name="RoundTimeLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 24
+[node name="RoundTimeLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=1937383889]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.92, 0.65, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 24
 text = "Time Left --"
 
-[node name="MultiplierLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 22
+[node name="MultiplierLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=309907334]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.93, 1, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
 text = "Multiplier x1"
 
-[node name="CurrencyLabel" type="Label" parent="RunHUD/Margin/VBox"]
-theme_override_font_sizes/font_size = 22
+[node name="CurrencyLabel" type="Label" parent="RunHUD/Margin/VBox" unique_id=1104031]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.87, 1, 0.77, 1)
 theme_override_colors/font_outline_color = Color(0.09, 0.09, 0.1, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
 text = "Cash $0"
+
+[node name="RoundEndScreen" parent="." unique_id=522869335 instance=ExtResource("round_end_screen_scene")]
+run_state_path = NodePath("../RunState")
+lap_tracker_path = NodePath("../LapTracker")

@@ -89,7 +89,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - Starter tracks are authored from tile resources and stitched into a centerline at runtime. The wall and surface generation code is intentionally simple — it will evolve.
 - The current starter layouts map world position to `SurfaceProfile` resources (`tarmac`, `sand`, `grass`) so floor regions can change car handling without per-triangle floor physics.
 - Lap counting currently uses track progress plus a virtual checkpoint halfway around the course rather than hand-placed checkpoint volumes.
-- Coins are currently scene children, but their positions come from layout-defined track slots at runtime so each starter map can stay fair and readable.
+- Coins are instantiated under `Track/Coins` at round start and distributed around the active track so map swaps still produce readable pickup lines.
 - Track points now come from `TrackLayout` and `TrackTileDefinition` resources rather than living directly in `track/test_track.gd`.
 - Keep using deliberate collision layers as new collidable types are added. Do not reuse layer 1 as the default for unrelated objects.
 

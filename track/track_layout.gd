@@ -10,7 +10,6 @@ const CONNECTION_EPSILON := 0.05
 var _display_name: String = ""
 var _tile_size: float = 36.0
 var _lap_start_progress: float = 0.0
-var _coin_slots: PackedVector2Array = PackedVector2Array()
 var _tiles: Array[TrackLayoutTileResource] = []
 
 @export var display_name: String:
@@ -30,12 +29,6 @@ var _tiles: Array[TrackLayoutTileResource] = []
 		return _lap_start_progress
 	set(value):
 		_lap_start_progress = value
-		emit_changed()
-@export var coin_slots: PackedVector2Array:
-	get:
-		return _coin_slots
-	set(value):
-		_coin_slots = value
 		emit_changed()
 @export var tiles: Array[TrackLayoutTileResource]:
 	get:
