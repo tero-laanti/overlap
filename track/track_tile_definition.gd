@@ -4,71 +4,19 @@ extends Resource
 
 const TrackDirectionRef := preload("res://track/track_direction.gd")
 
-var _display_name: String = ""
-var _entry_direction: int = TrackDirectionRef.Heading.W
-var _exit_direction: int = TrackDirectionRef.Heading.E
-var _footprint: Vector2i = Vector2i.ONE
-var _entry_cell: Vector2i = Vector2i.ZERO
-var _exit_cell: Vector2i = Vector2i.ZERO
-var _center_feature_tag: StringName = &""
-var _interior_points: PackedVector3Array = PackedVector3Array()
-
-@export var display_name: String:
-	get:
-		return _display_name
-	set(value):
-		_display_name = value
-		emit_changed()
-## Heading for the entry socket. Any of the eight directions is allowed regardless of
-## footprint. Multi-cell tiles may only be placed at 90-degree rotation_steps (0/2/4/6)
-## so the footprint stays grid-aligned; diagonal intrinsic directions are preserved
-## across those 90-degree rotations.
-@export_enum("N:0", "NE:1", "E:2", "SE:3", "S:4", "SW:5", "W:6", "NW:7") var entry_direction: int:
-	get:
-		return _entry_direction
-	set(value):
-		_entry_direction = value
-		emit_changed()
-## Heading for the exit socket. Any of the eight directions is allowed regardless of
-## footprint. Multi-cell tiles may only be placed at 90-degree rotation_steps (0/2/4/6)
-## so the footprint stays grid-aligned; diagonal intrinsic directions are preserved
-## across those 90-degree rotations.
-@export_enum("N:0", "NE:1", "E:2", "SE:3", "S:4", "SW:5", "W:6", "NW:7") var exit_direction: int:
-	get:
-		return _exit_direction
-	set(value):
-		_exit_direction = value
-		emit_changed()
-@export var footprint: Vector2i:
-	get:
-		return _footprint
-	set(value):
-		_footprint = value
-		emit_changed()
-@export var entry_cell: Vector2i:
-	get:
-		return _entry_cell
-	set(value):
-		_entry_cell = value
-		emit_changed()
-@export var exit_cell: Vector2i:
-	get:
-		return _exit_cell
-	set(value):
-		_exit_cell = value
-		emit_changed()
-@export var center_feature_tag: StringName:
-	get:
-		return _center_feature_tag
-	set(value):
-		_center_feature_tag = value
-		emit_changed()
-@export var interior_points: PackedVector3Array:
-	get:
-		return _interior_points
-	set(value):
-		_interior_points = value
-		emit_changed()
+@export var display_name: String = ""
+## Heading for the entry socket. Stored as an int (0=N, 1=NE, 2=E, ... 7=NW). Any of
+## the eight directions is allowed regardless of footprint. Multi-cell tiles may only
+## be placed at 90-degree rotation_steps (0/2/4/6) so the footprint stays grid-aligned;
+## diagonal intrinsic directions are preserved across those 90-degree rotations.
+@export var entry_direction: int = TrackDirectionRef.Heading.W
+## Heading for the exit socket. See entry_direction for the encoding.
+@export var exit_direction: int = TrackDirectionRef.Heading.E
+@export var footprint: Vector2i = Vector2i.ONE
+@export var entry_cell: Vector2i = Vector2i.ZERO
+@export var exit_cell: Vector2i = Vector2i.ZERO
+@export var center_feature_tag: StringName = &""
+@export var interior_points: PackedVector3Array = PackedVector3Array()
 
 
 func get_entry_direction(rotation_steps: int = 0, reverse_path: bool = false) -> int:
