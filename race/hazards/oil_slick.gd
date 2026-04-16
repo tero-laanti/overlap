@@ -1,7 +1,6 @@
 class_name OilSlick
 extends Area3D
 
-const HazardPreviewHelper := preload("res://race/hazard_preview_helper.gd")
 const RUN_STATE_GROUP := &"run_state"
 
 @export_range(0.05, 1.0, 0.05) var grip_multiplier: float = 0.3

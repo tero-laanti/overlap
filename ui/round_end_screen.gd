@@ -301,7 +301,7 @@ func _format_bonus_seconds(seconds: float) -> String:
 func _format_round_time(seconds: float) -> String:
 	var safe_seconds: float = maxf(seconds, 0.0)
 	var total_seconds: int = int(safe_seconds)
-	var minutes: int = total_seconds / 60
+	var minutes: int = int(total_seconds / 60.0)
 	var whole_seconds: int = total_seconds % 60
 	var tenths: int = int(floor(fposmod(safe_seconds, 1.0) * 10.0))
 	return "%d:%02d.%01d" % [minutes, whole_seconds, tenths]

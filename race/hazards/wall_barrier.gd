@@ -1,8 +1,6 @@
 class_name WallBarrier
 extends StaticBody3D
 
-const HazardPreviewHelper := preload("res://race/hazard_preview_helper.gd")
-
 @export var base_color: Color = Color(0.78, 0.22, 0.14, 1.0)
 @export var accent_color: Color = Color(0.98, 0.58, 0.22, 1.0)
 @export var preview_valid_color: Color = Color(0.96, 0.66, 0.28, 1.0)
