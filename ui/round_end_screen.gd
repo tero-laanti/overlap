@@ -2,6 +2,36 @@ class_name RoundEndScreen
 extends CanvasLayer
 
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
+const COMPACT_LAYOUT_MIN_VIEWPORT_HEIGHT := 760.0
+const COMPACT_LAYOUT_MIN_VIEWPORT_WIDTH := 1366.0
+const DEFAULT_PANEL_MIN_WIDTH := 360.0
+const MIN_PANEL_WIDTH := 280.0
+const DEFAULT_PANEL_MARGIN := 28
+const COMPACT_PANEL_MARGIN := 20
+const DEFAULT_SECTION_SEPARATION := 14
+const COMPACT_SECTION_SEPARATION := 10
+const DEFAULT_ACTION_BUTTON_HEIGHT := 54.0
+const COMPACT_ACTION_BUTTON_HEIGHT := 46.0
+const DEFAULT_HAZARD_BUTTON_HEIGHT := 70.0
+const COMPACT_HAZARD_BUTTON_HEIGHT := 58.0
+const DEFAULT_TITLE_FONT_SIZE := 36
+const COMPACT_TITLE_FONT_SIZE := 30
+const DEFAULT_STATS_FONT_SIZE := 22
+const COMPACT_STATS_FONT_SIZE := 19
+const DEFAULT_NEXT_ROUND_FONT_SIZE := 20
+const COMPACT_NEXT_ROUND_FONT_SIZE := 18
+const DEFAULT_ACTION_FONT_SIZE := 22
+const COMPACT_ACTION_FONT_SIZE := 19
+const DEFAULT_PENDING_FONT_SIZE := 18
+const COMPACT_PENDING_FONT_SIZE := 16
+const DEFAULT_CONTINUE_FONT_SIZE := 18
+const COMPACT_CONTINUE_FONT_SIZE := 16
+const DEFAULT_HAZARD_TITLE_FONT_SIZE := 24
+const COMPACT_HAZARD_TITLE_FONT_SIZE := 20
+const DEFAULT_HAZARD_SECTION_SEPARATION := 8
+const COMPACT_HAZARD_SECTION_SEPARATION := 6
+const DEFAULT_HAZARD_BUTTON_FONT_SIZE := 18
+const COMPACT_HAZARD_BUTTON_FONT_SIZE := 16
 
 signal buy_time_requested
 signal buy_boost_pad_requested
@@ -11,7 +41,10 @@ signal continue_requested
 @export var run_state_path: NodePath
 @export var lap_tracker_path: NodePath
 
+@onready var panel: PanelContainer = $Center/Panel
+@onready var panel_margin: MarginContainer = $Center/Panel/Margin
 @onready var options_box: VBoxContainer = $Center/Panel/Margin/VBox
+@onready var title_label: Label = $Center/Panel/Margin/VBox/TitleLabel
 @onready var stats_label: Label = $Center/Panel/Margin/VBox/StatsLabel
 @onready var next_round_label: Label = $Center/Panel/Margin/VBox/NextRoundLabel
 @onready var buy_time_button: Button = $Center/Panel/Margin/VBox/BuyTimeButton
@@ -57,7 +90,10 @@ func _ready() -> void:
 		buy_time_button.pressed.connect(_on_buy_time_button_pressed)
 	if _buy_boost_pad_button and not _buy_boost_pad_button.pressed.is_connected(_on_buy_boost_pad_button_pressed):
 		_buy_boost_pad_button.pressed.connect(_on_buy_boost_pad_button_pressed)
+	if not get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.connect(_on_viewport_size_changed)
 
+	_apply_responsive_layout()
 	_refresh_display()
 
 
@@ -145,8 +181,6 @@ func _ensure_dynamic_controls() -> void:
 	if _buy_boost_pad_button == null:
 		_buy_boost_pad_button = Button.new()
 		_buy_boost_pad_button.name = "BuyBoostPadButton"
-		_buy_boost_pad_button.custom_minimum_size = Vector2(0.0, 54.0)
-		_buy_boost_pad_button.add_theme_font_size_override("font_size", 22)
 		_buy_boost_pad_button.focus_mode = Control.FOCUS_NONE
 		options_box.add_child(_buy_boost_pad_button)
 		options_box.move_child(_buy_boost_pad_button, continue_label.get_index())
@@ -163,14 +197,12 @@ func _ensure_dynamic_controls() -> void:
 	if _hazard_draft_section == null:
 		_hazard_draft_section = VBoxContainer.new()
 		_hazard_draft_section.name = "HazardDraftSection"
-		_hazard_draft_section.add_theme_constant_override("separation", 8)
 		options_box.add_child(_hazard_draft_section)
 		options_box.move_child(_hazard_draft_section, continue_label.get_index())
 
 		_hazard_draft_title = Label.new()
 		_hazard_draft_title.name = "HazardDraftTitle"
 		_hazard_draft_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_hazard_draft_title.add_theme_font_size_override("font_size", 24)
 		_hazard_draft_title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.72, 1.0))
 		_hazard_draft_title.text = "Draft a Hazard"
 		_hazard_draft_section.add_child(_hazard_draft_title)
@@ -178,7 +210,6 @@ func _ensure_dynamic_controls() -> void:
 		for index in range(3):
 			var hazard_button: Button = Button.new()
 			hazard_button.name = "HazardDraftButton%d" % (index + 1)
-			hazard_button.custom_minimum_size = Vector2(0.0, 70.0)
 			hazard_button.focus_mode = Control.FOCUS_NONE
 			if not hazard_button.pressed.is_connected(_on_hazard_draft_button_pressed.bind(index)):
 				hazard_button.pressed.connect(_on_hazard_draft_button_pressed.bind(index))
@@ -186,6 +217,63 @@ func _ensure_dynamic_controls() -> void:
 			_hazard_draft_buttons.append(hazard_button)
 
 	_reorder_dynamic_controls()
+
+
+func _apply_responsive_layout() -> void:
+	if not is_node_ready():
+		return
+
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var use_compact_layout: bool = viewport_size.y <= COMPACT_LAYOUT_MIN_VIEWPORT_HEIGHT \
+		or viewport_size.x <= COMPACT_LAYOUT_MIN_VIEWPORT_WIDTH
+	var panel_margin_size: int = COMPACT_PANEL_MARGIN if use_compact_layout else DEFAULT_PANEL_MARGIN
+	var section_separation: int = COMPACT_SECTION_SEPARATION if use_compact_layout else DEFAULT_SECTION_SEPARATION
+	var action_button_height: float = COMPACT_ACTION_BUTTON_HEIGHT if use_compact_layout else DEFAULT_ACTION_BUTTON_HEIGHT
+	var hazard_button_height: float = COMPACT_HAZARD_BUTTON_HEIGHT if use_compact_layout else DEFAULT_HAZARD_BUTTON_HEIGHT
+
+	panel.custom_minimum_size = Vector2(
+		minf(DEFAULT_PANEL_MIN_WIDTH, maxf(viewport_size.x - panel_margin_size * 2.0, MIN_PANEL_WIDTH)),
+		0.0
+	)
+	panel_margin.add_theme_constant_override("margin_left", panel_margin_size)
+	panel_margin.add_theme_constant_override("margin_top", panel_margin_size)
+	panel_margin.add_theme_constant_override("margin_right", panel_margin_size)
+	panel_margin.add_theme_constant_override("margin_bottom", panel_margin_size)
+	options_box.add_theme_constant_override("separation", section_separation)
+	title_label.add_theme_font_size_override("font_size", COMPACT_TITLE_FONT_SIZE if use_compact_layout else DEFAULT_TITLE_FONT_SIZE)
+	stats_label.add_theme_font_size_override("font_size", COMPACT_STATS_FONT_SIZE if use_compact_layout else DEFAULT_STATS_FONT_SIZE)
+	next_round_label.add_theme_font_size_override("font_size", COMPACT_NEXT_ROUND_FONT_SIZE if use_compact_layout else DEFAULT_NEXT_ROUND_FONT_SIZE)
+	buy_time_button.custom_minimum_size = Vector2(0.0, action_button_height)
+	buy_time_button.add_theme_font_size_override("font_size", COMPACT_ACTION_FONT_SIZE if use_compact_layout else DEFAULT_ACTION_FONT_SIZE)
+	continue_label.add_theme_font_size_override("font_size", COMPACT_CONTINUE_FONT_SIZE if use_compact_layout else DEFAULT_CONTINUE_FONT_SIZE)
+
+	if _buy_boost_pad_button:
+		_buy_boost_pad_button.custom_minimum_size = Vector2(0.0, action_button_height)
+		_buy_boost_pad_button.add_theme_font_size_override("font_size", COMPACT_ACTION_FONT_SIZE if use_compact_layout else DEFAULT_ACTION_FONT_SIZE)
+
+	if _pending_items_label:
+		_pending_items_label.add_theme_font_size_override("font_size", COMPACT_PENDING_FONT_SIZE if use_compact_layout else DEFAULT_PENDING_FONT_SIZE)
+
+	if _hazard_draft_section:
+		_hazard_draft_section.add_theme_constant_override(
+			"separation",
+			COMPACT_HAZARD_SECTION_SEPARATION if use_compact_layout else DEFAULT_HAZARD_SECTION_SEPARATION
+		)
+	if _hazard_draft_title:
+		_hazard_draft_title.add_theme_font_size_override(
+			"font_size",
+			COMPACT_HAZARD_TITLE_FONT_SIZE if use_compact_layout else DEFAULT_HAZARD_TITLE_FONT_SIZE
+		)
+	for hazard_button in _hazard_draft_buttons:
+		hazard_button.custom_minimum_size = Vector2(0.0, hazard_button_height)
+		hazard_button.add_theme_font_size_override(
+			"font_size",
+			COMPACT_HAZARD_BUTTON_FONT_SIZE if use_compact_layout else DEFAULT_HAZARD_BUTTON_FONT_SIZE
+		)
+
+
+func _on_viewport_size_changed() -> void:
+	_apply_responsive_layout()
 
 
 func _reorder_dynamic_controls() -> void:
@@ -268,13 +356,13 @@ func _refresh_display() -> void:
 				continue
 
 			var hazard_type: int = _hazard_draft_options[button_index]
-			var button_text: String = "[%d] %s\n%s" % [
+			var button_text: String = "[%d] %s%s\n%s" % [
 				button_index + 1,
 				HazardTypeRegistry.get_display_name(hazard_type),
+				" (Selected)" if hazard_type == _selected_hazard_type else "",
 				HazardTypeRegistry.get_description(hazard_type),
 			]
 			if hazard_type == _selected_hazard_type:
-				button_text += "\nSelected"
 				hazard_button.modulate = Color(1.0, 0.92, 0.78, 1.0)
 			else:
 				hazard_button.modulate = Color(1.0, 1.0, 1.0, 1.0)

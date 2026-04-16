@@ -28,6 +28,8 @@ var _surface_provider: Node = null
 var _grip_penalty_multiplier: float = DEFAULT_GRIP_PENALTY_MULTIPLIER
 var _grip_penalty_time_remaining: float = 0.0
 var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
+var _pending_reset_transform: Transform3D = Transform3D.IDENTITY
+var _has_pending_reset: bool = false
 
 signal drift_started
 signal drift_ended
@@ -55,6 +57,8 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	angular_velocity = Vector3.ZERO
 	global_transform = spawn_transform
 	sleeping = false
+	_pending_reset_transform = spawn_transform
+	_has_pending_reset = true
 	_clear_grip_penalty()
 	clear_speed_cap()
 
@@ -119,6 +123,8 @@ func clear_speed_cap() -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	_apply_pending_reset(state)
+
 	if not stats:
 		return
 
@@ -232,6 +238,16 @@ func _get_flat_forward_vector() -> Vector3:
 	if forward.length_squared() < 0.001:
 		return Vector3.FORWARD
 	return forward.normalized()
+
+
+func _apply_pending_reset(state: PhysicsDirectBodyState3D) -> void:
+	if not _has_pending_reset:
+		return
+
+	state.linear_velocity = Vector3.ZERO
+	state.angular_velocity = Vector3.ZERO
+	state.transform = _pending_reset_transform
+	_has_pending_reset = false
 
 
 func _tick_grip_penalty(delta: float) -> void:

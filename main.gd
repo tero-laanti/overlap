@@ -6,7 +6,7 @@ const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
 ## Approximate radius of a boost pad for overlap checks (half the pad's longest extent).
 const BOOST_PAD_FOOTPRINT_RADIUS := 2.3
-const HAZARD_DRAFT_OPTION_COUNT := 3
+const HAZARD_DRAFT_OPTION_COUNT := 2
 const HAZARD_POSITION_CANDIDATE_COUNT := 3
 const HAZARD_POSITION_MAX_ATTEMPTS := 96
 
