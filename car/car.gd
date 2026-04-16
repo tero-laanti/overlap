@@ -71,6 +71,16 @@ func set_controls_enabled(is_enabled: bool) -> void:
 		throttle_input = 0.0
 
 
+## Freezes or unfreezes the car's physics. Zeros velocity on freeze so the body
+## doesn't resume drifting when it unfreezes. Used to hold the car still while
+## the pit stop UI is up.
+func set_frozen(should_freeze: bool) -> void:
+	if should_freeze:
+		linear_velocity = Vector3.ZERO
+		angular_velocity = Vector3.ZERO
+	freeze = should_freeze
+
+
 func apply_forward_boost(boost_speed: float) -> void:
 	if boost_speed <= 0.0:
 		return

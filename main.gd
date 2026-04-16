@@ -230,6 +230,8 @@ func _on_continue_requested() -> void:
 
 func _on_round_finished() -> void:
 	_hazard_controller.clear_pending()
+	if _car:
+		_car.set_frozen(true)
 	if _round_end_screen:
 		_round_end_screen.configure_hazard_draft(_get_hazard_draft_options())
 	_update_car_controls()
@@ -241,6 +243,8 @@ func _on_round_started(_round_number: int) -> void:
 	_hazard_controller.clear_selection()
 	_hazard_controller.clear_pending()
 	_rebuild_track_coins()
+	if _car:
+		_car.set_frozen(false)
 	if _round_end_screen:
 		_round_end_screen.clear_hazard_draft()
 	_update_car_controls()
