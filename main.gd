@@ -119,6 +119,8 @@ func _ready() -> void:
 			_run_state.round_started.connect(_on_round_started)
 		if not _run_state.buy_time_cost_changed.is_connected(_on_buy_time_cost_changed):
 			_run_state.buy_time_cost_changed.connect(_on_buy_time_cost_changed)
+		if not _run_state.run_failed.is_connected(_on_run_failed):
+			_run_state.run_failed.connect(_on_run_failed)
 
 	if _track:
 		_placement_progress = _track.get_lap_start_progress()
@@ -235,6 +237,22 @@ func _on_round_finished() -> void:
 	if _round_end_screen:
 		_round_end_screen.configure_hazard_draft(_get_hazard_draft_options())
 	_update_car_controls()
+
+
+func _on_run_failed(_last_round_number: int, _final_currency: int) -> void:
+	# The GameOverScreen handles the UI; main just has to make sure nothing
+	# drifts into the pit-stop flow — no hazard draft, car stays frozen, no
+	# lingering placement preview.
+	_hazard_controller.clear_pending()
+	_is_placement_active = false
+	_clear_placement_preview()
+	if _car:
+		_car.set_frozen(true)
+	if _round_end_screen:
+		_round_end_screen.visible = false
+		_round_end_screen.clear_hazard_draft()
+	_update_car_controls()
+	_update_placement_overlay()
 
 
 func _on_round_started(_round_number: int) -> void:

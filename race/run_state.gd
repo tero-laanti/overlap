@@ -12,6 +12,7 @@ signal currency_changed(currency: int)
 signal lap_rewarded(reward: int)
 signal round_started(round_number: int)
 signal round_finished
+signal run_failed(last_round_number: int, final_currency: int)
 signal buy_time_cost_changed(cost: int)
 
 @export var lap_tracker_path: NodePath
@@ -32,6 +33,7 @@ var currency: int = 0
 var round_earnings: int = 0
 var current_buy_time_cost: int = 0
 var is_round_active: bool = false
+var is_run_over: bool = false
 
 var _lap_tracker: LapTracker = null
 var _has_external_clock_driver: bool = false
@@ -62,6 +64,7 @@ func reset_for_new_run() -> void:
 	currency = 0
 	round_number = 0
 	current_buy_time_cost = maxi(buy_time_base_cost, 0)
+	is_run_over = false
 	currency_changed.emit(currency)
 	buy_time_cost_changed.emit(current_buy_time_cost)
 
@@ -192,6 +195,13 @@ func _finish_round() -> void:
 	is_round_active = false
 	if _lap_tracker:
 		_lap_tracker.set_tracking_enabled(false)
+
+	var laps_this_round: int = _lap_tracker.completed_laps if _lap_tracker else 0
+	if laps_this_round <= 0:
+		is_run_over = true
+		run_failed.emit(round_number, currency)
+		return
+
 	round_finished.emit()
 
 

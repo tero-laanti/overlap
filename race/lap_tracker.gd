@@ -45,7 +45,15 @@ func _physics_process(_delta: float) -> void:
 
 	var progress_delta: float = _get_signed_progress_delta(relative_progress, _last_progress)
 
-	if progress_delta > minimum_forward_progress and relative_progress >= checkpoint_progress:
+	# Only arm when the car actually crosses the checkpoint going forward. Just
+	# being past the checkpoint is not enough — driving backwards from the
+	# start line wraps relative_progress to ~0.99, which would otherwise let
+	# the player cheese a lap by bumping forward across the finish line.
+	if (
+		progress_delta > minimum_forward_progress
+		and _last_progress < checkpoint_progress
+		and relative_progress >= checkpoint_progress
+	):
 		_lap_armed = true
 
 	var crossed_finish_forward: bool = (

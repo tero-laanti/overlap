@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://437ebgb8puho" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
 [ext_resource type="Script" uid="uid://cbkha778a3etd" path="res://main.gd" id="main_script"]
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
+[ext_resource type="Script" path="res://ui/game_over_screen.gd" id="game_over_screen_script"]
 [ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
 [ext_resource type="Resource" uid="uid://b08ipsbn6kfqk" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
@@ -167,3 +168,8 @@ lap_tracker_path = NodePath("../LapTracker")
 
 [node name="HazardPlacementController" type="Node" parent="." unique_id=1632819470]
 script = ExtResource("hazard_placement_controller_script")
+
+[node name="GameOverScreen" type="CanvasLayer" parent="."]
+script = ExtResource("game_over_screen_script")
+run_state_path = NodePath("../RunState")
+lap_tracker_path = NodePath("../LapTracker")
