@@ -12,7 +12,7 @@ Race laps on a circuit under a timer. Each completed lap increases a multiplier,
 
 ### Pit Stop Phase (between rounds)
 
-1. **Buy positives** — boost pads, coins, timer extensions. Cost scales up with each purchase, so stacking the same upgrade gets progressively expensive.
+1. **Buy positives** — currently boost pads and timer extensions. Timer extensions already scale up with each purchase, and other shop items can follow if they prove fun in testing.
 2. **Draft a hazard** — pick 1 of 2 offered hazards (the lesser evil) and place it on the track.
 3. **Track mutation** (every N rounds) — circuit grows longer. Laps take more time, multiplier grows slower, earnings pressure increases.
 

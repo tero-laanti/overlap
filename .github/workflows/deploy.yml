@@ -53,8 +53,12 @@ jobs:
         run: |
           set -euo pipefail
           cd builds
-          # Web + Linux + Windows: zip the directory (macOS is already a zip)
-          zip -r html.zip html
+          # Web: zip the exported files so index.html stays at the archive root for itch.io
+          (
+            cd html
+            zip -r ../html.zip .
+          )
+          # Linux + Windows: zip the directory (macOS is already a zip)
           zip -r windows.zip windows
           zip -r linux.zip linux
           mv macos/Overlap.zip macos.zip

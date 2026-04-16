@@ -99,7 +99,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 
 ### Pit Stop Flow
 
-- Between rounds the pit stop runs three phases in order: buy positives (boost pads, coins, timer extensions whose cost scales per purchase), draft 1 of 2 offered hazards, then place the drafted hazard on the track. `main.gd` orchestrates this sequencing alongside track placement state.
+- Between rounds the pit stop runs three phases in order: buy positives (currently boost pads plus timer extensions, with timer-extension cost scaling per purchase), draft 1 of 2 offered hazards, then place the drafted hazard on the track. `main.gd` orchestrates this sequencing alongside track placement state.
 - Placed positives and hazards persist on the track for subsequent rounds.
 
 ### Hazard types
