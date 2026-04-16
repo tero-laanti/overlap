@@ -7,10 +7,10 @@ Overlap is an early-stage Godot 4.6 arcade racing game prototype. The current fo
 - Arcade car controller with drift system (the "Big Lie" — drifting preserves and adds speed)
 - Rear-wheel drift smoke feedback that only emits while the car is sliding
 - Surface-dependent handling for tarmac, sand, and grass
-- Procedural test track with walls and a closed-loop centerline
+- Tile-authored starter tracks stitched into a closed-loop centerline with generated walls and surfaces
 - Progress-based lap counter with a virtual checkpoint and HUD
 - Repeatable round loop with countdown, lap timer, multiplier, and lap-reward currency HUD
-- Basic coin collectibles with multiplier-scaled payouts and per-lap respawn
+- Basic coin collectibles with multiplier-scaled payouts, per-lap respawn, and layout-defined placement slots
 - Round-end pit stop that can buy extra starting time or queue a Boost Pad for track placement before the next round
 - Dynamic follow camera with speed-based zoom
 - Jolt Physics at 120Hz tick rate
@@ -37,7 +37,7 @@ If you want the repo to do both steps for you, run `scripts/headless_check.sh` a
 car/          Car controller, stats resource, and tuning data
 camera/       Camera systems
 race/         Race-state systems such as lap tracking
-track/        Track generation and layout
+track/        Track tiles, starter layouts, and generated track runtime
 ui/           HUD and prototype overlays
 addons/       Editor plugins (MCP bridge)
 docs/         Design notes and explorations (planned)

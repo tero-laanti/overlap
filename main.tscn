@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" path="res://race/run_state.gd" id="run_state_script"]
 [ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
+[ext_resource type="Resource" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -51,6 +53,7 @@ target_path = NodePath("../Car")
 
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
+starter_layouts = Array[Resource]([ExtResource("starter_rectangle_layout"), ExtResource("starter_octagon_layout")])
 
 [node name="LapTracker" type="Node" parent="."]
 script = ExtResource("lap_tracker_script")

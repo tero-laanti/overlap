@@ -3,6 +3,7 @@ extends Node3D
 
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
+const TRACK_COIN_ROOT_NAME := "Coins"
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
 const PLACEMENT_PANEL_MIN_WIDTH := 360.0
 const HAZARD_DRAFT_OPTION_COUNT := 2
@@ -75,6 +76,8 @@ func _ready() -> void:
 	if not _camera:
 		push_warning("MainSceneController could not find the camera.")
 
+	_position_coins_on_track()
+
 	_ensure_boost_pad_root()
 	_ensure_hazard_root()
 	_ensure_placement_overlay()
@@ -104,6 +107,8 @@ func _ready() -> void:
 
 	if _track:
 		_placement_progress = _track.get_lap_start_progress()
+		if _car:
+			_car.reset_to_transform(_get_car_start_transform())
 
 	_focus_camera_on(_car, false)
 	_update_car_controls()
@@ -748,3 +753,23 @@ func _get_car_start_transform() -> Transform3D:
 	if _track != null:
 		return _track.get_start_transform(_car_spawn_transform.origin.y)
 	return _car_spawn_transform
+
+
+func _position_coins_on_track() -> void:
+	if _track == null:
+		return
+
+	var coin_root: Node3D = _track.get_node_or_null(TRACK_COIN_ROOT_NAME) as Node3D
+	if coin_root == null:
+		return
+
+	var coin_slots: PackedVector2Array = _track.get_default_coin_slots()
+	var slot_index: int = 0
+	for child in coin_root.get_children():
+		var coin: Coin = child as Coin
+		if coin == null or slot_index >= coin_slots.size():
+			continue
+
+		var coin_slot: Vector2 = coin_slots[slot_index]
+		coin.global_transform = _track.get_track_transform(coin_slot.x, coin_slot.y, coin.global_position.y)
+		slot_index += 1

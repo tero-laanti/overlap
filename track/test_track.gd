@@ -2,6 +2,8 @@
 class_name TestTrack
 extends Node3D
 
+const TrackLayoutResource := preload("res://track/track_layout.gd")
+
 class ClosestSegmentResult:
 	var distance: float
 	var segment_index: int
@@ -14,6 +16,27 @@ class ClosestSegmentResult:
 
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
+const GROUND_MARGIN := 24.0
+
+var _starter_layouts: Array[TrackLayoutResource] = []
+var _active_starter_layout_index: int = 0
+
+@export_group("Layout")
+@export var starter_layouts: Array[TrackLayoutResource]:
+	get:
+		return _starter_layouts
+	set(value):
+		_starter_layouts = value
+		_refresh_layout_observers()
+		_queue_generated_track_rebuild()
+@export_range(0, 8, 1) var active_starter_layout_index: int:
+	get:
+		return _active_starter_layout_index
+	set(value):
+		_active_starter_layout_index = value
+		_queue_generated_track_rebuild()
+
+@export_group("Fallback Oval")
 ## Oval shape.
 @export var semi_major_x: float = 60.0
 @export var semi_minor_z: float = 40.0
@@ -53,6 +76,25 @@ var _segment_lengths: Array[float] = []
 var _cumulative_lengths: Array[float] = []
 var _track_length: float = 0.0
 var _generated_root: Node3D = null
+var _is_rebuild_queued: bool = false
+var _observed_layouts: Array[TrackLayoutResource] = []
+var _default_coin_slots: PackedVector2Array = PackedVector2Array([
+	Vector2(0.05, 0.0),
+	Vector2(0.2, 0.0),
+	Vector2(0.36, 0.0),
+	Vector2(0.52, 0.0),
+	Vector2(0.68, 0.0),
+	Vector2(0.84, 0.0),
+])
+
+
+func _enter_tree() -> void:
+	_refresh_layout_observers()
+
+
+func _exit_tree() -> void:
+	_clear_layout_observers()
+	_is_rebuild_queued = false
 
 
 func _ready() -> void:
@@ -62,6 +104,20 @@ func _ready() -> void:
 
 
 func _build_centerline() -> void:
+	var active_layout: TrackLayoutResource = _get_active_layout()
+	if active_layout != null:
+		_warn_about_layout_issues(active_layout)
+		_points = active_layout.build_centerline_points()
+		if _points.size() >= 3:
+			_rebuild_length_cache()
+			return
+
+		push_warning("TestTrack fell back to the oval because the active layout did not produce enough points.")
+
+	_build_fallback_oval_centerline()
+
+
+func _build_fallback_oval_centerline() -> void:
 	_points.clear()
 	for i in range(oval_segments):
 		var t := float(i) / float(oval_segments) * TAU
@@ -80,9 +136,10 @@ func _add_ground() -> void:
 	var mi := MeshInstance3D.new()
 	mi.name = "Ground"
 	var box := BoxMesh.new()
-	box.size = Vector3(200.0, 0.1, 200.0)
+	var bounds: AABB = _get_track_bounds()
+	box.size = Vector3(maxf(bounds.size.x, 16.0), 0.1, maxf(bounds.size.z, 16.0))
 	mi.mesh = box
-	mi.position = Vector3(0.0, -0.05, 0.0)
+	mi.position = Vector3(bounds.position.x + bounds.size.x * 0.5, -0.05, bounds.position.z + bounds.size.z * 0.5)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = GRASS_COLOR
 	mi.material_override = mat
@@ -118,6 +175,9 @@ func get_progress_at_position(world_position: Vector3) -> float:
 
 
 func get_lap_start_progress() -> float:
+	var active_layout: TrackLayoutResource = _get_active_layout()
+	if active_layout != null:
+		return wrapf(active_layout.lap_start_progress, 0.0, 1.0)
 	return wrapf(lap_start_progress, 0.0, 1.0)
 
 
@@ -149,6 +209,13 @@ func get_start_transform(y_offset: float = START_LINE_Y_OFFSET) -> Transform3D:
 
 func get_max_lateral_offset(clearance: float = 0.0) -> float:
 	return maxf(track_width * 0.5 - clearance, 0.0)
+
+
+func get_default_coin_slots() -> PackedVector2Array:
+	var active_layout: TrackLayoutResource = _get_active_layout()
+	if active_layout != null and not active_layout.coin_slots.is_empty():
+		return active_layout.coin_slots
+	return _default_coin_slots
 
 
 func is_track_position_valid(progress: float, lateral_offset: float, clearance: float = 0.0) -> bool:
@@ -356,3 +423,82 @@ func _get_or_create_generated_root() -> Node3D:
 
 func _add_generated_child(child: Node) -> void:
 	_get_or_create_generated_root().add_child(child)
+
+
+func _queue_generated_track_rebuild() -> void:
+	if not is_inside_tree() or _is_rebuild_queued:
+		return
+
+	_is_rebuild_queued = true
+	call_deferred("_rebuild_generated_track_deferred")
+
+
+func _rebuild_generated_track_deferred() -> void:
+	_is_rebuild_queued = false
+	if not is_inside_tree():
+		return
+
+	_rebuild_generated_track()
+
+
+func _get_active_layout() -> TrackLayoutResource:
+	if starter_layouts.is_empty():
+		return null
+
+	var safe_index: int = clampi(active_starter_layout_index, 0, starter_layouts.size() - 1)
+	return starter_layouts[safe_index]
+
+
+func _warn_about_layout_issues(layout: TrackLayoutResource) -> void:
+	for issue in layout.get_validation_issues():
+		push_warning(issue)
+
+
+func _refresh_layout_observers() -> void:
+	_clear_layout_observers()
+
+	for layout in starter_layouts:
+		if layout == null or _observed_layouts.has(layout):
+			continue
+
+		_observed_layouts.append(layout)
+		if not layout.changed.is_connected(_on_layout_resource_changed):
+			layout.changed.connect(_on_layout_resource_changed)
+
+
+func _clear_layout_observers() -> void:
+	for layout in _observed_layouts:
+		if layout != null and layout.changed.is_connected(_on_layout_resource_changed):
+			layout.changed.disconnect(_on_layout_resource_changed)
+
+	_observed_layouts.clear()
+
+
+func _on_layout_resource_changed() -> void:
+	_queue_generated_track_rebuild()
+
+
+func _get_track_bounds() -> AABB:
+	if _points.is_empty():
+		return AABB(Vector3(-8.0, -0.05, -8.0), Vector3(16.0, 0.1, 16.0))
+
+	var min_x: float = _points[0].x
+	var max_x: float = _points[0].x
+	var min_z: float = _points[0].z
+	var max_z: float = _points[0].z
+	var boundary_padding: float = track_width * 0.5 + sand_width + GROUND_MARGIN
+
+	for point in _points:
+		min_x = minf(min_x, point.x)
+		max_x = maxf(max_x, point.x)
+		min_z = minf(min_z, point.z)
+		max_z = maxf(max_z, point.z)
+
+	return AABB(
+		Vector3(min_x - boundary_padding, -0.05, min_z - boundary_padding),
+		Vector3(
+			(max_x - min_x) + boundary_padding * 2.0,
+			0.1,
+			(max_z - min_z) + boundary_padding * 2.0
+		)
+	)
