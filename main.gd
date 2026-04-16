@@ -15,8 +15,6 @@ const COIN_LATERAL_OFFSET_RATIO := 0.2
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
 const PLACEMENT_PANEL_MIN_WIDTH := 360.0
 const HAZARD_DRAFT_OPTION_COUNT := 2
-const HAZARD_POSITION_CANDIDATE_COUNT := 3
-const HAZARD_POSITION_MAX_ATTEMPTS := 96
 const PLACEMENT_PANEL_BG := Color(0.08, 0.1, 0.14, 0.9)
 const PLACEMENT_PANEL_BORDER := Color(0.48, 0.58, 0.72, 0.5)
 const PLACEMENT_WARNING_BORDER := Color(1.0, 0.45, 0.35, 0.9)
@@ -36,7 +34,6 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var placement_progress_speed: float = 0.18
 @export var placement_lateral_speed: float = 7.0
 @export var boost_pad_track_clearance: float = 1.5
-@export var _min_hazard_distance: float = 8.0
 ## Fixed RNG seed for deterministic runs. 0 = use randomize() (non-deterministic).
 @export var deterministic_seed: int = 0
 
@@ -49,9 +46,7 @@ var _current_buy_time_cost: int = 0
 var _car_spawn_transform: Transform3D = Transform3D.IDENTITY
 var _pending_start_time_bonus: float = 0.0
 var _pending_boost_pad_count: int = 0
-var _pending_hazard_type: int = HazardTypeRegistry.NONE
 var _boost_pad_root: Node3D = null
-var _hazard_root: Node3D = null
 var _placement_overlay: CanvasLayer = null
 var _placement_panel: PanelContainer = null
 var _placement_label: Label = null
@@ -59,10 +54,8 @@ var _placement_preview: BoostPad = null
 var _placement_progress: float = 0.0
 var _placement_lateral_offset: float = 0.0
 var _is_placement_active: bool = false
-var _hazard_position_previews: Array[Node3D] = []
-var _hazard_position_data: Array[Dictionary] = []
-var _hazard_focused_index: int = 0
-var _is_hazard_position_selection_active: bool = false
+
+@onready var _hazard_controller: HazardPlacementController = $HazardPlacementController
 
 
 func _ready() -> void:
@@ -93,10 +86,19 @@ func _ready() -> void:
 		push_warning("MainSceneController could not find the camera.")
 
 	_ensure_boost_pad_root()
-	_ensure_hazard_root()
+	_hazard_controller.configure(_track, boost_pad_track_clearance)
 	_rebuild_track_coins()
 	_ensure_placement_overlay()
 	_current_buy_time_cost = maxi(buy_time_cost, 0)
+
+	if not _hazard_controller.placement_begun.is_connected(_on_hazard_placement_begun):
+		_hazard_controller.placement_begun.connect(_on_hazard_placement_begun)
+	if not _hazard_controller.focus_changed.is_connected(_on_hazard_focus_changed):
+		_hazard_controller.focus_changed.connect(_on_hazard_focus_changed)
+	if not _hazard_controller.placement_confirmed.is_connected(_on_hazard_placement_confirmed):
+		_hazard_controller.placement_confirmed.connect(_on_hazard_placement_confirmed)
+	if not _hazard_controller.placement_abandoned.is_connected(_on_hazard_placement_abandoned):
+		_hazard_controller.placement_abandoned.connect(_on_hazard_placement_abandoned)
 
 	if _round_end_screen:
 		_sync_buy_time_option()
@@ -148,25 +150,25 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo():
 		return
 
-	if _is_hazard_position_selection_active:
+	if _hazard_controller.is_active():
 		if event.is_action_pressed("steer_left"):
 			get_viewport().set_input_as_handled()
-			_cycle_hazard_position(-1)
+			_hazard_controller.cycle(-1)
 		elif event.is_action_pressed("steer_right"):
 			get_viewport().set_input_as_handled()
-			_cycle_hazard_position(1)
+			_hazard_controller.cycle(1)
 		elif event.is_action_pressed("draft_hazard_1"):
 			get_viewport().set_input_as_handled()
-			_focus_hazard_position(0)
+			_hazard_controller.focus_index(0)
 		elif event.is_action_pressed("draft_hazard_2"):
 			get_viewport().set_input_as_handled()
-			_focus_hazard_position(1)
+			_hazard_controller.focus_index(1)
 		elif event.is_action_pressed("draft_hazard_3"):
 			get_viewport().set_input_as_handled()
-			_focus_hazard_position(2)
+			_hazard_controller.focus_index(2)
 		elif event.is_action_pressed("place_boost_pad"):
 			get_viewport().set_input_as_handled()
-			_confirm_hazard_position()
+			_hazard_controller.confirm()
 		return
 
 	if not _is_placement_active:
@@ -205,24 +207,22 @@ func _on_buy_boost_pad_requested() -> void:
 
 
 func _on_hazard_drafted(hazard_type: int) -> void:
-	if not HazardTypeRegistry.is_valid_type(hazard_type):
-		return
-	_pending_hazard_type = hazard_type
+	_hazard_controller.set_pending_hazard_type(hazard_type)
 
 
 func _on_continue_requested() -> void:
 	if not _car or not _run_state or _run_state.is_round_active:
 		return
-	if _is_placement_active or _is_hazard_position_selection_active:
+	if _is_placement_active or _hazard_controller.is_active():
 		return
-	if _should_require_hazard_draft() and not _has_pending_hazard_draft():
+	if _should_require_hazard_draft() and not _hazard_controller.has_pending_draft():
 		return
 
 	if _pending_boost_pad_count > 0:
 		_begin_boost_pad_placement()
 		return
 
-	if _has_pending_hazard_draft():
+	if _hazard_controller.has_pending_draft():
 		_begin_hazard_position_selection()
 		return
 
@@ -230,7 +230,7 @@ func _on_continue_requested() -> void:
 
 
 func _on_round_finished() -> void:
-	_pending_hazard_type = HazardTypeRegistry.NONE
+	_hazard_controller.clear_pending()
 	if _round_end_screen:
 		_round_end_screen.configure_hazard_draft(_get_hazard_draft_options())
 	_update_car_controls()
@@ -239,8 +239,8 @@ func _on_round_finished() -> void:
 func _on_round_started(_round_number: int) -> void:
 	_is_placement_active = false
 	_clear_placement_preview()
-	_clear_hazard_position_selection()
-	_pending_hazard_type = HazardTypeRegistry.NONE
+	_hazard_controller.clear_selection()
+	_hazard_controller.clear_pending()
 	_rebuild_track_coins()
 	if _round_end_screen:
 		_round_end_screen.clear_hazard_draft()
@@ -263,7 +263,7 @@ func _sync_buy_time_option() -> void:
 func _start_next_round() -> void:
 	if not _car or not _run_state or _run_state.is_round_active:
 		return
-	if _is_placement_active or _is_hazard_position_selection_active:
+	if _is_placement_active or _hazard_controller.is_active():
 		return
 
 	var extra_start_time: float = _pending_start_time_bonus
@@ -326,7 +326,7 @@ func _confirm_boost_pad_placement() -> void:
 	_is_placement_active = false
 	_update_car_controls()
 	_update_placement_overlay()
-	if _has_pending_hazard_draft():
+	if _hazard_controller.has_pending_draft():
 		_begin_hazard_position_selection()
 		return
 
@@ -334,129 +334,37 @@ func _confirm_boost_pad_placement() -> void:
 
 
 func _begin_hazard_position_selection() -> void:
-	if not _track or not _has_pending_hazard_draft():
+	if _track == null:
 		_start_next_round()
 		return
-	if _hazard_root == null:
-		_ensure_hazard_root()
-	if _hazard_root == null:
-		_start_next_round()
-		return
+	_hazard_controller.begin_placement(_get_occupied_track_item_positions())
 
-	_clear_hazard_position_selection()
 
-	var generated_positions: Array[Dictionary] = _generate_hazard_positions()
-	if generated_positions.size() < HAZARD_POSITION_CANDIDATE_COUNT:
-		push_warning("MainSceneController could not find %d valid hazard placement positions." % HAZARD_POSITION_CANDIDATE_COUNT)
-		_pending_hazard_type = HazardTypeRegistry.NONE
-		_start_next_round()
-		return
-
+func _on_hazard_placement_begun(focused_preview: Node3D) -> void:
 	if _car:
 		_car.reset_to_transform(_get_car_start_transform())
 	if _round_end_screen:
 		_round_end_screen.visible = false
-
-	var spawned_position_data: Array[Dictionary] = []
-	for candidate_data in generated_positions:
-		var preview_transform: Transform3D = candidate_data["transform"]
-		var preview_node: Node3D = _spawn_hazard_preview(_pending_hazard_type, preview_transform)
-		if preview_node == null:
-			continue
-
-		_hazard_position_previews.append(preview_node)
-		spawned_position_data.append(candidate_data)
-
-	if _hazard_position_previews.size() < HAZARD_POSITION_CANDIDATE_COUNT:
-		push_warning("MainSceneController failed to prepare %d hazard placement previews." % HAZARD_POSITION_CANDIDATE_COUNT)
-		_clear_hazard_position_selection()
-		_pending_hazard_type = HazardTypeRegistry.NONE
-		_start_next_round()
-		return
-
-	_hazard_position_data = spawned_position_data
-	_is_hazard_position_selection_active = true
-	_hazard_focused_index = 0
-	_update_hazard_preview_focus()
-	_focus_camera_on(_hazard_position_previews[_hazard_focused_index], true)
 	_update_car_controls()
+	_update_placement_overlay()
+	_focus_camera_on(focused_preview, true)
+
+
+func _on_hazard_focus_changed(focused_preview: Node3D) -> void:
+	_focus_camera_on(focused_preview, true)
 	_update_placement_overlay()
 
 
-func _confirm_hazard_position() -> void:
-	if not _is_hazard_position_selection_active:
-		return
-	if _hazard_position_previews.is_empty():
-		return
-
-	var safe_index: int = clampi(_hazard_focused_index, 0, _hazard_position_previews.size() - 1)
-	var chosen_preview: Node3D = _hazard_position_previews[safe_index]
-	if chosen_preview == null:
-		return
-
-	HazardPreviewHelper.set_preview(chosen_preview, false, true, true)
-	_clear_hazard_position_selection(chosen_preview)
-
-	var base_name: String = HazardTypeRegistry.get_node_name(_pending_hazard_type)
-	chosen_preview.name = "%s%d" % [base_name, _count_hazards_with_base_name(base_name, chosen_preview) + 1]
-	_pending_hazard_type = HazardTypeRegistry.NONE
+func _on_hazard_placement_confirmed() -> void:
 	_update_car_controls()
 	_update_placement_overlay()
 	_start_next_round()
 
 
-func _cycle_hazard_position(direction: int) -> void:
-	if _hazard_position_previews.is_empty():
-		return
-
-	var next_index: int = _hazard_focused_index + direction
-	_focus_hazard_position(next_index)
-
-
-func _focus_hazard_position(index: int) -> void:
-	if _hazard_position_previews.is_empty():
-		return
-
-	_hazard_focused_index = wrapi(index, 0, _hazard_position_previews.size())
-	_update_hazard_preview_focus()
-	var focused_preview: Node3D = _hazard_position_previews[_hazard_focused_index]
-	_focus_camera_on(focused_preview, true)
+func _on_hazard_placement_abandoned() -> void:
+	_update_car_controls()
 	_update_placement_overlay()
-
-
-func _generate_hazard_positions() -> Array[Dictionary]:
-	var generated_positions: Array[Dictionary] = []
-	if _track == null:
-		return generated_positions
-
-	var occupied_positions: Array[Vector3] = _get_occupied_track_item_positions()
-	var max_lateral_offset: float = _track.get_max_lateral_offset(boost_pad_track_clearance)
-
-	var attempts: int = 0
-	while generated_positions.size() < HAZARD_POSITION_CANDIDATE_COUNT and attempts < HAZARD_POSITION_MAX_ATTEMPTS:
-		attempts += 1
-
-		var progress: float = randf()
-		var lateral_offset: float = randf_range(-max_lateral_offset, max_lateral_offset)
-		if not _track.is_track_position_valid(progress, lateral_offset, boost_pad_track_clearance):
-			continue
-
-		var candidate_transform: Transform3D = _track.get_track_transform(progress, lateral_offset)
-		var candidate_position: Vector3 = candidate_transform.origin
-		if _is_hazard_position_blocked(candidate_position, occupied_positions):
-			continue
-
-		occupied_positions.append(candidate_position)
-		generated_positions.append({
-			"progress": progress,
-			"lateral_offset": lateral_offset,
-			"transform": candidate_transform,
-		})
-
-	if generated_positions.size() < HAZARD_POSITION_CANDIDATE_COUNT:
-		return []
-
-	return generated_positions
+	_start_next_round()
 
 
 func _update_placement_input(delta: float) -> void:
@@ -508,26 +416,6 @@ func _clear_placement_preview() -> void:
 	_placement_preview = null
 
 
-func _clear_hazard_position_selection(kept_preview: Node3D = null) -> void:
-	for preview in _hazard_position_previews:
-		if preview == null or preview == kept_preview:
-			continue
-		preview.queue_free()
-
-	_hazard_position_previews.clear()
-	_hazard_position_data.clear()
-	_hazard_focused_index = 0
-	_is_hazard_position_selection_active = false
-
-
-func _update_hazard_preview_focus() -> void:
-	for preview_index in range(_hazard_position_previews.size()):
-		var preview: Node3D = _hazard_position_previews[preview_index]
-		if preview == null:
-			continue
-		HazardPreviewHelper.set_preview_focus(preview, preview_index == _hazard_focused_index)
-
-
 func _ensure_boost_pad_root() -> void:
 	if _track == null:
 		return
@@ -539,19 +427,6 @@ func _ensure_boost_pad_root() -> void:
 	_boost_pad_root = Node3D.new()
 	_boost_pad_root.name = "BoostPads"
 	_track.add_child(_boost_pad_root)
-
-
-func _ensure_hazard_root() -> void:
-	if _track == null:
-		return
-
-	_hazard_root = _track.get_node_or_null("Hazards") as Node3D
-	if _hazard_root:
-		return
-
-	_hazard_root = Node3D.new()
-	_hazard_root.name = "Hazards"
-	_track.add_child(_hazard_root)
 
 
 func _ensure_placement_overlay() -> void:
@@ -592,7 +467,7 @@ func _update_placement_overlay() -> void:
 	if _placement_overlay == null or _placement_panel == null or _placement_label == null:
 		return
 
-	_placement_overlay.visible = _is_placement_active or _is_hazard_position_selection_active
+	_placement_overlay.visible = _is_placement_active or _hazard_controller.is_active()
 	_placement_panel.visible = _placement_overlay.visible
 	if not _placement_overlay.visible:
 		return
@@ -630,10 +505,10 @@ func _update_placement_overlay() -> void:
 		)
 		return
 
-	var total_positions: int = maxi(_hazard_position_data.size(), 1)
-	var focused_position: int = mini(_hazard_focused_index + 1, total_positions)
+	var total_positions: int = maxi(_hazard_controller.get_position_count(), 1)
+	var focused_position: int = mini(_hazard_controller.get_focused_index() + 1, total_positions)
 	_placement_label.text = "Place %s\nPosition %d/%d\nSteer / 1-%d: browse positions\nSpace / Enter: confirm" % [
-		HazardTypeRegistry.get_display_name(_pending_hazard_type),
+		HazardTypeRegistry.get_display_name(_hazard_controller.get_pending_hazard_type()),
 		focused_position,
 		total_positions,
 		total_positions,
@@ -666,7 +541,7 @@ func _update_car_controls() -> void:
 	var controls_should_be_enabled: bool = _run_state != null \
 		and _run_state.is_round_active \
 		and not _is_placement_active \
-		and not _is_hazard_position_selection_active
+		and not _hazard_controller.is_active()
 	_car.set_controls_enabled(controls_should_be_enabled)
 
 
@@ -719,33 +594,11 @@ func _should_require_hazard_draft() -> bool:
 	return _run_state != null and _run_state.round_number >= 1
 
 
-func _has_pending_hazard_draft() -> bool:
-	return HazardTypeRegistry.is_valid_type(_pending_hazard_type)
-
-
-func _spawn_hazard_preview(hazard_type: int, preview_transform: Transform3D) -> Node3D:
-	var preview_scene: PackedScene = load(HazardTypeRegistry.get_scene_path(hazard_type)) as PackedScene
-	if preview_scene == null:
-		push_warning("MainSceneController failed to load a hazard scene for type %d." % hazard_type)
-		return null
-
-	var preview_node: Node3D = preview_scene.instantiate() as Node3D
-	if preview_node == null:
-		push_warning("MainSceneController failed to instantiate a hazard preview for type %d." % hazard_type)
-		return null
-
-	preview_node.name = "%sPreview" % HazardTypeRegistry.get_node_name(hazard_type)
-	HazardPreviewHelper.set_preview(preview_node, true, true, false)
-	_hazard_root.add_child(preview_node)
-	preview_node.global_transform = preview_transform
-	return preview_node
-
-
 func _get_occupied_track_item_positions() -> Array[Vector3]:
 	var occupied_positions: Array[Vector3] = []
 	occupied_positions.append(_get_car_start_transform().origin)
 	_append_track_item_positions(_boost_pad_root, occupied_positions)
-	_append_track_item_positions(_hazard_root, occupied_positions)
+	_append_track_item_positions(_hazard_controller.get_hazard_root(), occupied_positions)
 	return occupied_positions
 
 
@@ -758,25 +611,6 @@ func _append_track_item_positions(root: Node3D, occupied_positions: Array[Vector
 		if track_item == null or track_item == _placement_preview:
 			continue
 		occupied_positions.append(track_item.global_transform.origin)
-
-
-func _count_hazards_with_base_name(base_name: String, exclude: Node3D = null) -> int:
-	if _hazard_root == null:
-		return 0
-	var count: int = 0
-	for child in _hazard_root.get_children():
-		if child == exclude:
-			continue
-		if child.name.begins_with(base_name):
-			count += 1
-	return count
-
-
-func _is_hazard_position_blocked(candidate_position: Vector3, occupied_positions: Array[Vector3]) -> bool:
-	for occupied_position in occupied_positions:
-		if occupied_position.distance_to(candidate_position) < _min_hazard_distance:
-			return true
-	return false
 
 
 func _get_car_start_transform() -> Transform3D:

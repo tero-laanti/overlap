@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
 [ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
+[ext_resource type="Script" path="res://race/hazard_placement_controller.gd" id="hazard_placement_controller_script"]
 [ext_resource type="Resource" uid="uid://b08ipsbn6kfqk" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
 [ext_resource type="Resource" uid="uid://d1m1yrhibrbyo" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
 [ext_resource type="Resource" uid="uid://cu7ebht5rmoj5" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
@@ -162,3 +163,6 @@ text = "Cash $0"
 [node name="RoundEndScreen" parent="." unique_id=522869335 instance=ExtResource("round_end_screen_scene")]
 run_state_path = NodePath("../RunState")
 lap_tracker_path = NodePath("../LapTracker")
+
+[node name="HazardPlacementController" type="Node" parent="."]
+script = ExtResource("hazard_placement_controller_script")
