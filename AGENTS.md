@@ -100,6 +100,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
   4. `run.play` the target scene, then `run.get_output`, then `run.stop`.
   5. Fix any errors introduced by the change before considering the task complete.
 - If the session exposes higher-level wrappers such as `godot_run_scene` or `godot_get_output`, treat them as aliases for the same MCP-backed loop. Do not invent commands that are not available in the session.
+- For fresh-clone headless validation outside MCP, run one editor-style bootstrap first (`--headless --editor --path ... --quit`) before plain `--headless` checks so repo-defined `class_name` types are registered.
 - If MCP or editor-backed validation is unavailable, say so explicitly in the handoff. Do not claim runtime validation you did not perform.
 - After every non-trivial code change, run two code-review passes when agent tooling is available: one standard review and one adversarial review focused on finding regressions, edge cases, and weak assumptions.
 - Treat review as part of implementation, not a separate optional step. Iterate on the change until both review passes report no unresolved medium-or-higher issues, or explicitly document any remaining disagreement in the handoff with the reason it was left unresolved.

@@ -20,6 +20,15 @@ Overlap is an early-stage Godot 4.6 arcade racing game prototype. The current fo
 
 Requires Godot 4.6 with Jolt Physics (built-in). Clone the repo, open `project.godot` in the Godot editor, and press F5 to run.
 
+## Headless Validation
+
+On a fresh clone, bootstrap Godot's global `class_name` registry before running plain headless validation:
+
+1. `godot --headless --editor --path . --quit`
+2. `godot --headless --path . --quit-after 3`
+
+After that first editor-style scan, use your normal headless command for follow-up checks.
+
 ## Project Structure
 
 ```

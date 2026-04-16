@@ -185,6 +185,20 @@ func _ensure_dynamic_controls() -> void:
 			_hazard_draft_section.add_child(hazard_button)
 			_hazard_draft_buttons.append(hazard_button)
 
+	_reorder_dynamic_controls()
+
+
+func _reorder_dynamic_controls() -> void:
+	var next_index: int = buy_time_button.get_index() + 1
+	if _buy_boost_pad_button:
+		options_box.move_child(_buy_boost_pad_button, next_index)
+		next_index += 1
+	if _hazard_draft_section:
+		options_box.move_child(_hazard_draft_section, next_index)
+		next_index += 1
+	if _pending_items_label:
+		options_box.move_child(_pending_items_label, next_index)
+
 
 func _refresh_display() -> void:
 	if not is_node_ready():

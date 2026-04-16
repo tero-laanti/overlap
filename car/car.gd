@@ -5,7 +5,6 @@ extends RigidBody3D
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
 const DRIFT_FEEDBACK_NODE := "DriftFeedback"
-const DRIFT_FEEDBACK_SCRIPT_PATH := "res://car/drift_feedback.gd"
 ## Minimum forward speed before braking force applies (below this, reverse kicks in).
 const BRAKE_SPEED_THRESHOLD := 0.5
 ## Reverse acceleration is this fraction of forward acceleration.
@@ -221,16 +220,7 @@ func _ensure_drift_feedback() -> void:
 		drift_feedback.bind_car(self)
 		return
 
-	var drift_feedback_script: GDScript = load(DRIFT_FEEDBACK_SCRIPT_PATH) as GDScript
-	if drift_feedback_script == null:
-		push_warning("Missing drift feedback script at %s" % DRIFT_FEEDBACK_SCRIPT_PATH)
-		return
-
-	var new_drift_feedback := drift_feedback_script.new() as DriftFeedback
-	if new_drift_feedback == null:
-		push_warning("Failed to instantiate drift feedback from %s" % DRIFT_FEEDBACK_SCRIPT_PATH)
-		return
-
+	var new_drift_feedback: DriftFeedback = DriftFeedback.new()
 	new_drift_feedback.name = DRIFT_FEEDBACK_NODE
 	add_child(new_drift_feedback)
 	new_drift_feedback.bind_car(self)

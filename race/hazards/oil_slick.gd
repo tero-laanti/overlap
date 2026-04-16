@@ -37,6 +37,8 @@ func _ready() -> void:
 
 
 func set_preview_mode(is_preview: bool) -> void:
+	if is_preview:
+		_triggered_body_ids.clear()
 	_preview_mode = is_preview
 	if is_node_ready():
 		_apply_visual_state()
@@ -59,6 +61,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if _run_state and not _run_state.is_round_active:
 		return
+	_prune_triggered_bodies()
 
 	var body_id: int = body.get_instance_id()
 	if _triggered_body_ids.has(body_id):
@@ -70,6 +73,16 @@ func _on_body_entered(body: Node) -> void:
 
 func _on_body_exited(body: Node) -> void:
 	_triggered_body_ids.erase(body.get_instance_id())
+
+
+func _prune_triggered_bodies() -> void:
+	var stale_body_ids: Array[int] = []
+	for body_id in _triggered_body_ids.keys():
+		if instance_from_id(body_id) == null:
+			stale_body_ids.append(body_id)
+
+	for body_id in stale_body_ids:
+		_triggered_body_ids.erase(body_id)
 
 
 func _configure_materials() -> void:

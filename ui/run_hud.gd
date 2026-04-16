@@ -99,11 +99,14 @@ func _on_round_time_changed(time_remaining: float) -> void:
 
 
 func _on_lap_time_changed(current_lap_time: float) -> void:
-	lap_time_label.text = "Lap Time %s" % _format_lap_time(current_lap_time, "0:00.00")
+	lap_time_label.text = "Lap Time %s" % _format_lap_time(current_lap_time)
 
 
 func _on_last_lap_time_changed(last_lap_time: float) -> void:
-	last_lap_label.text = "Last %s" % _format_lap_time(last_lap_time, "--:--.--")
+	var last_lap_text: String = "--:--.--"
+	if last_lap_time > 0.0:
+		last_lap_text = _format_lap_time(last_lap_time)
+	last_lap_label.text = "Last %s" % last_lap_text
 
 
 func _on_multiplier_changed(multiplier: int) -> void:
@@ -144,14 +147,12 @@ func _show_missing_state() -> void:
 	currency_label.text = "Cash $--"
 
 
-func _format_lap_time(seconds: float, empty_value: String) -> String:
-	if seconds <= 0.0:
-		return empty_value
-
-	var total_seconds: int = int(seconds)
+func _format_lap_time(seconds: float) -> String:
+	var safe_seconds: float = maxf(seconds, 0.0)
+	var total_seconds: int = int(safe_seconds)
 	var minutes: int = total_seconds / 60
 	var whole_seconds: int = total_seconds % 60
-	var centiseconds: int = int(roundf(fmod(seconds, 1.0) * 100.0))
+	var centiseconds: int = int(roundf(fposmod(safe_seconds, 1.0) * 100.0))
 
 	if centiseconds >= 100:
 		centiseconds = 0
