@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TrackTileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://track/track_tile_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Corner Tight 90"
+entry_direction = 6
+exit_direction = 0
+interior_points = PackedVector3Array(-0.24, 0, -0.08, -0.08, 0, -0.24)

@@ -6,7 +6,7 @@
 
 Godot 4.6 arcade racer prototype. GDScript only. Jolt Physics. MCP Bridge enabled on port 6008.
 
-Read `DESIGN.md` for game vision, design principles, and constraints. That document is the authority on *what* we're building and *why*. This file covers *how* to work in the repo.
+Read `DESIGN.md` for game vision, design principles, and constraints. That document is the authority on _what_ we're building and _why_. This file covers _how_ to work in the repo.
 
 ## Key Files
 
@@ -48,6 +48,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 
 - Follow the official GDScript style guide: `snake_case` for variables and functions, `PascalCase` for classes and nodes, `CONSTANT_CASE` for constants.
 - Use static typing everywhere: `var speed: float = 10.0`, typed arrays, typed return values.
+- Use `const` instead of `var` wherever possible.
 - Give every non-trivial script a `class_name`.
 - Use Godot's Input Map for all player input — no hardcoded key constants.
 - Use `@export` with proper types for inspector-visible properties. Prefer specific types (`CarStats`) over generic ones (`Resource`).
@@ -59,13 +60,13 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - Physics tick rate is 120Hz (`project.godot`). All force magnitudes in `CarStats` are calibrated to this rate. Do not change without retuning.
 - Collision layers are assigned deliberately. Current assignments:
 
-| Layer | Name | Used by |
-|-------|------|---------|
-| 1 | `car` | Car `RigidBody3D` |
-| 2 | `track_wall` | Track wall `StaticBody3D`s and placed wall barriers |
-| 3 | `track_surface` | Reserved for future use |
-| 4 | `collectible` | Coins and future pickups |
-| 5 | `track_modifier` | Boost pads, oil slicks, slow zones, and future placed track effects |
+| Layer | Name             | Used by                                                             |
+| ----- | ---------------- | ------------------------------------------------------------------- |
+| 1     | `car`            | Car `RigidBody3D`                                                   |
+| 2     | `track_wall`     | Track wall `StaticBody3D`s and placed wall barriers                 |
+| 3     | `track_surface`  | Reserved for future use                                             |
+| 4     | `collectible`    | Coins and future pickups                                            |
+| 5     | `track_modifier` | Boost pads, oil slicks, slow zones, and future placed track effects |
 
 - The layer names in `project.godot` and this table are the source of truth. When adding a new collidable type, claim the next free layer, update both, and set `collision_mask` to only the layers that object needs.
 
@@ -91,6 +92,8 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - Lap counting currently uses track progress plus a virtual checkpoint halfway around the course rather than hand-placed checkpoint volumes.
 - Coins are instantiated under `Track/Coins` at round start and distributed around the active track so map swaps still produce readable pickup lines.
 - Track points now come from `TrackLayout` and `TrackTileDefinition` resources rather than living directly in `track/test_track.gd`.
+- `TrackTileDefinition.footprint` is enforced by layout validation. Multi-cell tiles claim every occupied grid cell, and `entry_cell` / `exit_cell` select which occupied cells own the path sockets.
+- Multi-cell footprints currently rotate in 90-degree steps only. Keep 45-degree rotations on `1x1` tiles, or author a dedicated cardinal-orientation variant for larger pieces.
 - Keep using deliberate collision layers as new collidable types are added. Do not reuse layer 1 as the default for unrelated objects.
 
 ## Testing and Validation
@@ -104,6 +107,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
   5. Fix any errors introduced by the change before considering the task complete.
 - If the session exposes higher-level wrappers such as `godot_run_scene` or `godot_get_output`, treat them as aliases for the same MCP-backed loop. Do not invent commands that are not available in the session.
 - For fresh-clone headless validation outside MCP, run one editor-style bootstrap first (`--headless --editor --path ... --quit`) before plain `--headless` checks so repo-defined `class_name` types are registered.
+- Use `res://scripts/validate_track_layouts.gd` when changing tile definitions or authored layouts to catch overlaps, unsupported rotations, and broken socket continuity across every layout resource.
 - If MCP or editor-backed validation is unavailable, say so explicitly in the handoff. Do not claim runtime validation you did not perform.
 - After every non-trivial code change, run two code-review passes when agent tooling is available: one standard review and one adversarial review focused on finding regressions, edge cases, and weak assumptions.
 - Treat review as part of implementation, not a separate optional step. Iterate on the change until both review passes report no unresolved medium-or-higher issues, or explicitly document any remaining disagreement in the handoff with the reason it was left unresolved.

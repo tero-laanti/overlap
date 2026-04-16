@@ -1,0 +1,100 @@
+[gd_resource type="Resource" script_class="TrackLayout" format=3 uid="uid://d1m1yrhibrbyo"]
+
+[ext_resource type="Script" uid="uid://2egkjeuemcpk" path="res://track/track_layout.gd" id="1"]
+[ext_resource type="Script" uid="uid://b1c2ku0n0khk0" path="res://track/track_layout_tile.gd" id="2"]
+[ext_resource type="Resource" path="res://track/tiles/corner_tight_90.tres" id="3"]
+[ext_resource type="Resource" path="res://track/tiles/connector_rise_45_2x1.tres" id="4"]
+[ext_resource type="Resource" path="res://track/tiles/straight_diagonal.tres" id="5"]
+[ext_resource type="Resource" path="res://track/tiles/corner_tight_45.tres" id="6"]
+[ext_resource type="Resource" path="res://track/tiles/straight_long_2x1.tres" id="7"]
+[ext_resource type="Resource" path="res://track/tiles/sweeper_broad_90_2x2.tres" id="8"]
+[ext_resource type="Resource" path="res://track/tiles/offset_connector_2x2.tres" id="9"]
+[ext_resource type="Resource" path="res://track/tiles/straight_cardinal.tres" id="10"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+tile = ExtResource("3")
+grid_position = Vector2i(0, 2)
+rotation_steps = 4
+reverse_path = true
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("2")
+tile = ExtResource("4")
+grid_position = Vector2i(1, 2)
+
+[sub_resource type="Resource" id="3"]
+script = ExtResource("2")
+tile = ExtResource("5")
+grid_position = Vector2i(3, 1)
+rotation_steps = 2
+reverse_path = true
+
+[sub_resource type="Resource" id="4"]
+script = ExtResource("2")
+tile = ExtResource("6")
+grid_position = Vector2i(4, 0)
+rotation_steps = 4
+reverse_path = true
+
+[sub_resource type="Resource" id="5"]
+script = ExtResource("2")
+tile = ExtResource("7")
+grid_position = Vector2i(5, 0)
+
+[sub_resource type="Resource" id="6"]
+script = ExtResource("2")
+tile = ExtResource("3")
+grid_position = Vector2i(7, 0)
+rotation_steps = 6
+reverse_path = true
+
+[sub_resource type="Resource" id="7"]
+script = ExtResource("2")
+tile = ExtResource("7")
+grid_position = Vector2i(7, 1)
+rotation_steps = 2
+
+[sub_resource type="Resource" id="8"]
+script = ExtResource("2")
+tile = ExtResource("8")
+grid_position = Vector2i(6, 3)
+reverse_path = true
+
+[sub_resource type="Resource" id="9"]
+script = ExtResource("2")
+tile = ExtResource("7")
+grid_position = Vector2i(4, 4)
+rotation_steps = 4
+
+[sub_resource type="Resource" id="10"]
+script = ExtResource("2")
+tile = ExtResource("9")
+grid_position = Vector2i(2, 4)
+rotation_steps = 4
+
+[sub_resource type="Resource" id="11"]
+script = ExtResource("2")
+tile = ExtResource("10")
+grid_position = Vector2i(1, 5)
+reverse_path = true
+
+[sub_resource type="Resource" id="12"]
+script = ExtResource("2")
+tile = ExtResource("3")
+grid_position = Vector2i(0, 5)
+rotation_steps = 2
+reverse_path = true
+
+[sub_resource type="Resource" id="13"]
+script = ExtResource("2")
+tile = ExtResource("7")
+grid_position = Vector2i(0, 3)
+rotation_steps = 6
+
+[resource]
+script = ExtResource("1")
+display_name = "Starter Dogleg Sprint"
+tile_size = 36.0
+lap_start_progress = 0.86
+tiles = Array[ExtResource("2")]([SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4"), SubResource("5"), SubResource("6"), SubResource("7"), SubResource("8"), SubResource("9"), SubResource("10"), SubResource("11"), SubResource("12"), SubResource("13")])

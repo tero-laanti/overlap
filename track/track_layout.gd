@@ -74,6 +74,8 @@ func build_centerline_points() -> Array[Vector3]:
 func get_validation_issues() -> PackedStringArray:
 	var issues: PackedStringArray = PackedStringArray()
 	var valid_tiles: Array[TrackLayoutTileResource] = []
+	var occupied_cells: Dictionary = {}
+	var layout_name: String = _get_layout_name()
 
 	for layout_tile in tiles:
 		if layout_tile != null and layout_tile.tile != null:
@@ -85,24 +87,56 @@ func get_validation_issues() -> PackedStringArray:
 
 	for tile_index in range(valid_tiles.size()):
 		var current_tile: TrackLayoutTileResource = valid_tiles[tile_index]
+		var current_tile_name: String = current_tile.get_display_name()
+		for tile_issue in current_tile.get_configuration_issues():
+			issues.append("%s tile %d (%s): %s" % [layout_name, tile_index + 1, current_tile_name, tile_issue])
+
+		for occupied_cell in current_tile.get_occupied_cells():
+			if occupied_cells.has(occupied_cell):
+				var overlapping_tile_index: int = occupied_cells[occupied_cell]
+				issues.append(
+					"%s tile %d (%s) overlaps tile %d (%s) at grid cell %s." % [
+						layout_name,
+						tile_index + 1,
+						current_tile_name,
+						overlapping_tile_index + 1,
+						valid_tiles[overlapping_tile_index].get_display_name(),
+						occupied_cell,
+					]
+				)
+				continue
+
+			occupied_cells[occupied_cell] = tile_index
+
+	for tile_index in range(valid_tiles.size()):
+		var current_tile: TrackLayoutTileResource = valid_tiles[tile_index]
 		var next_tile: TrackLayoutTileResource = valid_tiles[(tile_index + 1) % valid_tiles.size()]
-		var expected_next_position: Vector2i = current_tile.grid_position + TrackDirectionRef.get_grid_offset(current_tile.get_exit_direction())
-		if expected_next_position != next_tile.grid_position:
+		var current_tile_name: String = current_tile.get_display_name()
+		var next_tile_name: String = next_tile.get_display_name()
+		var expected_next_entry_cell: Vector2i = current_tile.get_exit_grid_position() + TrackDirectionRef.get_grid_offset(current_tile.get_exit_direction())
+		var next_entry_cell: Vector2i = next_tile.get_entry_grid_position()
+		if expected_next_entry_cell != next_entry_cell:
 			issues.append(
-				"%s tile %d expects the next tile at %s, but found %s." % [
-					display_name if not display_name.is_empty() else "TrackLayout",
+				"%s tile %d (%s) exits toward grid cell %s, but tile %d (%s) enters from %s." % [
+					layout_name,
 					tile_index + 1,
-					expected_next_position,
-					next_tile.grid_position,
+					current_tile_name,
+					expected_next_entry_cell,
+					(tile_index + 1) % valid_tiles.size() + 1,
+					next_tile_name,
+					next_entry_cell,
 				]
 			)
 
 		if not TrackDirectionRef.are_opposites(current_tile.get_exit_direction(), next_tile.get_entry_direction()):
 			issues.append(
-				"%s tile %d exits %s but the next tile enters %s." % [
-					display_name if not display_name.is_empty() else "TrackLayout",
+				"%s tile %d (%s) exits %s but tile %d (%s) enters %s." % [
+					layout_name,
 					tile_index + 1,
+					current_tile_name,
 					TrackDirectionRef.get_label(current_tile.get_exit_direction()),
+					(tile_index + 1) % valid_tiles.size() + 1,
+					next_tile_name,
 					TrackDirectionRef.get_label(next_tile.get_entry_direction()),
 				]
 			)
@@ -114,10 +148,12 @@ func get_validation_issues() -> PackedStringArray:
 
 		if current_points[-1].distance_to(next_points[0]) > CONNECTION_EPSILON:
 			issues.append(
-				"%s tile %d does not line up with tile %d." % [
-					display_name if not display_name.is_empty() else "TrackLayout",
+				"%s tile %d (%s) does not line up with tile %d (%s)." % [
+					layout_name,
 					tile_index + 1,
+					current_tile_name,
 					(tile_index + 1) % valid_tiles.size() + 1,
+					next_tile_name,
 				]
 			)
 
@@ -142,3 +178,7 @@ func _refresh_tile_observers() -> void:
 
 func _on_layout_tile_changed() -> void:
 	emit_changed()
+
+
+func _get_layout_name() -> String:
+	return display_name if not display_name.is_empty() else "TrackLayout"

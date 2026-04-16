@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TrackTileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://track/track_tile_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Sweeper Broad 90 2x2"
+entry_direction = 6
+exit_direction = 0
+footprint = Vector2i(2, 2)
+entry_cell = Vector2i(0, 1)
+exit_cell = Vector2i(1, 0)
+center_feature_tag = &"hero"
+interior_points = PackedVector3Array(-0.1, 0, 1.0, 0.42, 0, 0.98, 0.92, 0, 0.72, 1.02, 0, 0.18)
