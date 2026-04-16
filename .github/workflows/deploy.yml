@@ -17,9 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.6.2
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true
 
@@ -59,7 +62,7 @@ jobs:
           ls -la *.zip
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: builds
           path: builds/*.zip
@@ -71,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: builds
           path: builds
