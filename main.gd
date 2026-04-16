@@ -236,7 +236,7 @@ func _on_round_started(_round_number: int) -> void:
 	_clear_placement_preview()
 	_clear_hazard_position_selection()
 	_pending_hazard_type = HazardTypeRegistry.NONE
-	call_deferred("_rebuild_track_coins")
+	_rebuild_track_coins()
 	if _round_end_screen:
 		_round_end_screen.clear_hazard_draft()
 	_update_car_controls()
@@ -789,7 +789,7 @@ func _rebuild_track_coins() -> void:
 		return
 
 	for child in coin_root.get_children():
-		child.free()
+		child.queue_free()
 
 	if coin_count <= 0 or COIN_SCENE == null:
 		return
