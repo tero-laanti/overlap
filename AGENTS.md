@@ -169,6 +169,37 @@ Rules that reduce rework by making repo conventions explicit and machine-readabl
 - If a `.tscn` must be edited as text, keep edits minimal and surgical. Never reformat or reorder sections.
 - After any scene file edit, verify the scene still opens cleanly in the editor when that validation path is available.
 
+## Web Builds
+
+The game ships to itch.io via `.github/workflows/deploy.yml`. Four channels are pushed per run: `html`, `windows`, `linux`, `macos`. Local editor behavior and the exported web build do not always agree — the rules below keep the web target from silently diverging.
+
+### Resource scripts — pitfalls that only surface on web
+
+1. **Prefer plain `@export var foo: T = default` on `Resource` subclasses.** Avoid the private-backing-variable + getter/setter pattern (`var _foo: T` with `@export var foo: T: get: ...; set(value): ...`). It serializes fine on desktop, but after a script refactor the stale import cache can drop the stored overrides on web, leaving properties at their script defaults.
+2. **Avoid `@export_enum("A:0", "B:1", ...) var x: int`.** Use plain `@export var x: int = 0` and document the encoding in a comment. The `@export_enum` form is also cache-sensitive when the script's structure changes.
+3. **Reserve setter-based `@export` for cases that actually need side effects.** Observer refresh (`emit_changed` / connecting to child `changed` signals) only drives editor live-preview. Runtime code doesn't need it; removing it costs nothing at runtime.
+
+### After any significant `Resource` script refactor
+
+Always clear the import cache before shipping a web build:
+
+```
+rm -rf .godot
+# reopen Godot; let it reimport everything
+```
+
+Symptoms that point to a stale cache: desktop builds behave correctly, but web shows properties loading as script defaults instead of the values in `.tres` files. Cache clear first, diagnose second.
+
+### Impact of the plain-`@export` preference
+
+- **Inspector UX.** No enum dropdown for direction fields; authors type raw numbers. Doesn't matter for AI-driven edits that read code, matters slightly for human authoring.
+- **Editor live refresh.** Parent resources no longer auto-repaint when a nested resource's internal property changes in the inspector. Close/reopen the scene or reselect the affected resource to force a refresh. Only affects editor authoring flow; no runtime consequence.
+- **Runtime.** Zero. Loaded properties, rotation math, track generation all behave identically.
+
+### Renderer parity
+
+`project.godot` uses the `mobile` rendering method so the local editor preview and the WebGL 2 / Compatibility fallback used by the web build share a shading path. Do not switch to `forward_plus` without also planning for the web divergence this will re-introduce.
+
 ## Prototype-First Principle
 
 This project is in early prototype phase. Process exists to prevent wasted work on big changes, not to slow down learning. When the fastest path to understanding is "change a value and feel the result," do that.
