@@ -1,0 +1,99 @@
+name: Deploy to itch.io
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.6.2
+  # Set this as a repo *variable* (Settings → Secrets and variables → Actions → Variables)
+  # to e.g. "yourname/overlap". Not a secret — the slug is public on your itch page.
+  ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+
+jobs:
+  export:
+    name: Export Godot project
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.6.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
+             ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Export all presets
+        run: |
+          set -euo pipefail
+          mkdir -p builds/html builds/windows builds/linux builds/macos
+
+          # HTML5 (web)
+          godot --headless --verbose --export-release "HTML5" builds/html/index.html
+
+          # Windows Desktop
+          godot --headless --verbose --export-release "Windows Desktop" builds/windows/Overlap.exe
+
+          # Linux
+          godot --headless --verbose --export-release "Linux" builds/linux/Overlap.x86_64
+
+          # macOS — Godot writes a .zip containing the .app bundle directly
+          godot --headless --verbose --export-release "macOS" builds/macos/Overlap.zip
+
+      - name: Archive builds
+        run: |
+          set -euo pipefail
+          cd builds
+          # Web + Linux + Windows: zip the directory (macOS is already a zip)
+          zip -r html.zip html
+          zip -r windows.zip windows
+          zip -r linux.zip linux
+          mv macos/Overlap.zip macos.zip
+          rmdir macos
+          ls -la *.zip
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: builds/*.zip
+          retention-days: 7
+
+  publish:
+    name: Push builds to itch.io
+    needs: export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: builds
+          path: builds
+
+      - name: Install butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ITCH_TARGET:-}" ]; then
+            echo "ITCH_TARGET repo variable is not set (expected 'user/game')." >&2
+            exit 1
+          fi
+          ./butler push --userversion "$VERSION" builds/html.zip    "$ITCH_TARGET:html"
+          ./butler push --userversion "$VERSION" builds/windows.zip "$ITCH_TARGET:windows"
+          ./butler push --userversion "$VERSION" builds/linux.zip   "$ITCH_TARGET:linux"
+          ./butler push --userversion "$VERSION" builds/macos.zip   "$ITCH_TARGET:macos"
