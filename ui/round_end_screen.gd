@@ -1,8 +1,11 @@
 class_name RoundEndScreen
 extends CanvasLayer
 
+const HazardTypeRegistry := preload("res://race/hazard_type.gd")
+
 signal buy_time_requested
 signal buy_boost_pad_requested
+signal hazard_drafted(hazard_type: int)
 signal continue_requested
 
 @export var run_state_path: NodePath
@@ -23,6 +26,12 @@ var _pending_start_time_bonus: float = 0.0
 var _pending_boost_pad_count: int = 0
 var _buy_boost_pad_button: Button = null
 var _pending_items_label: Label = null
+var _hazard_draft_section: VBoxContainer = null
+var _hazard_draft_title: Label = null
+var _hazard_draft_buttons: Array[Button] = []
+var _hazard_draft_options: Array[int] = []
+var _selected_hazard_type: int = HazardTypeRegistry.NONE
+var _requires_hazard_draft: bool = false
 
 
 func _ready() -> void:
@@ -63,6 +72,20 @@ func configure_buy_boost_pad_option(cost: int) -> void:
 	_refresh_display()
 
 
+func configure_hazard_draft(options: Array[int]) -> void:
+	_hazard_draft_options = options.duplicate()
+	_selected_hazard_type = HazardTypeRegistry.NONE
+	_requires_hazard_draft = not _hazard_draft_options.is_empty()
+	_refresh_display()
+
+
+func clear_hazard_draft() -> void:
+	_hazard_draft_options.clear()
+	_selected_hazard_type = HazardTypeRegistry.NONE
+	_requires_hazard_draft = false
+	_refresh_display()
+
+
 func set_pending_start_time_bonus(seconds: float) -> void:
 	_pending_start_time_bonus = maxf(seconds, 0.0)
 	_refresh_display()
@@ -76,7 +99,16 @@ func set_pending_boost_pad_count(count: int) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or event.is_echo():
 		return
-	if event.is_action_pressed("buy_time"):
+	if event.is_action_pressed("draft_hazard_1"):
+		get_viewport().set_input_as_handled()
+		_select_hazard_draft_index(0)
+	elif event.is_action_pressed("draft_hazard_2"):
+		get_viewport().set_input_as_handled()
+		_select_hazard_draft_index(1)
+	elif event.is_action_pressed("draft_hazard_3"):
+		get_viewport().set_input_as_handled()
+		_select_hazard_draft_index(2)
+	elif event.is_action_pressed("buy_time"):
 		get_viewport().set_input_as_handled()
 		buy_time_requested.emit()
 	elif event.is_action_pressed("buy_boost_pad"):
@@ -84,7 +116,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		buy_boost_pad_requested.emit()
 	elif event.is_action_pressed("continue_round"):
 		get_viewport().set_input_as_handled()
-		continue_requested.emit()
+		if _can_continue():
+			continue_requested.emit()
 
 
 func _on_round_finished() -> void:
@@ -126,6 +159,31 @@ func _ensure_dynamic_controls() -> void:
 		_pending_items_label.add_theme_color_override("font_color", Color(0.87, 1.0, 0.77, 1.0))
 		options_box.add_child(_pending_items_label)
 		options_box.move_child(_pending_items_label, continue_label.get_index())
+
+	if _hazard_draft_section == null:
+		_hazard_draft_section = VBoxContainer.new()
+		_hazard_draft_section.name = "HazardDraftSection"
+		_hazard_draft_section.add_theme_constant_override("separation", 8)
+		options_box.add_child(_hazard_draft_section)
+		options_box.move_child(_hazard_draft_section, continue_label.get_index())
+
+		_hazard_draft_title = Label.new()
+		_hazard_draft_title.name = "HazardDraftTitle"
+		_hazard_draft_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_hazard_draft_title.add_theme_font_size_override("font_size", 24)
+		_hazard_draft_title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.72, 1.0))
+		_hazard_draft_title.text = "Draft a Hazard"
+		_hazard_draft_section.add_child(_hazard_draft_title)
+
+		for index in range(3):
+			var hazard_button: Button = Button.new()
+			hazard_button.name = "HazardDraftButton%d" % (index + 1)
+			hazard_button.custom_minimum_size = Vector2(0.0, 70.0)
+			hazard_button.focus_mode = Control.FOCUS_NONE
+			if not hazard_button.pressed.is_connected(_on_hazard_draft_button_pressed.bind(index)):
+				hazard_button.pressed.connect(_on_hazard_draft_button_pressed.bind(index))
+			_hazard_draft_section.add_child(hazard_button)
+			_hazard_draft_buttons.append(hazard_button)
 
 
 func _refresh_display() -> void:
@@ -184,9 +242,40 @@ func _refresh_display() -> void:
 		_pending_items_label.visible = not pending_parts.is_empty()
 		_pending_items_label.text = "Queued: %s" % ", ".join(pending_parts)
 
+	if _hazard_draft_section:
+		_hazard_draft_section.visible = _requires_hazard_draft
+		if _hazard_draft_title:
+			_hazard_draft_title.text = "Draft a Hazard"
+		for button_index in range(_hazard_draft_buttons.size()):
+			var hazard_button: Button = _hazard_draft_buttons[button_index]
+			var has_option: bool = button_index < _hazard_draft_options.size()
+			hazard_button.visible = has_option
+			if not has_option:
+				continue
+
+			var hazard_type: int = _hazard_draft_options[button_index]
+			var button_text: String = "[%d] %s\n%s" % [
+				button_index + 1,
+				HazardTypeRegistry.get_display_name(hazard_type),
+				HazardTypeRegistry.get_description(hazard_type),
+			]
+			if hazard_type == _selected_hazard_type:
+				button_text += "\nSelected"
+				hazard_button.modulate = Color(1.0, 0.92, 0.78, 1.0)
+			else:
+				hazard_button.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+			hazard_button.text = button_text
+
+	continue_label.modulate = Color(0.84, 0.86, 0.9, 1.0)
 	continue_label.text = "Space / Enter to continue"
-	if _pending_boost_pad_count > 0:
+	if _requires_hazard_draft and _selected_hazard_type == HazardTypeRegistry.NONE:
+		continue_label.text = "Pick a hazard with %s before continuing" % _format_hazard_shortcuts()
+		continue_label.modulate = Color(1.0, 0.72, 0.68, 1.0)
+	elif _pending_boost_pad_count > 0:
 		continue_label.text = "Space / Enter to place before the next round"
+	elif _requires_hazard_draft:
+		continue_label.text = "Space / Enter to place the drafted hazard"
 
 
 func _format_bonus_seconds(seconds: float) -> String:
@@ -202,3 +291,29 @@ func _format_round_time(seconds: float) -> String:
 	var whole_seconds: int = total_seconds % 60
 	var tenths: int = int(floor(fposmod(safe_seconds, 1.0) * 10.0))
 	return "%d:%02d.%01d" % [minutes, whole_seconds, tenths]
+
+
+func _on_hazard_draft_button_pressed(button_index: int) -> void:
+	_select_hazard_draft_index(button_index)
+
+
+func _select_hazard_draft_index(button_index: int) -> void:
+	if not _requires_hazard_draft:
+		return
+	if button_index < 0 or button_index >= _hazard_draft_options.size():
+		return
+
+	_selected_hazard_type = _hazard_draft_options[button_index]
+	hazard_drafted.emit(_selected_hazard_type)
+	_refresh_display()
+
+
+func _can_continue() -> bool:
+	return not _requires_hazard_draft or _selected_hazard_type != HazardTypeRegistry.NONE
+
+
+func _format_hazard_shortcuts() -> String:
+	var shortcuts: Array[String] = []
+	for option_index in range(_hazard_draft_options.size()):
+		shortcuts.append(str(option_index + 1))
+	return " / ".join(shortcuts)
