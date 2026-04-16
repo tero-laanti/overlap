@@ -207,7 +207,7 @@ func _ensure_dynamic_controls() -> void:
 		_hazard_draft_title.text = "Draft a Hazard"
 		_hazard_draft_section.add_child(_hazard_draft_title)
 
-		for index in range(3):
+		for index in range(HazardTypeRegistry.get_available_types().size()):
 			var hazard_button: Button = Button.new()
 			hazard_button.name = "HazardDraftButton%d" % (index + 1)
 			hazard_button.focus_mode = Control.FOCUS_NONE
@@ -356,13 +356,14 @@ func _refresh_display() -> void:
 				continue
 
 			var hazard_type: int = _hazard_draft_options[button_index]
+			var is_selected: bool = hazard_type == _selected_hazard_type
 			var button_text: String = "[%d] %s%s\n%s" % [
 				button_index + 1,
 				HazardTypeRegistry.get_display_name(hazard_type),
-				" (Selected)" if hazard_type == _selected_hazard_type else "",
+				" (Selected)" if is_selected else "",
 				HazardTypeRegistry.get_description(hazard_type),
 			]
-			if hazard_type == _selected_hazard_type:
+			if is_selected:
 				hazard_button.modulate = Color(1.0, 0.92, 0.78, 1.0)
 			else:
 				hazard_button.modulate = Color(1.0, 1.0, 1.0, 1.0)
