@@ -46,21 +46,25 @@ const START_LINE_HEIGHT := 0.04
 const START_LINE_Y_OFFSET := 0.03
 const TRACK_EDGE_PADDING := 0.6
 const PLACEMENT_SURFACE_Y_OFFSET := 0.02
+const GENERATED_ROOT_NAME := "GeneratedTrack"
+const LEGACY_GENERATED_CHILD_NAMES := [
+	"Ground",
+	"SandSurface",
+	"TrackSurface",
+	"StartFinishLine",
+]
 
 var _points: Array[Vector3] = []
 var _segment_lengths: Array[float] = []
 var _cumulative_lengths: Array[float] = []
 var _track_length: float = 0.0
+var _generated_root: Node3D = null
 
 
 func _ready() -> void:
-	add_to_group(SURFACE_PROVIDER_GROUP)
-	_build_centerline()
-	_add_ground()
-	_add_ring_mesh("SandSurface", track_width / 2.0 + sand_width, 0.005, SAND_COLOR)
-	_add_ring_mesh("TrackSurface", track_width / 2.0, 0.01, TARMAC_COLOR)
-	_add_start_finish_line()
-	_add_walls()
+	if not is_in_group(SURFACE_PROVIDER_GROUP):
+		add_to_group(SURFACE_PROVIDER_GROUP)
+	_rebuild_generated_track()
 
 
 func _build_centerline() -> void:
@@ -88,7 +92,7 @@ func _add_ground() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = GRASS_COLOR
 	mi.material_override = mat
-	add_child(mi)
+	_add_generated_child(mi)
 
 
 func get_surface_profile_at_position(world_position: Vector3) -> SurfaceProfile:
@@ -197,7 +201,7 @@ func _add_ring_mesh(mesh_name: String, half_w: float, y_offset: float, color: Co
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mi.material_override = mat
-	add_child(mi)
+	_add_generated_child(mi)
 
 
 func _add_start_finish_line() -> void:
@@ -213,7 +217,7 @@ func _add_start_finish_line() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = START_LINE_COLOR
 	line.material_override = mat
-	add_child(line)
+	_add_generated_child(line)
 
 
 func _rebuild_length_cache() -> void:
@@ -305,7 +309,7 @@ func _add_wall(wall_name: String, from: Vector3, to: Vector3) -> void:
 	body.rotation.y = angle
 	body.collision_layer = WALL_COLLISION_LAYER
 	body.collision_mask = 0
-	add_child(body)
+	_add_generated_child(body)
 
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(wall_thickness, wall_height, seg_length)
@@ -321,3 +325,52 @@ func _add_wall(wall_name: String, from: Vector3, to: Vector3) -> void:
 	mat.albedo_color = BARRIER_COLOR
 	mi.material_override = mat
 	body.add_child(mi)
+
+
+func _rebuild_generated_track() -> void:
+	_clear_generated_track()
+	_build_centerline()
+	_generated_root = _get_or_create_generated_root()
+	_add_ground()
+	_add_ring_mesh("SandSurface", track_width / 2.0 + sand_width, 0.005, SAND_COLOR)
+	_add_ring_mesh("TrackSurface", track_width / 2.0, 0.01, TARMAC_COLOR)
+	_add_start_finish_line()
+	_add_walls()
+
+
+func _clear_generated_track() -> void:
+	var existing_generated_root: Node3D = get_node_or_null(GENERATED_ROOT_NAME) as Node3D
+	if existing_generated_root != null:
+		existing_generated_root.free()
+
+	for child in get_children():
+		if _is_legacy_generated_child(child):
+			child.free()
+
+	_generated_root = null
+
+
+func _get_or_create_generated_root() -> Node3D:
+	if is_instance_valid(_generated_root):
+		return _generated_root
+
+	_generated_root = get_node_or_null(GENERATED_ROOT_NAME) as Node3D
+	if _generated_root != null:
+		return _generated_root
+
+	_generated_root = Node3D.new()
+	_generated_root.name = GENERATED_ROOT_NAME
+	add_child(_generated_root)
+	return _generated_root
+
+
+func _add_generated_child(child: Node) -> void:
+	_get_or_create_generated_root().add_child(child)
+
+
+func _is_legacy_generated_child(child: Node) -> bool:
+	if child.name == GENERATED_ROOT_NAME:
+		return false
+	if LEGACY_GENERATED_CHILD_NAMES.has(child.name):
+		return true
+	return child.name.begins_with("WallOuter_") or child.name.begins_with("WallInner_")

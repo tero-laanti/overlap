@@ -4,8 +4,6 @@ extends Node3D
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const PLACEMENT_LABEL_MARGIN := Vector2(24.0, 24.0)
-## Approximate radius of a boost pad for overlap checks (half the pad's longest extent).
-const BOOST_PAD_FOOTPRINT_RADIUS := 2.3
 const HAZARD_DRAFT_OPTION_COUNT := 2
 const HAZARD_POSITION_CANDIDATE_COUNT := 3
 const HAZARD_POSITION_MAX_ATTEMPTS := 96
@@ -91,6 +89,7 @@ func _ready() -> void:
 			_round_end_screen.continue_requested.connect(_on_continue_requested)
 
 	if _run_state:
+		_run_state.set_external_clock_driver(true)
 		if not _run_state.round_finished.is_connected(_on_round_finished):
 			_run_state.round_finished.connect(_on_round_finished)
 		if not _run_state.round_started.is_connected(_on_round_started):
@@ -102,6 +101,11 @@ func _ready() -> void:
 	_focus_camera_on(_car, false)
 	_update_car_controls()
 	_update_placement_overlay()
+
+
+func _physics_process(delta: float) -> void:
+	if _run_state:
+		_run_state.advance_round_clock(delta)
 
 
 func _process(delta: float) -> void:
@@ -543,8 +547,8 @@ func _update_placement_overlay() -> void:
 		)
 		var is_overlapping_existing_pad: bool = false
 		if is_on_valid_track:
-			var placement_position: Vector3 = _track.get_track_transform(_placement_progress, _placement_lateral_offset).origin
-			is_overlapping_existing_pad = _does_boost_pad_overlap_existing(placement_position)
+			var placement_transform: Transform3D = _track.get_track_transform(_placement_progress, _placement_lateral_offset)
+			is_overlapping_existing_pad = _does_boost_pad_overlap_existing(placement_transform)
 
 		var can_place: bool = is_on_valid_track and not is_overlapping_existing_pad
 		var remaining_after_place: int = maxi(_pending_boost_pad_count - 1, 0)
@@ -598,24 +602,20 @@ func _can_place_boost_pad(progress: float, lateral_offset: float) -> bool:
 	if not _track.is_track_position_valid(progress, lateral_offset, boost_pad_track_clearance):
 		return false
 
-	var placement_position: Vector3 = _track.get_track_transform(progress, lateral_offset).origin
-	return not _does_boost_pad_overlap_existing(placement_position)
+	var placement_transform: Transform3D = _track.get_track_transform(progress, lateral_offset)
+	return not _does_boost_pad_overlap_existing(placement_transform)
 
 
-func _does_boost_pad_overlap_existing(placement_position: Vector3) -> bool:
+func _does_boost_pad_overlap_existing(placement_transform: Transform3D) -> bool:
 	if _boost_pad_root == null:
 		return false
 
-	var minimum_center_distance: float = BOOST_PAD_FOOTPRINT_RADIUS * 2.0
-	var placement_point: Vector2 = Vector2(placement_position.x, placement_position.z)
 	for child in _boost_pad_root.get_children():
 		var existing_pad: BoostPad = child as BoostPad
 		if existing_pad == null or existing_pad == _placement_preview:
 			continue
 
-		var existing_position: Vector3 = existing_pad.global_transform.origin
-		var existing_point: Vector2 = Vector2(existing_position.x, existing_position.z)
-		if placement_point.distance_to(existing_point) < minimum_center_distance:
+		if BoostPad.footprints_overlap(placement_transform, existing_pad.global_transform):
 			return true
 
 	return false

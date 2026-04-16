@@ -29,6 +29,7 @@ var round_earnings: int = 0
 var is_round_active: bool = false
 
 var _lap_tracker: LapTracker = null
+var _has_external_clock_driver: bool = false
 
 
 func _enter_tree() -> void:
@@ -41,17 +42,10 @@ func _ready() -> void:
 		start_run()
 
 
-func _process(delta: float) -> void:
-	if not is_round_active:
+func _physics_process(delta: float) -> void:
+	if _has_external_clock_driver:
 		return
-
-	round_time_remaining = maxf(round_time_remaining - delta, 0.0)
-	current_lap_time += delta
-	round_time_changed.emit(round_time_remaining)
-	lap_time_changed.emit(current_lap_time)
-
-	if is_zero_approx(round_time_remaining):
-		_finish_round()
+	advance_round_clock(delta)
 
 
 func start_run() -> void:
@@ -91,6 +85,23 @@ func add_round_time(seconds: float) -> void:
 
 	round_time_remaining += seconds
 	round_time_changed.emit(round_time_remaining)
+
+
+func advance_round_clock(delta: float) -> void:
+	if not is_round_active or delta <= 0.0:
+		return
+
+	round_time_remaining = maxf(round_time_remaining - delta, 0.0)
+	current_lap_time += delta
+	round_time_changed.emit(round_time_remaining)
+	lap_time_changed.emit(current_lap_time)
+
+	if is_zero_approx(round_time_remaining):
+		_finish_round()
+
+
+func set_external_clock_driver(is_external: bool) -> void:
+	_has_external_clock_driver = is_external
 
 
 func add_pickup_currency(base_amount: int) -> int:

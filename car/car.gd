@@ -19,6 +19,10 @@ const DEFAULT_GRIP_PENALTY_MULTIPLIER := 1.0
 const DEFAULT_SPEED_CAP_FACTOR := 1.0
 ## Fraction of brake_force applied when the car exceeds a speed cap.
 const SPEED_CAP_RESISTANCE := 0.5
+const ACTIVE_INPUT_DRAG_FACTOR := 0.35
+const DRIFT_EXIT_THRESHOLD_FACTOR := 0.75
+const DRIFT_ENTRY_STEERING_THRESHOLD := 0.2
+const OVERSPEED_BRAKE_RATIO := 0.65
 
 var steering_input: float = 0.0
 var throttle_input: float = 0.0
@@ -40,16 +44,6 @@ func _ready() -> void:
 		stats = load("res://car/default_stats.tres")
 	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
 	_ensure_drift_feedback()
-
-
-func _process(_delta: float) -> void:
-	if not controls_enabled:
-		steering_input = 0.0
-		throttle_input = 0.0
-		return
-
-	steering_input = Input.get_axis("steer_right", "steer_left")
-	throttle_input = Input.get_axis("brake", "throttle")
 
 
 func reset_to_transform(spawn_transform: Transform3D) -> void:
@@ -90,9 +84,9 @@ func apply_forward_boost(boost_speed: float) -> void:
 
 	var current_forward_speed: float = planar_velocity.dot(forward)
 	var lateral_velocity: Vector3 = planar_velocity - forward * current_forward_speed
-	var boosted_forward_speed: float = maxf(current_forward_speed + boost_speed, boost_speed)
-	var max_boosted_speed: float = boost_speed
-	var minimum_forward_speed: float = boosted_forward_speed
+	var boosted_forward_speed: float = current_forward_speed + boost_speed
+	var max_boosted_speed: float = boosted_forward_speed
+	var minimum_forward_speed: float = -INF
 
 	if stats:
 		max_boosted_speed = maxf(stats.max_speed + boost_speed, boost_speed)
@@ -127,6 +121,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 
 	if not stats:
 		return
+
+	_sample_inputs()
 
 	var surface_profile: SurfaceProfile = _get_surface_profile(state.transform.origin)
 	var body_basis: Basis = state.transform.basis
@@ -167,12 +163,23 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			total_force += forward * acceleration_force * REVERSE_ACCEL_FACTOR * throttle_input
 
 	# --- Speed cap resistance ---
+	if fwd_speed > max_speed:
+		total_force += -forward * stats.brake_force * OVERSPEED_BRAKE_RATIO
 	if _speed_cap_factor < DEFAULT_SPEED_CAP_FACTOR and fwd_speed > max_speed:
 		total_force += -forward * stats.brake_force * SPEED_CAP_RESISTANCE
 
 	# --- Drift detection ---
 	var was_drifting := is_drifting
-	is_drifting = absf(lat_speed) > drift_threshold and absf(fwd_speed) > stats.drift_min_speed
+	var drift_enter_threshold: float = drift_threshold
+	var drift_exit_threshold: float = drift_threshold * DRIFT_EXIT_THRESHOLD_FACTOR
+	var lateral_speed_for_drift: float = absf(lat_speed)
+	var has_drift_entry_speed: bool = fwd_speed > stats.drift_min_speed
+	var has_drift_exit_speed: bool = fwd_speed > maxf(stats.drift_min_speed * DRIFT_EXIT_THRESHOLD_FACTOR, BRAKE_SPEED_THRESHOLD)
+	var has_drift_intent: bool = absf(steering_input) >= DRIFT_ENTRY_STEERING_THRESHOLD
+	if was_drifting:
+		is_drifting = lateral_speed_for_drift >= drift_exit_threshold and has_drift_exit_speed
+	else:
+		is_drifting = lateral_speed_for_drift >= drift_enter_threshold and has_drift_entry_speed and has_drift_intent
 
 	if is_drifting and not was_drifting:
 		drift_started.emit()
@@ -184,12 +191,14 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	total_force += -right * lat_speed * current_grip
 
 	# --- Drift boost (the Big Lie: drifting preserves/adds speed) ---
-	if is_drifting:
-		total_force += forward * drift_boost_force
+	if is_drifting and fwd_speed < max_speed:
+		var drift_speed_room: float = maxf(max_speed - fwd_speed, 0.0)
+		var drift_boost_scale: float = clampf(drift_speed_room / maxf(max_speed, 0.001), 0.0, 1.0)
+		total_force += forward * drift_boost_force * drift_boost_scale
 
-	# --- Linear drag when coasting ---
-	if absf(throttle_input) < THROTTLE_DEAD_ZONE:
-		total_force += -vel * linear_drag
+	# --- Linear drag ---
+	var drag_factor: float = ACTIVE_INPUT_DRAG_FACTOR if absf(throttle_input) >= THROTTLE_DEAD_ZONE else 1.0
+	total_force += -vel * linear_drag * drag_factor
 
 	state.apply_central_force(total_force)
 
@@ -238,6 +247,16 @@ func _get_flat_forward_vector() -> Vector3:
 	if forward.length_squared() < 0.001:
 		return Vector3.FORWARD
 	return forward.normalized()
+
+
+func _sample_inputs() -> void:
+	if not controls_enabled:
+		steering_input = 0.0
+		throttle_input = 0.0
+		return
+
+	steering_input = Input.get_axis("steer_right", "steer_left")
+	throttle_input = Input.get_axis("brake", "throttle")
 
 
 func _apply_pending_reset(state: PhysicsDirectBodyState3D) -> void:

@@ -2,6 +2,7 @@ class_name BoostPad
 extends Area3D
 
 const RUN_STATE_GROUP := &"run_state"
+const FOOTPRINT_HALF_EXTENTS := Vector2(1.3, 2.3)
 
 @export var boost_speed: float = 11.0
 @export var base_color: Color = Color(0.34, 0.36, 0.40, 1.0)
@@ -19,6 +20,26 @@ var _preview_valid: bool = true
 var _triggered_body_ids: Dictionary[int, bool] = {}
 var _base_material: StandardMaterial3D = StandardMaterial3D.new()
 var _accent_material: StandardMaterial3D = StandardMaterial3D.new()
+
+
+static func footprints_overlap(a_transform: Transform3D, b_transform: Transform3D, clearance: float = 0.0) -> bool:
+	var a_center: Vector2 = Vector2(a_transform.origin.x, a_transform.origin.z)
+	var b_center: Vector2 = Vector2(b_transform.origin.x, b_transform.origin.z)
+	var a_axes: Array[Vector2] = _get_footprint_axes(a_transform)
+	var b_axes: Array[Vector2] = _get_footprint_axes(b_transform)
+	var a_half_extents: Vector2 = FOOTPRINT_HALF_EXTENTS + Vector2.ONE * clearance
+	var b_half_extents: Vector2 = FOOTPRINT_HALF_EXTENTS + Vector2.ONE * clearance
+	var center_delta: Vector2 = b_center - a_center
+	var test_axes: Array[Vector2] = [a_axes[0], a_axes[1], b_axes[0], b_axes[1]]
+
+	for axis in test_axes:
+		var distance: float = absf(center_delta.dot(axis))
+		var radius_a: float = _project_footprint_radius(axis, a_axes, a_half_extents)
+		var radius_b: float = _project_footprint_radius(axis, b_axes, b_half_extents)
+		if distance >= radius_a + radius_b:
+			return false
+
+	return true
 
 
 func _ready() -> void:
@@ -105,3 +126,22 @@ func _apply_visual_state() -> void:
 	set_deferred("monitoring", not _preview_mode)
 	set_deferred("monitorable", not _preview_mode)
 	collision_shape.set_deferred("disabled", _preview_mode)
+
+
+static func _get_footprint_axes(pad_transform: Transform3D) -> Array[Vector2]:
+	var right: Vector2 = Vector2(pad_transform.basis.x.x, pad_transform.basis.x.z)
+	var forward: Vector2 = Vector2(pad_transform.basis.z.x, pad_transform.basis.z.z)
+	if right.length_squared() < 0.001:
+		right = Vector2.RIGHT
+	else:
+		right = right.normalized()
+	if forward.length_squared() < 0.001:
+		forward = Vector2.UP
+	else:
+		forward = forward.normalized()
+	return [right, forward]
+
+
+static func _project_footprint_radius(axis: Vector2, footprint_axes: Array[Vector2], half_extents: Vector2) -> float:
+	return absf(axis.dot(footprint_axes[0])) * half_extents.x \
+		+ absf(axis.dot(footprint_axes[1])) * half_extents.y
