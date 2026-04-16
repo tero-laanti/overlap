@@ -149,12 +149,12 @@ func get_start_transform(y_offset: float = START_LINE_Y_OFFSET) -> Transform3D:
 	return get_track_transform(get_lap_start_progress(), 0.0, y_offset)
 
 
-func get_boost_pad_max_lateral_offset(clearance: float = 0.0) -> float:
+func get_max_lateral_offset(clearance: float = 0.0) -> float:
 	return maxf(track_width * 0.5 - clearance, 0.0)
 
 
-func is_boost_pad_position_valid(progress: float, lateral_offset: float, clearance: float = 0.0) -> bool:
-	if absf(lateral_offset) > get_boost_pad_max_lateral_offset(clearance):
+func is_track_position_valid(progress: float, lateral_offset: float, clearance: float = 0.0) -> bool:
+	if absf(lateral_offset) > get_max_lateral_offset(clearance):
 		return false
 
 	var placement_position: Vector3 = get_track_transform(progress, lateral_offset).origin

@@ -16,12 +16,19 @@ const THROTTLE_DEAD_ZONE := 0.1
 const MIN_SPEED_FOR_FULL_TURN := 5.0
 ## Y position the car is locked to (ground plane).
 const GROUND_Y := 0.25
+const DEFAULT_GRIP_PENALTY_MULTIPLIER := 1.0
+const DEFAULT_SPEED_CAP_FACTOR := 1.0
+## Fraction of brake_force applied when the car exceeds a speed cap.
+const SPEED_CAP_RESISTANCE := 0.5
 
 var steering_input: float = 0.0
 var throttle_input: float = 0.0
 var is_drifting: bool = false
 var controls_enabled: bool = true
 var _surface_provider: Node = null
+var _grip_penalty_multiplier: float = DEFAULT_GRIP_PENALTY_MULTIPLIER
+var _grip_penalty_time_remaining: float = 0.0
+var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
 
 signal drift_started
 signal drift_ended
@@ -49,6 +56,8 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	angular_velocity = Vector3.ZERO
 	global_transform = spawn_transform
 	sleeping = false
+	_clear_grip_penalty()
+	clear_speed_cap()
 
 	if is_drifting:
 		is_drifting = false
@@ -69,12 +78,7 @@ func apply_forward_boost(boost_speed: float) -> void:
 	if boost_speed <= 0.0:
 		return
 
-	var forward: Vector3 = -global_basis.z
-	forward.y = 0.0
-	if forward.length_squared() < 0.001:
-		forward = Vector3.FORWARD
-	else:
-		forward = forward.normalized()
+	var forward: Vector3 = _get_flat_forward_vector()
 
 	var current_velocity: Vector3 = linear_velocity
 	var vertical_velocity: float = current_velocity.y
@@ -94,6 +98,25 @@ func apply_forward_boost(boost_speed: float) -> void:
 	boosted_forward_speed = clampf(boosted_forward_speed, minimum_forward_speed, max_boosted_speed)
 	linear_velocity = lateral_velocity + forward * boosted_forward_speed + Vector3.UP * vertical_velocity
 	sleeping = false
+
+
+func apply_grip_penalty(multiplier: float, duration: float) -> void:
+	var safe_multiplier: float = clampf(multiplier, 0.0, 1.0)
+	var safe_duration: float = maxf(duration, 0.0)
+	if safe_duration <= 0.0 or safe_multiplier >= DEFAULT_GRIP_PENALTY_MULTIPLIER:
+		_clear_grip_penalty()
+		return
+
+	_grip_penalty_multiplier = safe_multiplier
+	_grip_penalty_time_remaining = safe_duration
+
+
+func set_speed_cap(factor: float) -> void:
+	_speed_cap_factor = clampf(factor, 0.0, 1.0)
+
+
+func clear_speed_cap() -> void:
+	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
@@ -118,11 +141,11 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var drift_threshold_multiplier: float = surface_profile.drift_threshold_multiplier if surface_profile else 1.0
 	var linear_drag_multiplier: float = surface_profile.linear_drag_multiplier if surface_profile else 1.0
 	var acceleration_force: float = stats.acceleration_force * acceleration_multiplier
-	var max_speed: float = stats.max_speed * max_speed_multiplier
-	var reverse_max_speed: float = stats.reverse_max_speed * max_speed_multiplier
+	var max_speed: float = stats.max_speed * max_speed_multiplier * _speed_cap_factor
+	var reverse_max_speed: float = stats.reverse_max_speed * max_speed_multiplier * _speed_cap_factor
 	var drift_threshold: float = stats.drift_threshold * drift_threshold_multiplier
-	var grip: float = stats.grip * grip_multiplier
-	var drift_grip: float = stats.drift_grip * drift_grip_multiplier
+	var grip: float = stats.grip * grip_multiplier * _grip_penalty_multiplier
+	var drift_grip: float = stats.drift_grip * drift_grip_multiplier * _grip_penalty_multiplier
 	var drift_boost_force: float = stats.drift_boost_force * drift_boost_multiplier
 	var linear_drag: float = stats.linear_drag * linear_drag_multiplier
 	var turn_speed: float = stats.turn_speed * turn_speed_multiplier
@@ -137,6 +160,10 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			total_force += forward * stats.brake_force * throttle_input
 		elif fwd_speed > -reverse_max_speed:
 			total_force += forward * acceleration_force * REVERSE_ACCEL_FACTOR * throttle_input
+
+	# --- Speed cap resistance ---
+	if _speed_cap_factor < DEFAULT_SPEED_CAP_FACTOR and fwd_speed > max_speed:
+		total_force += -forward * stats.brake_force * SPEED_CAP_RESISTANCE
 
 	# --- Drift detection ---
 	var was_drifting := is_drifting
@@ -175,6 +202,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var yaw := xform.basis.get_euler().y
 	xform.basis = Basis.from_euler(Vector3(0.0, yaw, 0.0))
 	state.transform = xform
+	_tick_grip_penalty(state.step)
 
 
 func _get_surface_profile(world_position: Vector3) -> SurfaceProfile:
@@ -206,3 +234,25 @@ func _ensure_drift_feedback() -> void:
 	new_drift_feedback.name = DRIFT_FEEDBACK_NODE
 	add_child(new_drift_feedback)
 	new_drift_feedback.bind_car(self)
+
+
+func _get_flat_forward_vector() -> Vector3:
+	var forward: Vector3 = -global_basis.z
+	forward.y = 0.0
+	if forward.length_squared() < 0.001:
+		return Vector3.FORWARD
+	return forward.normalized()
+
+
+func _tick_grip_penalty(delta: float) -> void:
+	if _grip_penalty_time_remaining <= 0.0:
+		return
+
+	_grip_penalty_time_remaining = maxf(_grip_penalty_time_remaining - delta, 0.0)
+	if is_zero_approx(_grip_penalty_time_remaining):
+		_clear_grip_penalty()
+
+
+func _clear_grip_penalty() -> void:
+	_grip_penalty_multiplier = DEFAULT_GRIP_PENALTY_MULTIPLIER
+	_grip_penalty_time_remaining = 0.0

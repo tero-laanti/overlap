@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://race/hazards/slow_zone.gd" id="1"]
+
+[sub_resource type="BoxShape3D" id="1"]
+size = Vector3(3.4, 0.3, 5)
+
+[sub_resource type="BoxMesh" id="2"]
+size = Vector3(3.4, 0.12, 5)
+
+[sub_resource type="BoxMesh" id="3"]
+size = Vector3(2.2, 0.05, 4)
+
+[node name="SlowZone" type="Area3D"]
+collision_layer = 16
+collision_mask = 1
+monitoring = true
+monitorable = true
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.15, 0)
+shape = SubResource("1")
+
+[node name="BaseMesh" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.06, 0)
+mesh = SubResource("2")
+
+[node name="AccentMesh" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.1, 0)
+mesh = SubResource("3")

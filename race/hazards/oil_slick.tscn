@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://race/hazards/oil_slick.gd" id="1"]
+
+[sub_resource type="CylinderShape3D" id="1"]
+height = 0.24
+radius = 2.6
+
+[sub_resource type="CylinderMesh" id="2"]
+top_radius = 2.6
+bottom_radius = 2.6
+height = 0.08
+
+[sub_resource type="CylinderMesh" id="3"]
+top_radius = 1.65
+bottom_radius = 1.85
+height = 0.05
+
+[node name="OilSlick" type="Area3D"]
+collision_layer = 16
+collision_mask = 1
+monitoring = true
+monitorable = true
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.12, 0)
+shape = SubResource("1")
+
+[node name="BaseMesh" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.04, 0)
+mesh = SubResource("2")
+
+[node name="AccentMesh" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.07, 0)
+mesh = SubResource("3")
