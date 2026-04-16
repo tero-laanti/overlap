@@ -12,8 +12,8 @@ Race laps on a circuit under a timer. Each completed lap increases a multiplier,
 
 ### Pit Stop Phase (between rounds)
 
-1. **Buy positives** — boost pads, coins, timer extensions. Player chooses placement.
-2. **Draft a negative** — pick 1 of 2 hazards to place. The lesser evil.
+1. **Buy positives** — boost pads, coins, timer extensions. Cost scales up with each purchase, so stacking the same upgrade gets progressively expensive.
+2. **Draft a hazard** — pick 1 of 2 offered hazards (the lesser evil) and place it on the track.
 3. **Track mutation** (every N rounds) — circuit grows longer. Laps take more time, multiplier grows slower, earnings pressure increases.
 
 ### Run Arc

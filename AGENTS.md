@@ -18,6 +18,7 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - `camera/game_camera.gd` — Dynamic follow camera with speed-based zoom.
 - `race/coin.gd` — Collectible coin pickup with multiplier-scaled payouts.
 - `race/hazard_type.gd` — Hazard registry for scene paths, names, and descriptions.
+- `race/hazard_preview_helper.gd` — Shared material and collision toggling for hazard preview vs. placed states.
 - `race/hazards/*.gd` — Persistent track hazards. Preview visuals and hazard effects.
 - `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
 - `race/run_state.gd` — Round timer, lap timing, multiplier, and currency rewards.
@@ -95,6 +96,27 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That docum
 - `TrackTileDefinition.footprint` is enforced by layout validation. Multi-cell tiles claim every occupied grid cell, and `entry_cell` / `exit_cell` select which occupied cells own the path sockets.
 - Multi-cell footprints currently rotate in 90-degree steps only. Keep 45-degree rotations on `1x1` tiles, or author a dedicated cardinal-orientation variant for larger pieces.
 - Keep using deliberate collision layers as new collidable types are added. Do not reuse layer 1 as the default for unrelated objects.
+
+### Pit Stop Flow
+
+- Between rounds the pit stop runs three phases in order: buy positives (boost pads, coins, timer extensions whose cost scales per purchase), draft 1 of 2 offered hazards, then place the drafted hazard on the track. `main.gd` orchestrates this sequencing alongside track placement state.
+- Placed positives and hazards persist on the track for subsequent rounds.
+
+### Hazard types
+
+| Name         | Scene path                              | Effect                                                            | Collision layer          |
+| ------------ | --------------------------------------- | ----------------------------------------------------------------- | ------------------------ |
+| Oil Slick    | `res://race/hazards/oil_slick.tscn`     | Collapses grip on the car for 1.5s after it passes through.       | 5 (`track_modifier`)     |
+| Slow Zone    | `res://race/hazards/slow_zone.tscn`     | Caps the car's speed while it remains inside the volume.          | 5 (`track_modifier`)     |
+| Wall Barrier | `res://race/hazards/wall_barrier.tscn`  | Solid blocker — throws the car back on impact.                    | 2 (`track_wall`)         |
+
+### Adding a hazard
+
+1. **Script location.** Add the new hazard script under `race/hazards/` with a matching `.tscn` scene. Non-solid modifiers extend `Area3D`; solid blockers extend `StaticBody3D` (see `oil_slick.gd` / `slow_zone.gd` vs. `wall_barrier.gd`).
+2. **Base behavior and signals.** The script must expose `set_preview_mode(bool)`, `set_preview_valid(bool)`, and `set_preview_focused(bool)` so the placement flow can drive the preview. Area-based hazards connect `body_entered` / `body_exited` in `_ready`, bail out when `_preview_mode` is true, and (when applicable) skip effects while `RunState.is_round_active` is false. Track any per-car state by `get_instance_id()` and clear it on exit / preview toggles so restarting a round cannot leave stale penalties.
+3. **Register in the hazard registry.** Add a new enum value to `HazardType.Type` in `race/hazard_type.gd`, then add matching entries to `SCENE_PATHS`, `DISPLAY_NAMES`, `DESCRIPTIONS`, and `NODE_NAMES`, and include the enum value in `get_available_types()`.
+4. **Preview helper wiring.** In `_configure_materials`, call `HazardPreviewHelper.configure_materials` with the two `MeshInstance3D` children and two `StandardMaterial3D` instances. In `_apply_visual_state`, call `HazardPreviewHelper.apply_visual_state` with the base/accent colors and a `Callable` that derives the accent color from the current base color, then call `apply_collision_state_area` (for `Area3D`) or `apply_collision_state_body` (for `StaticBody3D`) so preview mode disables collision and monitoring.
+5. **Collision layer assignment.** Non-solid track modifiers use layer 5 (`track_modifier`). Solid blockers that physically stop the car use layer 2 (`track_wall`). Set `collision_mask` to only the layers the hazard needs to detect (typically layer 1 for the car on area hazards; walls use `collision_mask = 0`). If the hazard claims any new layer, update the collision-layer table above in the same change.
 
 ## Testing and Validation
 
