@@ -70,11 +70,14 @@ const START_LINE_Y_OFFSET := 0.03
 const TRACK_EDGE_PADDING := 0.6
 const PLACEMENT_SURFACE_Y_OFFSET := 0.02
 const GENERATED_ROOT_NAME := "GeneratedTrack"
+const START_SEGMENT_MAX_TURN_ANGLE := deg_to_rad(10.0)
+const START_SEGMENT_SAMPLE_DISTANCE_RATIO := 0.75
 
 var _points: Array[Vector3] = []
 var _segment_lengths: Array[float] = []
 var _cumulative_lengths: Array[float] = []
 var _track_length: float = 0.0
+var _resolved_lap_start_progress: float = 0.0
 var _generated_root: Node3D = null
 var _is_rebuild_queued: bool = false
 var _observed_layouts: Array[TrackLayoutResource] = []
@@ -167,10 +170,9 @@ func get_progress_at_position(world_position: Vector3) -> float:
 
 
 func get_lap_start_progress() -> float:
-	var active_layout: TrackLayoutResource = _get_active_layout()
-	if active_layout != null:
-		return wrapf(active_layout.lap_start_progress, 0.0, 1.0)
-	return wrapf(lap_start_progress, 0.0, 1.0)
+	if _points.is_empty():
+		_build_centerline()
+	return wrapf(_resolved_lap_start_progress, 0.0, 1.0)
 
 
 func get_track_transform(progress: float, lateral_offset: float = 0.0, y_offset: float = PLACEMENT_SURFACE_Y_OFFSET) -> Transform3D:
@@ -278,6 +280,8 @@ func _rebuild_length_cache() -> void:
 		_segment_lengths.append(segment_length)
 		_track_length += segment_length
 
+	_resolved_lap_start_progress = _resolve_lap_start_progress()
+
 
 func _get_segment_index_for_distance(distance_along_track: float) -> int:
 	var wrapped_distance: float = wrapf(distance_along_track, 0.0, _track_length)
@@ -291,6 +295,118 @@ func _get_segment_index_for_distance(distance_along_track: float) -> int:
 			break
 
 	return segment_index
+
+
+func _resolve_lap_start_progress() -> float:
+	var requested_progress: float = _get_requested_lap_start_progress()
+	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
+		return requested_progress
+
+	var preferred_distance: float = wrapf(requested_progress, 0.0, 1.0) * _track_length
+	var fallback_segment_index: int = _get_segment_index_for_distance(preferred_distance)
+	var best_segment_index: int = _find_best_start_segment(preferred_distance, fallback_segment_index)
+	return _get_segment_midpoint_progress(best_segment_index)
+
+
+func _find_best_start_segment(preferred_distance: float, fallback_segment_index: int) -> int:
+	var best_straight_segment_index: int = -1
+	var best_straight_distance: float = INF
+	var best_straight_length: float = -INF
+	var best_fallback_segment_index: int = fallback_segment_index
+	var best_fallback_turn_angle: float = INF
+	var best_fallback_distance: float = INF
+	var best_fallback_length: float = -INF
+	var sample_distance: float = minf(_track_length * 0.25, maxf(track_width * START_SEGMENT_SAMPLE_DISTANCE_RATIO, START_LINE_LENGTH * 2.0))
+
+	for segment_index in range(_segment_lengths.size()):
+		var segment_length: float = _segment_lengths[segment_index]
+		var segment_midpoint_distance: float = _get_segment_midpoint_distance(segment_index)
+		var wrapped_distance_to_preferred: float = _get_wrapped_track_distance(segment_midpoint_distance, preferred_distance)
+		var local_turn_angle: float = _get_local_turn_angle(segment_midpoint_distance, sample_distance)
+
+		if local_turn_angle <= START_SEGMENT_MAX_TURN_ANGLE:
+			var is_better_straight_segment: bool = (
+				wrapped_distance_to_preferred < best_straight_distance - 0.001
+				or (
+					is_equal_approx(wrapped_distance_to_preferred, best_straight_distance)
+					and segment_length > best_straight_length
+				)
+			)
+			if is_better_straight_segment:
+				best_straight_segment_index = segment_index
+				best_straight_distance = wrapped_distance_to_preferred
+				best_straight_length = segment_length
+			continue
+
+		var is_better_fallback_segment: bool = (
+			local_turn_angle < best_fallback_turn_angle - 0.001
+			or (
+				is_equal_approx(local_turn_angle, best_fallback_turn_angle)
+				and wrapped_distance_to_preferred < best_fallback_distance - 0.001
+			)
+			or (
+				is_equal_approx(local_turn_angle, best_fallback_turn_angle)
+				and is_equal_approx(wrapped_distance_to_preferred, best_fallback_distance)
+				and segment_length > best_fallback_length
+			)
+		)
+		if is_better_fallback_segment:
+			best_fallback_segment_index = segment_index
+			best_fallback_turn_angle = local_turn_angle
+			best_fallback_distance = wrapped_distance_to_preferred
+			best_fallback_length = segment_length
+
+	if best_straight_segment_index != -1:
+		return best_straight_segment_index
+	return best_fallback_segment_index
+
+
+func _get_segment_midpoint_progress(segment_index: int) -> float:
+	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
+		return 0.0
+	return wrapf(_get_segment_midpoint_distance(segment_index) / _track_length, 0.0, 1.0)
+
+
+func _get_segment_midpoint_distance(segment_index: int) -> float:
+	return _cumulative_lengths[segment_index] + _segment_lengths[segment_index] * 0.5
+
+
+func _get_local_turn_angle(distance_along_track: float, sample_distance: float) -> float:
+	if sample_distance <= 0.0:
+		return 0.0
+
+	var before_direction: Vector2 = _get_tangent_direction_2d(distance_along_track - sample_distance)
+	var after_direction: Vector2 = _get_tangent_direction_2d(distance_along_track + sample_distance)
+	return _get_direction_turn_angle(before_direction, after_direction)
+
+
+func _get_tangent_direction_2d(distance_along_track: float) -> Vector2:
+	var point_count: int = _points.size()
+	if point_count == 0:
+		return Vector2.ZERO
+
+	var segment_index: int = _get_segment_index_for_distance(distance_along_track)
+	var from: Vector3 = _points[segment_index]
+	var to: Vector3 = _points[(segment_index + 1) % point_count]
+	return Vector2(to.x - from.x, to.z - from.z).normalized()
+
+
+func _get_direction_turn_angle(from_direction: Vector2, to_direction: Vector2) -> float:
+	if from_direction.is_zero_approx() or to_direction.is_zero_approx():
+		return 0.0
+	return absf(from_direction.angle_to(to_direction))
+
+
+func _get_wrapped_track_distance(first_distance: float, second_distance: float) -> float:
+	var direct_distance: float = absf(first_distance - second_distance)
+	return minf(direct_distance, _track_length - direct_distance)
+
+
+func _get_requested_lap_start_progress() -> float:
+	var active_layout: TrackLayoutResource = _get_active_layout()
+	if active_layout != null:
+		return wrapf(active_layout.lap_start_progress, 0.0, 1.0)
+	return wrapf(lap_start_progress, 0.0, 1.0)
 
 
 func _get_local_track_point(world_position: Vector3) -> Vector2:
