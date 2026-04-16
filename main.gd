@@ -29,6 +29,7 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var round_end_screen_path: NodePath
 @export var camera_path: NodePath
 @export var buy_time_cost: int = 20
+@export var buy_time_cost_increase: int = 20
 @export var buy_time_seconds: float = 15.0
 @export var buy_boost_pad_cost: int = 30
 @export_range(0, 32, 1) var coin_count: int = 6
@@ -42,6 +43,7 @@ var _car: Car = null
 var _run_state: RunState = null
 var _round_end_screen: RoundEndScreen = null
 var _camera: GameCamera = null
+var _current_buy_time_cost: int = 0
 var _car_spawn_transform: Transform3D = Transform3D.IDENTITY
 var _pending_start_time_bonus: float = 0.0
 var _pending_boost_pad_count: int = 0
@@ -89,9 +91,10 @@ func _ready() -> void:
 	_ensure_hazard_root()
 	_rebuild_track_coins()
 	_ensure_placement_overlay()
+	_current_buy_time_cost = maxi(buy_time_cost, 0)
 
 	if _round_end_screen:
-		_round_end_screen.configure_buy_time_option(buy_time_cost, buy_time_seconds)
+		_sync_buy_time_option()
 		_round_end_screen.configure_buy_boost_pad_option(buy_boost_pad_cost)
 		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
 		_round_end_screen.set_pending_boost_pad_count(_pending_boost_pad_count)
@@ -171,12 +174,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_buy_time_requested() -> void:
 	if not _run_state or _run_state.is_round_active:
 		return
-	if buy_time_cost <= 0 or buy_time_seconds <= 0.0:
+	if _current_buy_time_cost <= 0 or buy_time_seconds <= 0.0:
 		return
-	if not _run_state.spend_currency(buy_time_cost):
+	if not _run_state.spend_currency(_current_buy_time_cost):
 		return
 
 	_pending_start_time_bonus += buy_time_seconds
+	_current_buy_time_cost += maxi(buy_time_cost_increase, 0)
+	_sync_buy_time_option()
 	if _round_end_screen:
 		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
 
@@ -237,6 +242,17 @@ func _on_round_started(_round_number: int) -> void:
 	_update_car_controls()
 	_update_placement_overlay()
 	_focus_camera_on(_car, false)
+
+
+func _sync_buy_time_option() -> void:
+	if _round_end_screen == null:
+		return
+
+	_round_end_screen.configure_buy_time_option(
+		_current_buy_time_cost,
+		buy_time_seconds,
+		maxi(buy_time_cost_increase, 0)
+	)
 
 
 func _start_next_round() -> void:

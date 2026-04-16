@@ -78,6 +78,7 @@ signal continue_requested
 var _run_state: RunState = null
 var _lap_tracker: LapTracker = null
 var _buy_time_cost: int = 0
+var _buy_time_cost_step: int = 0
 var _buy_time_seconds: float = 0.0
 var _buy_boost_pad_cost: int = 0
 var _pending_start_time_bonus: float = 0.0
@@ -130,8 +131,9 @@ func _ready() -> void:
 	_refresh_display()
 
 
-func configure_buy_time_option(cost: int, seconds: float) -> void:
+func configure_buy_time_option(cost: int, seconds: float, cost_step: int = 0) -> void:
 	_buy_time_cost = maxi(cost, 0)
+	_buy_time_cost_step = maxi(cost_step, 0)
 	_buy_time_seconds = maxf(seconds, 0.0)
 	_refresh_display()
 
@@ -527,6 +529,8 @@ func _refresh_display() -> void:
 		_format_bonus_seconds(_buy_time_seconds),
 		_buy_time_cost,
 	]
+	if _buy_time_cost_step > 0:
+		buy_time_button.text += "\nNext buy +$%d" % _buy_time_cost_step
 	buy_time_button.disabled = (
 		_run_state == null
 		or _buy_time_cost <= 0
