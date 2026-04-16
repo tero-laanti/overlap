@@ -26,9 +26,6 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var run_state_path: NodePath
 @export var round_end_screen_path: NodePath
 @export var camera_path: NodePath
-@export var buy_time_cost: int = 20
-@export var buy_time_cost_increase: int = 20
-@export var buy_time_seconds: float = 15.0
 @export var buy_boost_pad_cost: int = 30
 @export_range(0, 32, 1) var coin_count: int = 6
 @export var placement_progress_speed: float = 0.18
@@ -42,7 +39,6 @@ var _car: Car = null
 var _run_state: RunState = null
 var _round_end_screen: RoundEndScreen = null
 var _camera: GameCamera = null
-var _current_buy_time_cost: int = 0
 var _car_spawn_transform: Transform3D = Transform3D.IDENTITY
 var _pending_start_time_bonus: float = 0.0
 var _pending_boost_pad_count: int = 0
@@ -89,7 +85,6 @@ func _ready() -> void:
 	_hazard_controller.configure(_track, boost_pad_track_clearance)
 	_rebuild_track_coins()
 	_ensure_placement_overlay()
-	_current_buy_time_cost = maxi(buy_time_cost, 0)
 
 	if not _hazard_controller.placement_begun.is_connected(_on_hazard_placement_begun):
 		_hazard_controller.placement_begun.connect(_on_hazard_placement_begun)
@@ -122,6 +117,8 @@ func _ready() -> void:
 			_run_state.round_finished.connect(_on_round_finished)
 		if not _run_state.round_started.is_connected(_on_round_started):
 			_run_state.round_started.connect(_on_round_started)
+		if not _run_state.buy_time_cost_changed.is_connected(_on_buy_time_cost_changed):
+			_run_state.buy_time_cost_changed.connect(_on_buy_time_cost_changed)
 
 	if _track:
 		_placement_progress = _track.get_lap_start_progress()
@@ -179,18 +176,20 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_buy_time_requested() -> void:
-	if not _run_state or _run_state.is_round_active:
-		return
-	if _current_buy_time_cost <= 0 or buy_time_seconds <= 0.0:
-		return
-	if not _run_state.spend_currency(_current_buy_time_cost):
+	if _run_state == null:
 		return
 
-	_pending_start_time_bonus += buy_time_seconds
-	_current_buy_time_cost += maxi(buy_time_cost_increase, 0)
-	_sync_buy_time_option()
+	var seconds_granted: float = _run_state.try_buy_time()
+	if seconds_granted <= 0.0:
+		return
+
+	_pending_start_time_bonus += seconds_granted
 	if _round_end_screen:
 		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
+
+
+func _on_buy_time_cost_changed(_cost: int) -> void:
+	_sync_buy_time_option()
 
 
 func _on_buy_boost_pad_requested() -> void:
@@ -250,13 +249,13 @@ func _on_round_started(_round_number: int) -> void:
 
 
 func _sync_buy_time_option() -> void:
-	if _round_end_screen == null:
+	if _round_end_screen == null or _run_state == null:
 		return
 
 	_round_end_screen.configure_buy_time_option(
-		_current_buy_time_cost,
-		buy_time_seconds,
-		maxi(buy_time_cost_increase, 0)
+		_run_state.current_buy_time_cost,
+		_run_state.buy_time_seconds,
+		maxi(_run_state.buy_time_cost_increase, 0)
 	)
 
 

@@ -12,12 +12,16 @@ signal currency_changed(currency: int)
 signal lap_rewarded(reward: int)
 signal round_started(round_number: int)
 signal round_finished
+signal buy_time_cost_changed(cost: int)
 
 @export var lap_tracker_path: NodePath
 @export var starting_round_time: float = DEFAULT_STARTING_ROUND_TIME
 @export var base_lap_reward: int = 10
 @export var starting_multiplier: int = 1
 @export var auto_start_run: bool = true
+@export var buy_time_base_cost: int = 20
+@export var buy_time_cost_increase: int = 20
+@export var buy_time_seconds: float = 15.0
 
 var round_number: int = 0
 var round_time_remaining: float = 0.0
@@ -26,6 +30,7 @@ var last_lap_time: float = 0.0
 var current_multiplier: int = 1
 var currency: int = 0
 var round_earnings: int = 0
+var current_buy_time_cost: int = 0
 var is_round_active: bool = false
 
 var _lap_tracker: LapTracker = null
@@ -49,9 +54,32 @@ func _physics_process(delta: float) -> void:
 
 
 func start_run() -> void:
+	reset_for_new_run()
+	start_round()
+
+
+func reset_for_new_run() -> void:
 	currency = 0
 	round_number = 0
-	start_round()
+	current_buy_time_cost = maxi(buy_time_base_cost, 0)
+	currency_changed.emit(currency)
+	buy_time_cost_changed.emit(current_buy_time_cost)
+
+
+## Attempts to spend currency for a timer extension. Returns the seconds granted
+## (0.0 on failure) and increments the per-run cost when successful, so the next
+## purchase is more expensive. Refuses while a round is active.
+func try_buy_time() -> float:
+	if is_round_active:
+		return 0.0
+	if current_buy_time_cost <= 0 or buy_time_seconds <= 0.0:
+		return 0.0
+	if not spend_currency(current_buy_time_cost):
+		return 0.0
+
+	current_buy_time_cost += maxi(buy_time_cost_increase, 0)
+	buy_time_cost_changed.emit(current_buy_time_cost)
+	return buy_time_seconds
 
 
 func start_round(extra_start_time: float = 0.0) -> void:
