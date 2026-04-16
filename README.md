@@ -53,6 +53,16 @@ The prototype should answer:
 - Can the track layout create interesting drift chains?
 - What progression or challenge structure fits around this core?
 
+## Deployment to itch.io
+
+The repo ships builds to itch.io via GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)). Four channels are pushed per run: `html`, `windows`, `linux`, `macos`.
+
+### Triggering a deploy
+
+- **Tagged release**: `git tag v0.1.0 && git push --tags`.
+
+Butler versions the build as the tag name on tagged runs, or the commit SHA on manual runs.
+
 ## Docs Structure
 
 - `AGENTS.md`: canonical agent instructions and repo guardrails.
