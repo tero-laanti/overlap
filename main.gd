@@ -37,6 +37,8 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var placement_lateral_speed: float = 7.0
 @export var boost_pad_track_clearance: float = 1.5
 @export var _min_hazard_distance: float = 8.0
+## Fixed RNG seed for deterministic runs. 0 = use randomize() (non-deterministic).
+@export var deterministic_seed: int = 0
 
 var _track: TestTrack = null
 var _car: Car = null
@@ -64,7 +66,10 @@ var _is_hazard_position_selection_active: bool = false
 
 
 func _ready() -> void:
-	randomize()
+	if deterministic_seed == 0:
+		randomize()
+	else:
+		seed(deterministic_seed)
 	_track = get_node_or_null(track_path) as TestTrack
 	if _track == null:
 		_track = get_node_or_null("Track") as TestTrack
