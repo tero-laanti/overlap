@@ -95,10 +95,10 @@ func _ready() -> void:
 		_hazard_controller.placement_begun.connect(_on_hazard_placement_begun)
 	if not _hazard_controller.focus_changed.is_connected(_on_hazard_focus_changed):
 		_hazard_controller.focus_changed.connect(_on_hazard_focus_changed)
-	if not _hazard_controller.placement_confirmed.is_connected(_on_hazard_placement_confirmed):
-		_hazard_controller.placement_confirmed.connect(_on_hazard_placement_confirmed)
-	if not _hazard_controller.placement_abandoned.is_connected(_on_hazard_placement_abandoned):
-		_hazard_controller.placement_abandoned.connect(_on_hazard_placement_abandoned)
+	if not _hazard_controller.placement_confirmed.is_connected(_on_hazard_placement_resolved):
+		_hazard_controller.placement_confirmed.connect(_on_hazard_placement_resolved)
+	if not _hazard_controller.placement_abandoned.is_connected(_on_hazard_placement_resolved):
+		_hazard_controller.placement_abandoned.connect(_on_hazard_placement_resolved)
 
 	if _round_end_screen:
 		_sync_buy_time_option()
@@ -355,13 +355,7 @@ func _on_hazard_focus_changed(focused_preview: Node3D) -> void:
 	_update_placement_overlay()
 
 
-func _on_hazard_placement_confirmed() -> void:
-	_update_car_controls()
-	_update_placement_overlay()
-	_start_next_round()
-
-
-func _on_hazard_placement_abandoned() -> void:
+func _on_hazard_placement_resolved() -> void:
 	_update_car_controls()
 	_update_placement_overlay()
 	_start_next_round()

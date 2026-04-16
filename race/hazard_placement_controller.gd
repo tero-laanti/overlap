@@ -13,7 +13,6 @@ signal placement_confirmed
 signal placement_abandoned
 
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
-const HazardPreviewHelper := preload("res://race/hazard_preview_helper.gd")
 const HAZARD_ROOT_NAME := "Hazards"
 const CANDIDATE_COUNT := 3
 const MAX_PLACEMENT_ATTEMPTS := 96
@@ -25,7 +24,6 @@ var _track_clearance: float = 1.5
 var _pending_hazard_type: int = HazardTypeRegistry.NONE
 var _hazard_root: Node3D = null
 var _position_previews: Array[Node3D] = []
-var _position_data: Array[Dictionary] = []
 var _focused_index: int = 0
 var _is_active: bool = false
 
@@ -104,7 +102,6 @@ func begin_placement(occupied_positions: Array[Vector3]) -> bool:
 		if preview == null:
 			continue
 		_position_previews.append(preview)
-		_position_data.append(candidate)
 
 	if _position_previews.size() < CANDIDATE_COUNT:
 		push_warning("HazardPlacementController failed to prepare %d hazard placement previews." % CANDIDATE_COUNT)
@@ -234,7 +231,6 @@ func _clear_selection_internal(kept_preview: Node3D) -> void:
 		preview.queue_free()
 
 	_position_previews.clear()
-	_position_data.clear()
 	_focused_index = 0
 	_is_active = false
 
