@@ -1,0 +1,100 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://ui/main_menu.gd" id="menu_script"]
+[ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
+[ext_resource type="Script" path="res://track/track_layout.gd" id="track_layout_script"]
+[ext_resource type="Resource" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.4, 0.5, 0.6, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.55, 0.6, 1)
+ambient_light_energy = 0.8
+tonemap_mode = 2
+
+[sub_resource type="StyleBoxFlat" id="start_panel_style"]
+bg_color = Color(0.12, 0.14, 0.18, 0.94)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.92, 0.65, 0.35)
+
+[node name="MainMenu" type="Node3D"]
+script = ExtResource("menu_script")
+track_path = NodePath("Track")
+camera_path = NodePath("MenuCamera")
+
+[node name="WorldEnv" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, -0.866, 0, 0.866, 0.5, 0, 20, 0)
+shadow_enabled = true
+
+[node name="MenuCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 90, 0)
+current = true
+
+[node name="Track" type="Node3D" parent="."]
+script = ExtResource("track_script")
+starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_chicane_layout")])
+active_starter_layout_index = 0
+
+[node name="MenuUI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Vignette" type="ColorRect" parent="MenuUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.04, 0.06, 0.55)
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="MenuUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="MenuUI/Center"]
+theme_override_constants/separation = 28
+
+[node name="TitleLabel" type="Label" parent="MenuUI/Center/VBox"]
+theme_override_font_sizes/font_size = 96
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.06, 0.1, 0.95)
+theme_override_constants/outline_size = 10
+horizontal_alignment = 1
+text = "overlap"
+
+[node name="StartPanel" type="PanelContainer" parent="MenuUI/Center/VBox"]
+custom_minimum_size = Vector2(320, 0)
+theme_override_styles/panel = SubResource("start_panel_style")
+
+[node name="Margin" type="MarginContainer" parent="MenuUI/Center/VBox/StartPanel"]
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 22
+
+[node name="StartLabel" type="Label" parent="MenuUI/Center/VBox/StartPanel/Margin"]
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+horizontal_alignment = 1
+text = "Start"
+
+[node name="HintLabel" type="Label" parent="MenuUI/Center/VBox"]
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.82, 0.88, 0.94, 0.85)
+horizontal_alignment = 1
+text = "press any key or click"

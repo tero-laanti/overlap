@@ -554,6 +554,19 @@ func get_active_layout() -> TrackLayoutResource:
 	return _get_active_layout()
 
 
+## Returns the world-space center of the track's point cloud. Lets callers
+## (e.g. the main menu camera) frame the whole layout without peeking at the
+## generated geometry.
+func get_bounds_center() -> Vector3:
+	if _points.is_empty():
+		_build_centerline()
+	if _points.is_empty():
+		return global_position
+
+	var bounds: AABB = _get_track_bounds()
+	return to_global(bounds.position + bounds.size * 0.5)
+
+
 ## Swaps the active layout resource and rebuilds the generated geometry
 ## synchronously so callers can read the new centerline immediately.
 func set_active_layout(new_layout: TrackLayoutResource) -> void:
