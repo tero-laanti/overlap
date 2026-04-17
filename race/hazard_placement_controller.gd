@@ -170,6 +170,12 @@ func _generate_positions(occupied_positions: Array[Vector3]) -> Array[Dictionary
 
 	var local_occupied: Array[Vector3] = occupied_positions.duplicate()
 	var max_lateral_offset: float = _track.get_max_lateral_offset(_track_clearance)
+	var prefer_corner_inside: bool = _pending_hazard_type == HazardTypeRegistry.Type.CONE_CHICANE
+	# First half of the attempt budget enforces corner-inside when a hazard
+	# asks for it; the second half relaxes the constraint so straight-heavy
+	# tracks still yield a full set of candidates rather than failing the
+	# placement flow outright.
+	var strict_attempt_cap: int = MAX_PLACEMENT_ATTEMPTS / 2
 
 	var attempts: int = 0
 	while positions.size() < CANDIDATE_COUNT and attempts < MAX_PLACEMENT_ATTEMPTS:
@@ -177,6 +183,14 @@ func _generate_positions(occupied_positions: Array[Vector3]) -> Array[Dictionary
 
 		var progress: float = randf()
 		var lateral_offset: float = randf_range(-max_lateral_offset, max_lateral_offset)
+
+		if prefer_corner_inside:
+			var inside_sign: int = _track.get_inside_lateral_sign(progress)
+			if inside_sign != 0:
+				lateral_offset = absf(lateral_offset) * float(inside_sign)
+			elif attempts <= strict_attempt_cap:
+				continue
+
 		if not _track.is_track_position_valid(progress, lateral_offset, _track_clearance):
 			continue
 

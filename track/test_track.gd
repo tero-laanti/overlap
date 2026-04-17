@@ -239,6 +239,33 @@ func is_track_position_valid(progress: float, lateral_offset: float, clearance: 
 	return get_surface_profile_at_position(placement_position) == tarmac_surface
 
 
+## Returns +1 when the inside of the local corner is on the +lateral side
+## (driver's right), -1 when it's on the -lateral side (driver's left), and
+## 0 when the track is locally straight enough that there's no clear inside.
+## `sample_distance` controls how far along the centerline we sample to detect
+## turning; `min_turn_angle` is the smallest change (in radians) that counts
+## as a corner.
+func get_inside_lateral_sign(progress: float, sample_distance: float = 6.0, min_turn_angle: float = 0.25) -> int:
+	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
+		return 0
+	if sample_distance <= 0.0:
+		return 0
+
+	var distance_along_track: float = wrapf(progress, 0.0, 1.0) * _track_length
+	var before_direction: Vector2 = _get_tangent_direction_2d(distance_along_track - sample_distance)
+	var after_direction: Vector2 = _get_tangent_direction_2d(distance_along_track + sample_distance)
+	if before_direction.is_zero_approx() or after_direction.is_zero_approx():
+		return 0
+
+	var signed_angle: float = before_direction.angle_to(after_direction)
+	if absf(signed_angle) < min_turn_angle:
+		return 0
+	# Our +lateral direction is the tangent rotated 90° clockwise in (x, z),
+	# so a CCW signed turn (positive angle) curves the track toward -lateral
+	# and the inside sits on the negative side.
+	return -1 if signed_angle > 0.0 else 1
+
+
 ## Generates a filled band of given half-width around the centerline.
 func _add_ring_mesh(mesh_name: String, half_w: float, y_offset: float, color: Color) -> void:
 	var st := SurfaceTool.new()

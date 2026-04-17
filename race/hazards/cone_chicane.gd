@@ -55,6 +55,11 @@ func _collect_children() -> void:
 				_accent_meshes.append(child as MeshInstance3D)
 
 
+## Chicane owns several cone meshes per material, so it configures the two
+## shared StandardMaterial3D instances directly and assigns them as overrides
+## on every cone. `HazardPreviewHelper.configure_materials` only handles a
+## single BaseMesh / AccentMesh pair; the visual-state path still uses the
+## helper below.
 func _configure_materials() -> void:
 	_base_material.roughness = 0.56
 	_base_material.metallic = 0.04

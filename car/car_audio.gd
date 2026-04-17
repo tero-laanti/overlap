@@ -68,6 +68,12 @@ func bind_car(car_owner: Car) -> void:
 		car.drift_ended.connect(_on_car_drift_ended)
 	if not car.body_entered.is_connected(_on_car_body_entered):
 		car.body_entered.connect(_on_car_body_entered)
+	# `body_entered` only fires once per new body, so a zig-zag through the
+	# cone chicane (a single StaticBody3D with three shapes) only crashes the
+	# first cone audibly. `body_shape_entered` fires per shape, giving each
+	# cone its own impact cue (still gated by CRASH_RETRIGGER_SECONDS).
+	if not car.body_shape_entered.is_connected(_on_car_body_shape_entered):
+		car.body_shape_entered.connect(_on_car_body_shape_entered)
 
 	if _engine_player and not _engine_player.playing:
 		_engine_player.play()
@@ -108,6 +114,14 @@ func _make_player(player_name: String, assigned_stream: AudioStream, fallback_st
 
 
 func _on_car_body_entered(_body: Node) -> void:
+	_try_play_crash()
+
+
+func _on_car_body_shape_entered(_body_rid: RID, _body: Node, _body_shape_index: int, _local_shape_index: int) -> void:
+	_try_play_crash()
+
+
+func _try_play_crash() -> void:
 	if _time_since_last_crash < CRASH_RETRIGGER_SECONDS:
 		return
 	if car == null or _crash_player == null:
@@ -146,6 +160,8 @@ func _disconnect_car_signals() -> void:
 		car.drift_ended.disconnect(_on_car_drift_ended)
 	if car.body_entered.is_connected(_on_car_body_entered):
 		car.body_entered.disconnect(_on_car_body_entered)
+	if car.body_shape_entered.is_connected(_on_car_body_shape_entered):
+		car.body_shape_entered.disconnect(_on_car_body_shape_entered)
 
 
 func _release_player(player: AudioStreamPlayer) -> void:
