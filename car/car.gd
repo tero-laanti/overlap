@@ -145,7 +145,10 @@ func clear_temporary_handling_modifiers() -> void:
 func apply_planar_velocity_delta(delta_velocity: Vector3) -> void:
 	var planar_delta: Vector3 = delta_velocity
 	planar_delta.y = 0.0
-	linear_velocity += planar_delta
+	# Go through the physics engine instead of mutating `linear_velocity` from
+	# outside `_integrate_forces`; impulse is mass-scaled so the resulting
+	# velocity change stays equal to `planar_delta` regardless of mass.
+	apply_central_impulse(planar_delta * mass)
 	sleeping = false
 
 
