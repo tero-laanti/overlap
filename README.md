@@ -49,7 +49,10 @@ scripts/      Local validation helpers
 
 ## Design Direction
 
-The driving model is intentionally arcade — no suspension simulation, no tire model. The car is a RigidBody3D constrained to a ground plane with force-based acceleration and direct angular velocity steering. Drift state reduces lateral grip and adds a forward boost, rewarding the player for controlled slides.
+The driving model is intentionally arcade. The car is a custom `RigidBody3D`
+controller with query-based suspension, body-level acceleration, and direct
+steering control instead of a full tire model. Drift state reduces lateral grip
+and adds a forward boost, rewarding the player for controlled slides.
 
 The prototype should answer:
 - Does the drift-boost loop feel rewarding at speed?

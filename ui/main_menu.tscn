@@ -1,13 +1,14 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://ui/main_menu.gd" id="menu_script"]
-[ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
-[ext_resource type="Script" path="res://track/track_layout.gd" id="track_layout_script"]
-[ext_resource type="Resource" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
-[ext_resource type="Resource" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_figure_eight.tres" id="starter_figure_eight_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
+[ext_resource type="Script" path="res://track/track_layout.gd" id="track_layout_script"]
+[ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -19,15 +20,15 @@ tonemap_mode = 2
 
 [sub_resource type="StyleBoxFlat" id="start_panel_style"]
 bg_color = Color(0.12, 0.14, 0.18, 0.94)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 0.92, 0.65, 0.35)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="MainMenu" type="Node3D"]
 script = ExtResource("menu_script")
@@ -49,8 +50,8 @@ current = true
 
 [node name="Track" type="Node3D" parent="."]
 script = ExtResource("track_script")
-starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
-active_starter_layout_index = 1
+starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout"), ExtResource("starter_figure_eight_layout")])
+active_starter_layout_index = 5
 
 [node name="MenuUI" type="CanvasLayer" parent="."]
 layer = 2
@@ -128,6 +129,11 @@ text = "4"
 custom_minimum_size = Vector2(54, 54)
 theme_override_font_sizes/font_size = 24
 text = "5"
+
+[node name="TrackButton6" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
+custom_minimum_size = Vector2(54, 54)
+theme_override_font_sizes/font_size = 24
+text = "8"
 
 [node name="HintLabel" type="Label" parent="MenuUI/Center/VBox"]
 theme_override_font_sizes/font_size = 18

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TrackTileDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="TrackTileDefinition" format=3]
 
 [ext_resource type="Script" path="res://track/track_tile_definition.gd" id="1"]
 
@@ -7,3 +7,4 @@ script = ExtResource("1")
 display_name = "Straight Diagonal"
 entry_direction = 7
 exit_direction = 3
+interior_points = PackedVector3Array()

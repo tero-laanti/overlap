@@ -19,3 +19,11 @@ extends Resource
 
 @export_group("Physics")
 @export var linear_drag := 0.5 ## Slows the car when coasting
+@export var wheel_radius: float = 0.23
+@export var suspension_min_length: float = 0.05
+@export var suspension_rest_length: float = 0.12
+@export var suspension_max_length: float = 0.18
+@export var suspension_stiffness: float = 90.0
+@export var suspension_damping: float = 12.0
+@export var anti_roll_stiffness: float = 16.0
+@export var air_steer_factor: float = 0.2

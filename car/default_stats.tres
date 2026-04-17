@@ -4,14 +4,3 @@
 
 [resource]
 script = ExtResource("1")
-max_speed = 25.0
-acceleration_force = 40.0
-brake_force = 60.0
-reverse_max_speed = 10.0
-turn_speed = 3.5
-grip = 8.0
-drift_grip = 2.0
-drift_threshold = 4.0
-drift_min_speed = 8.0
-drift_boost_force = 5.0
-linear_drag = 0.5

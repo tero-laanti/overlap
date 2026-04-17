@@ -2,23 +2,24 @@
 
 [ext_resource type="Script" uid="uid://2egkjeuemcpk" path="res://track/track_layout.gd" id="4_dg77c"]
 [ext_resource type="Script" uid="uid://nxpfj861gbdq" path="res://camera/game_camera.gd" id="camera_script"]
+[ext_resource type="PackedScene" uid="uid://dgbttdgp7ob8w" path="res://car/assets/kenney_car_kit/sedan-sports.glb" id="car_body_scene"]
 [ext_resource type="Script" uid="uid://b16rihml1wthi" path="res://car/car.gd" id="car_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
 [ext_resource type="Script" uid="uid://q5onljnu7ugv" path="res://ui/game_over_screen.gd" id="game_over_screen_script"]
 [ext_resource type="Script" uid="uid://o61f78xqx288" path="res://race/hazard_placement_controller.gd" id="hazard_placement_controller_script"]
+[ext_resource type="PackedScene" path="res://race/jump_ramp.tscn" id="jump_ramp_scene"]
 [ext_resource type="Script" uid="uid://437ebgb8puho" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
 [ext_resource type="Script" uid="uid://cbkha778a3etd" path="res://main.gd" id="main_script"]
-[ext_resource type="PackedScene" uid="uid://dgbttdgp7ob8w" path="res://car/assets/kenney_car_kit/sedan-sports.glb" id="car_body_scene"]
-[ext_resource type="PackedScene" path="res://race/jump_ramp.tscn" id="jump_ramp_scene"]
+[ext_resource type="Script" uid="uid://cxj3quh0vjq5d" path="res://race/mutation_preview_controller.gd" id="mutation_preview_controller_script"]
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
 [ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
-[ext_resource type="Script" uid="uid://cxj3quh0vjq5d" path="res://race/mutation_preview_controller.gd" id="mutation_preview_controller_script"]
-[ext_resource type="Resource" uid="uid://b08ipsbn6kfqk" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
-[ext_resource type="Resource" uid="uid://d1m1yrhibrbyo" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
-[ext_resource type="Resource" uid="uid://cu7ebht5rmoj5" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
-[ext_resource type="Resource" uid="uid://cyiogqjoaufgp" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
-[ext_resource type="Resource" uid="uid://cpuh6760p7w1p" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
+[ext_resource type="Resource" uid="uid://dpwke30abehbk" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
+[ext_resource type="Resource" uid="uid://te8yy0tjn64d" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
+[ext_resource type="Resource" uid="uid://c0t8x2e2bhfig" path="res://track/layouts/starter_figure_eight.tres" id="starter_figure_eight_layout"]
+[ext_resource type="Resource" uid="uid://e54um8pvn6jj" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
+[ext_resource type="Resource" uid="uid://ce3smydy58pp5" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
+[ext_resource type="Resource" uid="uid://cstradcl3i16o" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
 [ext_resource type="Script" uid="uid://cpfvs67kqxbqn" path="res://track/test_track.gd" id="track_script"]
 
 [sub_resource type="Environment" id="env"]
@@ -39,7 +40,6 @@ car_path = NodePath("Car")
 run_state_path = NodePath("RunState")
 round_end_screen_path = NodePath("RoundEndScreen")
 camera_path = NodePath("GameCamera")
-debug_round_telemetry = false
 track_mutation_enabled = false
 
 [node name="WorldEnv" type="WorldEnvironment" parent="." unique_id=1062281694]
@@ -57,13 +57,15 @@ target_path = NodePath("../Car")
 
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
-starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
-active_starter_layout_index = 1
+starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout"), ExtResource("starter_figure_eight_layout")])
+active_starter_layout_index = 5
 
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
 
-[node name="JumpRamp" parent="Track" instance=ExtResource("jump_ramp_scene") unique_id=2133577482]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+[node name="JumpRamp" parent="Track" unique_id=2133577482 instance=ExtResource("jump_ramp_scene")]
+transform = Transform3D(-0.74994946, 0, -0.66149515, 0, 1, 0, 0.66149515, 0, -0.74994946, 0.12306261, 5.003726, 0.5533562)
+collision_layer = 4
+collision_mask = 0
 
 [node name="LapTracker" type="Node" parent="." unique_id=248903443]
 script = ExtResource("lap_tracker_script")
@@ -78,7 +80,6 @@ lap_tracker_path = NodePath("../LapTracker")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
 collision_mask = 6
 mass = 1.5
-gravity_scale = 1.0
 can_sleep = false
 continuous_cd = true
 contact_monitor = true
@@ -89,7 +90,19 @@ stats = ExtResource("car_stats")
 [node name="Collision" type="CollisionShape3D" parent="Car" unique_id=2075442314]
 shape = SubResource("car_shape")
 
-[node name="Body" parent="Car" instance=ExtResource("car_body_scene") unique_id=2086963516]
+[node name="WheelFrontLeft" type="Marker3D" parent="Car" unique_id=212383081]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, -0.05, -1.32)
+
+[node name="WheelFrontRight" type="Marker3D" parent="Car" unique_id=1871983277]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, -0.05, -1.32)
+
+[node name="WheelRearLeft" type="Marker3D" parent="Car" unique_id=2043585818]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, -0.05, 1.32)
+
+[node name="WheelRearRight" type="Marker3D" parent="Car" unique_id=1106278217]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, -0.05, 1.32)
+
+[node name="Body" parent="Car" unique_id=2086963516 instance=ExtResource("car_body_scene")]
 transform = Transform3D(-2, 0, 0, 0, 2, 0, 0, 0, -2, 0, -0.25, 0)
 
 [node name="RunHUD" type="CanvasLayer" parent="." unique_id=1952709169]
@@ -171,7 +184,7 @@ lap_tracker_path = NodePath("../LapTracker")
 [node name="HazardPlacementController" type="Node" parent="." unique_id=1632819470]
 script = ExtResource("hazard_placement_controller_script")
 
-[node name="MutationPreviewController" type="Node" parent="."]
+[node name="MutationPreviewController" type="Node" parent="." unique_id=244164602]
 script = ExtResource("mutation_preview_controller_script")
 
 [node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=1238794343]

@@ -6,9 +6,11 @@ extends Node
 
 const MASTER_BUS_NAME := &"Master"
 
-## Default lands on the chicane (index 1) because it surfaces drift and lap
-## timing on the first play better than the flat rectangle at index 0.
-var selected_track_index: int = 1
+## Default lands on the figure-eight (index 5) so a fresh launch puts the new
+## bridge crossing in front of the player. The chicane (index 1) is still a
+## good fallback if the web build or editor surfaces issues with the
+## procedural layout.
+var selected_track_index: int = 5
 
 ## Starts muted so a fresh launch never blares the placeholder audio at the
 ## player. The main menu's mute button flips this through `toggle_audio_muted`.

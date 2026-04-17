@@ -1,24 +1,24 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://race/hazards/cone_chicane.gd" id="1"]
 
 [sub_resource type="BoxShape3D" id="1"]
-size = Vector3(1.0, 1.2, 0.8)
+size = Vector3(1, 1.2, 0.8)
 
 [sub_resource type="BoxShape3D" id="2"]
-size = Vector3(1.0, 1.2, 0.8)
+size = Vector3(1, 1.2, 0.8)
 
 [sub_resource type="BoxShape3D" id="3"]
-size = Vector3(1.0, 1.2, 0.8)
+size = Vector3(1, 1.2, 0.8)
 
 [sub_resource type="BoxMesh" id="4"]
-size = Vector3(1.0, 1.2, 0.8)
+size = Vector3(1, 1.2, 0.8)
 
 [sub_resource type="BoxMesh" id="5"]
-size = Vector3(1.0, 1.2, 0.8)
+size = Vector3(1, 1.2, 0.8)
 
 [sub_resource type="BoxMesh" id="6"]
-size = Vector3(1.0, 1.2, 0.8)
+size = Vector3(1, 1.2, 0.8)
 
 [sub_resource type="BoxMesh" id="7"]
 size = Vector3(1.12, 0.16, 0.92)

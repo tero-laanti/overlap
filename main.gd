@@ -14,6 +14,7 @@ const COIN_TRACK_CLEARANCE := 1.25
 const COIN_MIN_OCCUPIED_DISTANCE := 3.0
 const COIN_LATERAL_OFFSET_RATIO := 0.2
 const TRACK_ITEM_PLACEMENT_SAMPLE_CLEARANCE := 1.0
+const CAR_START_CLEARANCE := 0.12
 const TRACK_ITEM_FOOTPRINT_SAMPLES := [
 	Vector2.ZERO,
 	Vector2(-1.0, 0.0),
@@ -45,6 +46,10 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var boost_pad_track_clearance: float = 1.5
 ## Fixed RNG seed for deterministic runs. 0 = use randomize() (non-deterministic).
 @export var deterministic_seed: int = 0
+## World Y below which the car is considered fallen off the map and gets
+## respawned at the start line. Guards against high-speed overshoots that
+## clear the ground collider.
+@export var fall_respawn_y: float = -10.0
 
 @export_group("Track Mutation")
 @export var track_mutation_enabled: bool = true
@@ -97,7 +102,9 @@ func _ready() -> void:
 	if not _track:
 		push_warning("MainSceneController could not find the track.")
 	else:
-		_track.set_starter_layout_index(GameSession.selected_track_index)
+		var game_session: Node = _get_game_session()
+		if game_session != null:
+			_track.set_starter_layout_index(int(game_session.get("selected_track_index")))
 
 	if not _car:
 		push_warning("MainSceneController could not find the car.")
@@ -164,6 +171,16 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if _run_state:
 		_run_state.advance_round_clock(delta)
+	_respawn_car_if_fallen()
+
+
+func _respawn_car_if_fallen() -> void:
+	if _car == null:
+		return
+	if _run_state == null or not _run_state.is_round_active:
+		return
+	if _car.global_position.y < fall_respawn_y:
+		_car.reset_to_transform(_get_car_start_transform())
 
 
 func _process(delta: float) -> void:
@@ -172,6 +189,13 @@ func _process(delta: float) -> void:
 
 	_update_placement_input(delta)
 	_update_placement_preview()
+
+
+func _get_game_session() -> Node:
+	var scene_tree: SceneTree = get_tree()
+	if scene_tree == null:
+		return null
+	return scene_tree.root.get_node_or_null(^"GameSession")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -935,7 +959,7 @@ func _get_collision_half_extents(shape: Shape3D) -> Vector2:
 
 func _get_car_start_transform() -> Transform3D:
 	if _track != null:
-		return _track.get_start_transform(_car_spawn_transform.origin.y)
+		return _track.get_start_transform(_car_spawn_transform.origin.y + CAR_START_CLEARANCE)
 	return _car_spawn_transform
 
 

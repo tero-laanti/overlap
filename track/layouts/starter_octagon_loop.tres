@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TrackLayout" format=3 uid="uid://cyiogqjoaufgp"]
+[gd_resource type="Resource" script_class="TrackLayout" format=3 uid="uid://e54um8pvn6jj"]
 
 [ext_resource type="Script" uid="uid://2egkjeuemcpk" path="res://track/track_layout.gd" id="1"]
 [ext_resource type="Script" uid="uid://b1c2ku0n0khk0" path="res://track/track_layout_tile.gd" id="2"]
@@ -71,6 +71,5 @@ reverse_path = true
 [resource]
 script = ExtResource("1")
 display_name = "Starter Tall Loop"
-tile_size = 36.0
 lap_start_progress = 0.88
 tiles = Array[ExtResource("2")]([SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4"), SubResource("5"), SubResource("6"), SubResource("7"), SubResource("8"), SubResource("9"), SubResource("10")])

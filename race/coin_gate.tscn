@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://race/coin_gate.gd" id="1"]
 
@@ -6,7 +6,7 @@
 size = Vector3(0.5, 2.2, 1.8)
 
 [sub_resource type="BoxMesh" id="2"]
-size = Vector3(3.0, 0.18, 0.24)
+size = Vector3(3, 0.18, 0.24)
 
 [sub_resource type="BoxMesh" id="3"]
 size = Vector3(0.42, 1.4, 0.2)
@@ -27,5 +27,5 @@ position = Vector3(0, 1.72, 0)
 mesh = SubResource("2")
 
 [node name="AccentMesh" type="MeshInstance3D" parent="."]
-position = Vector3(0, 1.0, 0)
+position = Vector3(0, 1, 0)
 mesh = SubResource("3")

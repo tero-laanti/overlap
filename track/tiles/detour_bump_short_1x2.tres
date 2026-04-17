@@ -1,12 +1,10 @@
-[gd_resource type="Resource" script_class="TrackTileDefinition" format=3 uid="uid://d0tok2wf2cegx"]
+[gd_resource type="Resource" script_class="TrackTileDefinition" format=3 uid="uid://c0y310lxr0ef2"]
 
 [ext_resource type="Script" uid="uid://rimhwyviaouc" path="res://track/track_tile_definition.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Detour Bump Short 1x2"
-entry_direction = 6
-exit_direction = 2
 footprint = Vector2i(1, 2)
 entry_cell = Vector2i(0, 1)
 exit_cell = Vector2i(0, 1)
