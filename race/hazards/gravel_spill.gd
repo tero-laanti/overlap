@@ -42,13 +42,16 @@ func _physics_process(_delta: float) -> void:
 	if _run_state and not _run_state.is_round_active:
 		return
 
+	# Speed cap was set on entry and is held by the car until exit or a Wash
+	# Gate scrubs it. Re-applying per tick here would clobber a Wash Gate's
+	# clear. Grip is refreshed because the Car clears the modifier after
+	# `grip_refresh_duration`.
 	var stale_body_ids: Array[int] = []
 	for body_id in _active_cars.keys():
 		var car: Car = _active_cars[body_id]
 		if not is_instance_valid(car):
 			stale_body_ids.append(body_id)
 			continue
-		car.set_speed_cap(speed_factor)
 		car.apply_grip_penalty(grip_multiplier, grip_refresh_duration)
 
 	for body_id in stale_body_ids:
