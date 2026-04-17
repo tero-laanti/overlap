@@ -133,31 +133,29 @@ _how_ to work in the repo.
 - Starter tracks are authored from tile resources and stitched into a centerline
   at runtime. The wall and surface generation code is intentionally simple — it
   will evolve.
-- The current starter layouts map world position to `SurfaceProfile` resources
-  (`tarmac`, `sand`, `grass`) so floor regions can change car handling without
-  per-triangle floor physics.
-- Lap counting currently uses track progress plus a virtual checkpoint halfway
-  around the course rather than hand-placed checkpoint volumes.
+- Starter layouts map world position to `SurfaceProfile` resources (`tarmac`,
+  `sand`, `grass`) so floor regions can change car handling without per-triangle
+  floor physics.
+- Lap counting uses track progress plus a virtual checkpoint halfway around the
+  course rather than hand-placed checkpoint volumes.
 - Coins are instantiated under `Track/Coins` at round start and distributed
   around the active track so map swaps still produce readable pickup lines.
-- Track points now come from `TrackLayout` and `TrackTileDefinition` resources
-  rather than living directly in `track/test_track.gd`.
+- Track points come from `TrackLayout` and `TrackTileDefinition` resources.
 - `TrackTileDefinition.footprint` is enforced by layout validation. Multi-cell
   tiles claim every occupied grid cell, and `entry_cell` / `exit_cell` select
   which occupied cells own the path sockets.
-- Multi-cell footprints currently rotate in 90-degree steps only. Keep 45-degree
-  rotations on `1x1` tiles, or author a dedicated cardinal-orientation variant
-  for larger pieces.
+- Multi-cell footprints rotate in 90-degree steps only. Keep 45-degree rotations
+  on `1x1` tiles, or author a dedicated cardinal-orientation variant for larger
+  pieces.
 - Keep using deliberate collision layers as new collidable types are added. Do
   not reuse layer 1 as the default for unrelated objects.
 
 ### Pit Stop Flow
 
-- Between rounds the pit stop runs three phases in order: buy positives
-  (currently boost pads plus timer extensions, with timer-extension cost scaling
-  per purchase), draft 1 of 2 offered hazards, then place the drafted hazard on
-  the track. `main.gd` orchestrates this sequencing alongside track placement
-  state.
+- Between rounds the pit stop runs three phases in order: buy positives (boost
+  pads and timer extensions, with timer-extension cost scaling per purchase),
+  draft 1 of 2 offered hazards, then place the drafted hazard on the track.
+  `main.gd` orchestrates this sequencing alongside track placement state.
 - Placed positives and hazards persist on the track for subsequent rounds.
 
 ### Hazard types

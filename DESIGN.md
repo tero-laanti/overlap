@@ -12,7 +12,7 @@ Race laps on a circuit under a timer. Each completed lap increases a multiplier,
 
 ### Pit Stop Phase (between rounds)
 
-1. **Buy positives** — currently boost pads and timer extensions. Timer extensions already scale up with each purchase, and other shop items can follow if they prove fun in testing.
+1. **Buy positives** — spend earnings on beneficial items such as boost pads and timer-extension tokens. Timer-extension cost scales per purchase, and new shop items land as they prove fun in testing.
 2. **Draft a hazard** — pick 1 of 2 offered hazards (the lesser evil) and place it on the track.
 3. **Track mutation** (every N rounds) — circuit grows longer. Laps take more time, multiplier grows slower, earnings pressure increases.
 
@@ -50,10 +50,6 @@ Round 1 is gentle: simple track, generous timer, no hazards. Difficulty escalate
 | Balanced | Jack of all trades | No extremes, the learning car |
 
 Use exported Resource scripts for tuning so classes are easy to add.
-
-## Current Phase
-
-Phase 1: Core racing feel. Grey box car, test track, camera. Get the driving to feel great before building any systems on top of it.
 
 ## What Not To Do
 
