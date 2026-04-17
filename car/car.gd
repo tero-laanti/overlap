@@ -5,6 +5,7 @@ extends RigidBody3D
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
 const DRIFT_FEEDBACK_NODE := "DriftFeedback"
+const CAR_AUDIO_NODE := "CarAudio"
 ## Minimum forward speed before braking force applies (below this, reverse kicks in).
 const BRAKE_SPEED_THRESHOLD := 0.5
 ## Reverse acceleration is this fraction of forward acceleration.
@@ -44,6 +45,7 @@ func _ready() -> void:
 		stats = load("res://car/default_stats.tres")
 	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
 	_ensure_drift_feedback()
+	_ensure_car_audio()
 
 
 func reset_to_transform(spawn_transform: Transform3D) -> void:
@@ -249,6 +251,18 @@ func _ensure_drift_feedback() -> void:
 	new_drift_feedback.name = DRIFT_FEEDBACK_NODE
 	add_child(new_drift_feedback)
 	new_drift_feedback.bind_car(self)
+
+
+func _ensure_car_audio() -> void:
+	var car_audio := get_node_or_null(CAR_AUDIO_NODE) as CarAudio
+	if car_audio:
+		car_audio.bind_car(self)
+		return
+
+	var new_car_audio: CarAudio = CarAudio.new()
+	new_car_audio.name = CAR_AUDIO_NODE
+	add_child(new_car_audio)
+	new_car_audio.bind_car(self)
 
 
 func _get_flat_forward_vector() -> Vector3:
