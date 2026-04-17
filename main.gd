@@ -846,27 +846,33 @@ func _get_node_footprint_samples(
 		if half_extents.length_squared() <= 0.0001:
 			continue
 
+		# Sample ring is symmetric around the origin in both axes, so we only
+		# need two orthonormal ground-plane basis vectors — the sign of the
+		# local Z axis (Godot's `back`) does not matter here.
 		var collision_transform: Transform3D = sample_transform * collision_shape.transform
-		var right: Vector3 = collision_transform.basis.x
-		var forward: Vector3 = collision_transform.basis.z
-		if right.length_squared() < 0.0001:
-			right = Vector3.RIGHT
+		var width_axis: Vector3 = collision_transform.basis.x
+		var depth_axis: Vector3 = collision_transform.basis.z
+		if width_axis.length_squared() < 0.0001:
+			width_axis = Vector3.RIGHT
 		else:
-			right = right.normalized()
-		if forward.length_squared() < 0.0001:
-			forward = Vector3.BACK
+			width_axis = width_axis.normalized()
+		if depth_axis.length_squared() < 0.0001:
+			depth_axis = Vector3.BACK
 		else:
-			forward = forward.normalized()
+			depth_axis = depth_axis.normalized()
 
 		for sample in TRACK_ITEM_FOOTPRINT_SAMPLES:
 			var sample_position: Vector3 = collision_transform.origin \
-				+ right * (sample.x * half_extents.x) \
-				+ forward * (sample.y * half_extents.y)
+				+ width_axis * (sample.x * half_extents.x) \
+				+ depth_axis * (sample.y * half_extents.y)
 			sample_positions.append(sample_position)
 
 	return sample_positions
 
 
+## Collects only direct `CollisionShape3D` children. Compound bodies that
+## nest shapes under intermediate Node3Ds (none today) would need deeper
+## traversal; the placement filter silently ignores any unreachable shape.
 func _get_collision_shapes(node: Node3D) -> Array[CollisionShape3D]:
 	var collision_shapes: Array[CollisionShape3D] = []
 	for child in node.get_children():
@@ -909,8 +915,10 @@ func _get_collision_half_extents(shape: Shape3D) -> Vector2:
 		var cylinder_shape: CylinderShape3D = shape as CylinderShape3D
 		return Vector2(cylinder_shape.radius, cylinder_shape.radius)
 	if shape is CapsuleShape3D:
+		# CapsuleShape3D is Y-axis oriented; its `height` sits along world Y
+		# once placed on the track so the ground footprint is just the radius.
 		var capsule_shape: CapsuleShape3D = shape as CapsuleShape3D
-		return Vector2(capsule_shape.radius, capsule_shape.radius + capsule_shape.height * 0.5)
+		return Vector2(capsule_shape.radius, capsule_shape.radius)
 	if shape is SphereShape3D:
 		var sphere_shape: SphereShape3D = shape as SphereShape3D
 		return Vector2(sphere_shape.radius, sphere_shape.radius)
