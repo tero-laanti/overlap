@@ -32,8 +32,8 @@ _how_ to work in the repo.
   delivery modes, and placement scene paths.
 - `race/hazard_preview_helper.gd` — Shared material and collision toggling for
   hazard preview vs. placed states.
-- `race/*.gd` — Persistent positive track pieces such as Boost Pads, Coin
-  Gates, Drift Ribbons, and Wash Gates.
+- `race/*.gd` — Persistent positive track pieces such as Boost Pads, Coin Gates,
+  Drift Ribbons, and Wash Gates.
 - `race/hazards/*.gd` — Persistent track hazards. Preview visuals and hazard
   effects.
 - `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
@@ -72,6 +72,7 @@ _how_ to work in the repo.
 - If a change does two things (e.g., adds a feature AND fixes an unrelated bug),
   split it into two commits.
 - Write commit messages that say what and why, not how. The diff shows how.
+- No "review changes" commit messages. That has 0 information.
 - No WIP commits on main.
 
 ## Godot Conventions
@@ -160,37 +161,37 @@ _how_ to work in the repo.
 
 - `TrackMutator` (`track/track_mutator.gd`) splices a detour tile into the
   active `TrackLayout` on round end via `main.gd._mutate_track_if_needed()`,
-  starting at `track_mutation_start_round` (default 2). Round 1 always runs
-  the authored layout.
+  starting at `track_mutation_start_round` (default 2). Round 1 always runs the
+  authored layout.
 - The mutator builds a fresh `TrackLayout` each time instead of mutating the
-  loaded `.tres` in place; the source resource stays clean. `TestTrack.set_active_layout()`
-  swaps the live layout and synchronously rebuilds centerline, meshes, and
-  length cache so downstream consumers (coin rebuild, hazard placement, car
-  respawn) read the new geometry.
-- Detour modules live in `track/tiles/detour_*.tres`. Each must share the
-  base entry/exit directions of the straights it replaces and carry one or
-  more extra rows orthogonal to travel (`footprint.y` ≥ 2) so the detour
-  geometry sits in previously empty grid cells. Shallow 1x2 / 2x2 `bump`
-  tiles add one orthogonal row; deeper 1x3 / 2x3 `hairpin` tiles add two
-  rows for a tighter apex; `chicane` tiles put entry/exit in the middle
-  row and peak into the rows on either side for an S-curve. A detour is
-  dropped in only when every extra cell it occupies is clear in the layout.
+  loaded `.tres` in place; the source resource stays clean.
+  `TestTrack.set_active_layout()` swaps the live layout and synchronously
+  rebuilds centerline, meshes, and length cache so downstream consumers (coin
+  rebuild, hazard placement, car respawn) read the new geometry.
+- Detour modules live in `track/tiles/detour_*.tres`. Each must share the base
+  entry/exit directions of the straights it replaces and carry one or more extra
+  rows orthogonal to travel (`footprint.y` ≥ 2) so the detour geometry sits in
+  previously empty grid cells. Shallow 1x2 / 2x2 `bump` tiles add one orthogonal
+  row; deeper 1x3 / 2x3 `hairpin` tiles add two rows for a tighter apex;
+  `chicane` tiles put entry/exit in the middle row and peak into the rows on
+  either side for an S-curve. A detour is dropped in only when every extra cell
+  it occupies is clear in the layout.
 - Candidate straights are filtered out when any placed positive, hazard, or the
-  car spawn position falls inside their footprint — a mutation never orphans
-  a placed item.
+  car spawn position falls inside their footprint — a mutation never orphans a
+  placed item.
 - When a splice lands, `TrackMutator` exposes `last_mutation_changed`,
-  `last_mutation_world_center`, and `last_mutation_display_name` so callers
-  can telegraph the change. `main.gd` focuses the camera on the new section
-  and shows a full-screen "Track Evolved" preview overlay; the pit-stop
-  screen only appears after the player presses `continue_round` /
-  `place_boost_pad`.
+  `last_mutation_world_center`, and `last_mutation_display_name` so callers can
+  telegraph the change. `main.gd` focuses the camera on the new section and
+  shows a full-screen "Track Evolved" preview overlay; the pit-stop screen only
+  appears after the player presses `continue_round` / `place_boost_pad`.
 - Set `debug_round_telemetry` on the `Main` node to have per-round lap times
   printed to stdout — useful for sanity-checking that new detour shapes are
   actually slowing laps down across a run.
-- Run `godot --headless --path . --script res://scripts/validate_track_mutator.gd`
-  when touching `track_mutator.gd`, a detour tile, or the layout data model.
-  It iterates six mutations per starter layout and fails if the produced
-  layout ever breaks validation.
+- Run
+  `godot --headless --path . --script res://scripts/validate_track_mutator.gd`
+  when touching `track_mutator.gd`, a detour tile, or the layout data model. It
+  iterates six mutations per starter layout and fails if the produced layout
+  ever breaks validation.
 
 ### Pit Stop Flow
 
@@ -206,24 +207,24 @@ _how_ to work in the repo.
 
 ### Positive types
 
-| Name         | Scene path                      | Effect                                                              | Collision layer          |
-| ------------ | ------------------------------- | ------------------------------------------------------------------- | ------------------------ |
-| Time Bank    | N/A (`instant`)                | Permanently adds `+5s` to the run timer.                            | None                     |
-| Boost Pad    | `res://race/boost_pad.tscn`     | Adds a reusable forward speed burst to a chosen line.               | 5 (`track_modifier`)     |
-| Coin Gate    | `res://race/coin_gate.tscn`     | Rewards a centered pass once per lap with a multiplier-scaled cash burst. | 5 (`track_modifier`) |
-| Drift Ribbon | `res://race/drift_ribbon.tscn`  | Rewards the first in-zone drift each lap with extra carry and grip. | 5 (`track_modifier`)     |
-| Wash Gate    | `res://race/wash_gate.tscn`     | Clears temporary grip and speed penalties on pass-through.          | 5 (`track_modifier`)     |
+| Name         | Scene path                     | Effect                                                                    | Collision layer      |
+| ------------ | ------------------------------ | ------------------------------------------------------------------------- | -------------------- |
+| Time Bank    | N/A (`instant`)                | Permanently adds `+5s` to the run timer.                                  | None                 |
+| Boost Pad    | `res://race/boost_pad.tscn`    | Adds a reusable forward speed burst to a chosen line.                     | 5 (`track_modifier`) |
+| Coin Gate    | `res://race/coin_gate.tscn`    | Rewards a centered pass once per lap with a multiplier-scaled cash burst. | 5 (`track_modifier`) |
+| Drift Ribbon | `res://race/drift_ribbon.tscn` | Rewards the first in-zone drift each lap with extra carry and grip.       | 5 (`track_modifier`) |
+| Wash Gate    | `res://race/wash_gate.tscn`    | Clears temporary grip and speed penalties on pass-through.                | 5 (`track_modifier`) |
 
 ### Hazard types
 
-| Name          | Scene path                                | Effect                                                      | Collision layer      |
-| ------------- | ----------------------------------------- | ----------------------------------------------------------- | -------------------- |
-| Oil Slick     | `res://race/hazards/oil_slick.tscn`       | Collapses grip on the car for 1.5s after it passes through. | 5 (`track_modifier`) |
-| Slow Zone     | `res://race/hazards/slow_zone.tscn`       | Caps the car's speed while it remains inside the volume.    | 5 (`track_modifier`) |
-| Gravel Spill  | `res://race/hazards/gravel_spill.tscn`    | Bleeds traction and speed while the car sits in the patch.  | 5 (`track_modifier`) |
-| Crosswind Fan | `res://race/hazards/crosswind_fan.tscn`   | Pushes the car laterally off the ideal line.                | 5 (`track_modifier`) |
-| Wall Barrier  | `res://race/hazards/wall_barrier.tscn`    | Solid blocker — throws the car back on impact.              | 2 (`track_wall`)     |
-| Cone Chicane  | `res://race/hazards/cone_chicane.tscn`    | Staggered blockers that force a slalom through the segment. | 2 (`track_wall`)     |
+| Name          | Scene path                              | Effect                                                      | Collision layer      |
+| ------------- | --------------------------------------- | ----------------------------------------------------------- | -------------------- |
+| Oil Slick     | `res://race/hazards/oil_slick.tscn`     | Collapses grip on the car for 1.5s after it passes through. | 5 (`track_modifier`) |
+| Slow Zone     | `res://race/hazards/slow_zone.tscn`     | Caps the car's speed while it remains inside the volume.    | 5 (`track_modifier`) |
+| Gravel Spill  | `res://race/hazards/gravel_spill.tscn`  | Bleeds traction and speed while the car sits in the patch.  | 5 (`track_modifier`) |
+| Crosswind Fan | `res://race/hazards/crosswind_fan.tscn` | Pushes the car laterally off the ideal line.                | 5 (`track_modifier`) |
+| Wall Barrier  | `res://race/hazards/wall_barrier.tscn`  | Solid blocker — throws the car back on impact.              | 2 (`track_wall`)     |
+| Cone Chicane  | `res://race/hazards/cone_chicane.tscn`  | Staggered blockers that force a slalom through the segment. | 2 (`track_wall`)     |
 
 ### Adding a hazard
 
@@ -265,11 +266,11 @@ _how_ to work in the repo.
 - When Godot MCP is available, use this validation loop:
   1. `editor.status` to confirm the editor and bridge are connected.
   2. `scene.open` or `scene.get_tree` to inspect the target scene before
-     changing it.
+	 changing it.
   3. Make the smallest scoped change that solves the task.
   4. `run.play` the target scene, then `run.get_output`, then `run.stop`.
   5. Fix any errors introduced by the change before considering the task
-     complete.
+	 complete.
 - If the session exposes higher-level wrappers such as `godot_run_scene` or
   `godot_get_output`, treat them as aliases for the same MCP-backed loop. Do not
   invent commands that are not available in the session.
@@ -385,13 +386,26 @@ divergence this will re-introduce.
 
 ## Web Builds
 
-The game ships to itch.io via `.github/workflows/deploy.yml`. Four channels are pushed per run: `html`, `windows`, `linux`, `macos`. Local editor behavior and the exported web build do not always agree — the rules below keep the web target from silently diverging.
+The game ships to itch.io via `.github/workflows/deploy.yml`. Four channels are
+pushed per run: `html`, `windows`, `linux`, `macos`. Local editor behavior and
+the exported web build do not always agree — the rules below keep the web target
+from silently diverging.
 
 ### Resource scripts — pitfalls that only surface on web
 
-1. **Prefer plain `@export var foo: T = default` on `Resource` subclasses.** Avoid the private-backing-variable + getter/setter pattern (`var _foo: T` with `@export var foo: T: get: ...; set(value): ...`). It serializes fine on desktop, but after a script refactor the stale import cache can drop the stored overrides on web, leaving properties at their script defaults.
-2. **Avoid `@export_enum("A:0", "B:1", ...) var x: int`.** Use plain `@export var x: int = 0` and document the encoding in a comment. The `@export_enum` form is also cache-sensitive when the script's structure changes.
-3. **Reserve setter-based `@export` for cases that actually need side effects.** Observer refresh (`emit_changed` / connecting to child `changed` signals) only drives editor live-preview. Runtime code doesn't need it; removing it costs nothing at runtime.
+1. **Prefer plain `@export var foo: T = default` on `Resource` subclasses.**
+   Avoid the private-backing-variable + getter/setter pattern (`var _foo: T`
+   with `@export var foo: T: get: ...; set(value): ...`). It serializes fine on
+   desktop, but after a script refactor the stale import cache can drop the
+   stored overrides on web, leaving properties at their script defaults.
+2. **Avoid `@export_enum("A:0", "B:1", ...) var x: int`.** Use plain
+   `@export var x: int = 0` and document the encoding in a comment. The
+   `@export_enum` form is also cache-sensitive when the script's structure
+   changes.
+3. **Reserve setter-based `@export` for cases that actually need side effects.**
+   Observer refresh (`emit_changed` / connecting to child `changed` signals)
+   only drives editor live-preview. Runtime code doesn't need it; removing it
+   costs nothing at runtime.
 
 ### After any significant `Resource` script refactor
 
@@ -402,17 +416,28 @@ rm -rf .godot
 # reopen Godot; let it reimport everything
 ```
 
-Symptoms that point to a stale cache: desktop builds behave correctly, but web shows properties loading as script defaults instead of the values in `.tres` files. Cache clear first, diagnose second.
+Symptoms that point to a stale cache: desktop builds behave correctly, but web
+shows properties loading as script defaults instead of the values in `.tres`
+files. Cache clear first, diagnose second.
 
 ### Impact of the plain-`@export` preference
 
-- **Inspector UX.** No enum dropdown for direction fields; authors type raw numbers. Doesn't matter for AI-driven edits that read code, matters slightly for human authoring.
-- **Editor live refresh.** Parent resources no longer auto-repaint when a nested resource's internal property changes in the inspector. Close/reopen the scene or reselect the affected resource to force a refresh. Only affects editor authoring flow; no runtime consequence.
-- **Runtime.** Zero. Loaded properties, rotation math, track generation all behave identically.
+- **Inspector UX.** No enum dropdown for direction fields; authors type raw
+  numbers. Doesn't matter for AI-driven edits that read code, matters slightly
+  for human authoring.
+- **Editor live refresh.** Parent resources no longer auto-repaint when a nested
+  resource's internal property changes in the inspector. Close/reopen the scene
+  or reselect the affected resource to force a refresh. Only affects editor
+  authoring flow; no runtime consequence.
+- **Runtime.** Zero. Loaded properties, rotation math, track generation all
+  behave identically.
 
 ### Renderer parity
 
-`project.godot` uses the `mobile` rendering method so the local editor preview and the WebGL 2 / Compatibility fallback used by the web build share a shading path. Do not switch to `forward_plus` without also planning for the web divergence this will re-introduce.
+`project.godot` uses the `mobile` rendering method so the local editor preview
+and the WebGL 2 / Compatibility fallback used by the web build share a shading
+path. Do not switch to `forward_plus` without also planning for the web
+divergence this will re-introduce.
 
 ## Prototype-First Principle
 
