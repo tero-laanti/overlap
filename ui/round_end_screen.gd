@@ -74,7 +74,7 @@ signal continue_requested
 @onready var title_label: Label = $Center/Panel/Margin/VBox/TitleLabel
 @onready var stats_label: Label = $Center/Panel/Margin/VBox/StatsLabel
 @onready var next_round_label: Label = $Center/Panel/Margin/VBox/NextRoundLabel
-@onready var buy_time_button: Button = $Center/Panel/Margin/VBox/BuyTimeButton
+@onready var positive_offer_button_1: Button = $Center/Panel/Margin/VBox/PositiveOfferButton1
 @onready var continue_label: Label = $Center/Panel/Margin/VBox/ContinueLabel
 
 var _run_state: RunState = null
@@ -203,10 +203,10 @@ func _on_time_bank_cost_changed(_cost: int) -> void:
 
 func _ensure_dynamic_controls() -> void:
 	if _positive_offer_buttons.is_empty():
-		buy_time_button.focus_mode = Control.FOCUS_NONE
-		if not buy_time_button.pressed.is_connected(_on_positive_offer_button_pressed.bind(0)):
-			buy_time_button.pressed.connect(_on_positive_offer_button_pressed.bind(0))
-		_positive_offer_buttons.append(buy_time_button)
+		positive_offer_button_1.focus_mode = Control.FOCUS_NONE
+		if not positive_offer_button_1.pressed.is_connected(_on_positive_offer_button_pressed.bind(0)):
+			positive_offer_button_1.pressed.connect(_on_positive_offer_button_pressed.bind(0))
+		_positive_offer_buttons.append(positive_offer_button_1)
 
 		for offer_index in range(1, POSITIVE_SHORTCUTS.size()):
 			var positive_button: Button = Button.new()
@@ -409,7 +409,7 @@ func _on_viewport_size_changed() -> void:
 
 
 func _reorder_dynamic_controls() -> void:
-	var next_index: int = _shop_section_label.get_index() + 1 if _shop_section_label else buy_time_button.get_index()
+	var next_index: int = _shop_section_label.get_index() + 1 if _shop_section_label else positive_offer_button_1.get_index()
 	for positive_button in _positive_offer_buttons:
 		options_box.move_child(positive_button, next_index)
 		next_index += 1
@@ -551,7 +551,8 @@ func _refresh_display() -> void:
 		for positive_type in _pending_positive_types:
 			counts_by_type[positive_type] = counts_by_type.get(positive_type, 0) + 1
 
-		var pending_types: Array = counts_by_type.keys()
+		var pending_types: Array[int] = []
+		pending_types.assign(counts_by_type.keys())
 		pending_types.sort_custom(func(a: int, b: int) -> bool:
 			return PositiveTypeRegistry.get_display_name(a) < PositiveTypeRegistry.get_display_name(b))
 		for positive_type in pending_types:

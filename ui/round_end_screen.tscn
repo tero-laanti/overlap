@@ -65,11 +65,11 @@ theme_override_colors/font_color = Color(0.82, 0.93, 1, 1)
 horizontal_alignment = 1
 text = "Next Round Starts With --"
 
-[node name="BuyTimeButton" type="Button" parent="Center/Panel/Margin/VBox"]
+[node name="PositiveOfferButton1" type="Button" parent="Center/Panel/Margin/VBox"]
 custom_minimum_size = Vector2(0, 54)
 theme_override_font_sizes/font_size = 22
 focus_mode = 0
-text = "[B] Buy +15s Next Round ($20)"
+text = "Positive Offer 1"
 
 [node name="ContinueLabel" type="Label" parent="Center/Panel/Margin/VBox"]
 theme_override_font_sizes/font_size = 18
