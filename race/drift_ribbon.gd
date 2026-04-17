@@ -4,6 +4,10 @@ extends Area3D
 const RUN_STATE_GROUP := &"run_state"
 const LAP_TRACKER_GROUP := &"lap_tracker"
 
+const BASELINE_ACCENT_EMISSION := 0.72
+const FLASH_DURATION := 0.6
+const FLASH_PEAK_MULTIPLIER := 4.5
+
 @export var reward_boost_speed: float = 6.5
 @export var stability_grip_bonus: float = 1.15
 @export var bonus_duration: float = 0.35
@@ -25,6 +29,7 @@ var _active_cars: Dictionary[int, Car] = {}
 var _triggered_body_ids: Dictionary[int, bool] = {}
 var _base_material: StandardMaterial3D = StandardMaterial3D.new()
 var _accent_material: StandardMaterial3D = StandardMaterial3D.new()
+var _flash_time_remaining: float = 0.0
 
 
 func _ready() -> void:
@@ -64,10 +69,31 @@ func _physics_process(_delta: float) -> void:
 		_triggered_body_ids[body_id] = true
 		car.apply_forward_boost(reward_boost_speed)
 		car.apply_grip_bonus(stability_grip_bonus, bonus_duration)
+		_trigger_flash()
 
 	for body_id in stale_body_ids:
 		_active_cars.erase(body_id)
 		_triggered_body_ids.erase(body_id)
+
+
+func _process(delta: float) -> void:
+	if _flash_time_remaining <= 0.0:
+		return
+	_flash_time_remaining = maxf(_flash_time_remaining - delta, 0.0)
+	_apply_flash_emission()
+
+
+func _trigger_flash() -> void:
+	_flash_time_remaining = FLASH_DURATION
+	_apply_flash_emission()
+
+
+func _apply_flash_emission() -> void:
+	if _accent_material == null:
+		return
+	var flash_t: float = _flash_time_remaining / FLASH_DURATION
+	var multiplier: float = lerpf(1.0, FLASH_PEAK_MULTIPLIER, flash_t)
+	_accent_material.emission_energy_multiplier = BASELINE_ACCENT_EMISSION * multiplier
 
 
 func set_preview_mode(is_preview: bool) -> void:
@@ -114,7 +140,7 @@ func _on_lap_completed(_completed_laps: int) -> void:
 func _configure_materials() -> void:
 	HazardPreviewHelper.configure_materials(
 		base_mesh, accent_mesh, _base_material, _accent_material,
-		0.35, 0.0, 0.18, 0.02, 0.72)
+		0.35, 0.0, 0.18, 0.02, BASELINE_ACCENT_EMISSION)
 
 
 func _apply_visual_state() -> void:
