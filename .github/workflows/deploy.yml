@@ -11,6 +11,14 @@ env:
   # to e.g. "yourname/overlap". Not a secret — the slug is public on your itch page.
   ITCH_TARGET: ${{ vars.ITCH_TARGET }}
 
+# Group by commit SHA so two tags pointing at the same commit (e.g. a typo
+# retag like v.0.0.8 -> v0.0.8) collapse into one deploy instead of racing
+# to push duplicate itch.io userversions. cancel-in-progress: true kills
+# the earlier run when a newer tag on the same commit arrives.
+concurrency:
+  group: deploy-${{ github.sha }}
+  cancel-in-progress: true
+
 jobs:
   export:
     name: Export Godot project
