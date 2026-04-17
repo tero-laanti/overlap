@@ -23,12 +23,13 @@ func _initialize() -> void:
 		var current_layout: TrackLayout = layout
 		var start_length: int = _centerline_length(current_layout)
 		for iteration in range(ITERATIONS_PER_LAYOUT):
-			var mutated: TrackLayout = mutator.mutate_layout(current_layout, [] as Array[Vector3])
-			if mutated == null:
-				push_error("%s iteration %d: mutator returned null" % [layout_path, iteration])
+			var result: TrackMutationResult = mutator.mutate_layout(current_layout, [] as Array[Vector3])
+			if result == null or result.layout == null:
+				push_error("%s iteration %d: mutator returned null layout" % [layout_path, iteration])
 				has_failures = true
 				break
 
+			var mutated: TrackLayout = result.layout
 			var issues: PackedStringArray = mutated.get_validation_issues()
 			if not issues.is_empty():
 				for issue in issues:
@@ -43,9 +44,10 @@ func _initialize() -> void:
 				break
 
 			print(
-				"%s iter %d: tiles=%d, centerline_points=%d" % [
+				"%s iter %d: changed=%s tiles=%d centerline_points=%d" % [
 					layout_path.get_file(),
 					iteration,
+					result.changed,
 					mutated.tiles.size(),
 					centerline_size,
 				]

@@ -268,7 +268,7 @@ func _on_continue_requested() -> void:
 
 func _on_round_finished() -> void:
 	_log_round_telemetry()
-	_mutate_track_if_needed()
+	var mutation_result: TrackMutationResult = _mutate_track_if_needed()
 	_hazard_controller.clear_pending()
 	if _car:
 		_car.set_frozen(true)
@@ -276,45 +276,42 @@ func _on_round_finished() -> void:
 		_round_end_screen.configure_hazard_draft(_get_hazard_draft_options())
 	_update_car_controls()
 
-	if _track_mutator.last_mutation_changed:
-		_reveal_mutation(
-			_track_mutator.last_mutation_world_center,
-			_track_mutator.last_mutation_display_name
-		)
+	if mutation_result.changed:
+		_reveal_mutation(mutation_result)
 
 
-func _mutate_track_if_needed() -> void:
+func _mutate_track_if_needed() -> TrackMutationResult:
+	var empty_result: TrackMutationResult = TrackMutationResult.new()
 	if not track_mutation_enabled:
-		return
+		return empty_result
 	if _track == null or _run_state == null:
-		return
+		return empty_result
 	if _run_state.round_number < track_mutation_start_round:
-		return
+		return empty_result
 
 	var active_layout: TrackLayout = _track.get_active_layout()
 	if active_layout == null:
-		return
+		return empty_result
 
-	var mutated_layout: TrackLayout = _track_mutator.mutate_layout(
+	var result: TrackMutationResult = _track_mutator.mutate_layout(
 		active_layout,
 		_get_occupied_track_item_positions()
 	)
-	if mutated_layout == null or mutated_layout == active_layout:
-		return
+	if result.changed and result.layout != null and result.layout != active_layout:
+		_track.set_active_layout(result.layout)
+	return result
 
-	_track.set_active_layout(mutated_layout)
 
-
-func _reveal_mutation(world_center: Vector3, detour_name: String) -> void:
+func _reveal_mutation(mutation_result: TrackMutationResult) -> void:
 	_ensure_mutation_overlay()
 
 	if _round_end_screen:
 		_round_end_screen.visible = false
-	_position_camera_for_mutation_preview(world_center)
-	_spawn_mutation_highlight(_track_mutator.last_mutation_centerline)
+	_position_camera_for_mutation_preview(mutation_result.world_center)
+	_spawn_mutation_highlight(mutation_result.centerline, mutation_result.original_centerline)
 
 	if _mutation_overlay_body:
-		var detour_label: String = detour_name if not detour_name.is_empty() else "new detour"
+		var detour_label: String = mutation_result.display_name if not mutation_result.display_name.is_empty() else "new detour"
 		_mutation_overlay_body.text = "Spliced in: %s" % detour_label
 	if _mutation_overlay:
 		_mutation_overlay.visible = true
@@ -357,13 +354,16 @@ func _position_camera_for_mutation_preview(world_center: Vector3) -> void:
 	_camera.look_at(world_center, Vector3.UP)
 
 
-func _spawn_mutation_highlight(centerline_points: Array[Vector3]) -> void:
+func _spawn_mutation_highlight(
+	centerline_points: Array[Vector3],
+	original_centerline_points: Array[Vector3]
+) -> void:
 	_clear_mutation_highlight()
 	if _track == null:
 		return
 
 	_mutation_ghost_mesh = _spawn_mutation_ribbon(
-		_track_mutator.last_mutation_original_centerline,
+		original_centerline_points,
 		MUTATION_GHOST_COLOR,
 		MUTATION_GHOST_Y_OFFSET,
 		"MutationGhost",

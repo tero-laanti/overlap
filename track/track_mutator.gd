@@ -17,73 +17,59 @@ const DEFAULT_DETOUR_MODULES: Array[TrackTileDefinition] = [
 ## base entry/exit directions and footprint.
 @export var detour_modules: Array[TrackTileDefinition] = DEFAULT_DETOUR_MODULES
 
-## True when the most recent mutate_layout call replaced a tile. Populated
-## synchronously so callers can read it right after mutate_layout returns.
-var last_mutation_changed: bool = false
-## World-space centroid of the spliced detour's occupied cells. Zero when
-## the last call did not change the layout. Used to focus camera on the
-## new section in the pit-stop telegraph.
-var last_mutation_world_center: Vector3 = Vector3.ZERO
-## Display name of the detour tile used in the most recent splice, for UI
-## telegraph text. Empty when no mutation occurred.
-var last_mutation_display_name: String = ""
-## World-space centerline points of the spliced detour tile, ordered entry
-## → exit. Used by the reveal overlay to draw a highlight ribbon over the
-## new section. Empty when no mutation occurred.
-var last_mutation_centerline: Array[Vector3] = []
-## World-space centerline points of the straight tile that the detour
-## replaced, captured before the splice. Used by the reveal overlay to
-## draw a ghost of the old racing line for before/after comparison.
-var last_mutation_original_centerline: Array[Vector3] = []
 
-
-## Returns a duplicated layout with one straight tile replaced by a detour
-## module, or the input layout unchanged if no valid splice was possible.
-## Skips candidates whose footprint world bounds contain any of
-## occupied_world_positions so placed hazards and boost pads are not orphaned.
+## Returns a `TrackMutationResult`. `result.layout` is always the layout
+## the caller should install; when `result.changed` is true one straight
+## tile was replaced by a detour and the telegraph fields describe the
+## splice. Candidates whose footprint world bounds contain any of
+## `occupied_world_positions` are skipped so placed hazards, boost pads,
+## and the car spawn are not orphaned. If the first randomly selected
+## candidate fails the full layout validation, later candidates are tried
+## before giving up.
 func mutate_layout(
 	source_layout: TrackLayout,
 	occupied_world_positions: Array[Vector3]
-) -> TrackLayout:
-	last_mutation_changed = false
-	last_mutation_world_center = Vector3.ZERO
-	last_mutation_display_name = ""
-	last_mutation_centerline = []
-	last_mutation_original_centerline = []
+) -> TrackMutationResult:
+	var result: TrackMutationResult = TrackMutationResult.new()
+	result.layout = source_layout
 
 	if source_layout == null:
-		return source_layout
+		return result
 	if detour_modules.is_empty():
 		push_warning("TrackMutator has no detour modules configured.")
-		return source_layout
+		return result
 
 	var candidates: Array[Dictionary] = _collect_candidates(source_layout, occupied_world_positions)
 	if candidates.is_empty():
-		return source_layout
+		return result
 
-	var selected: Dictionary = candidates[randi() % candidates.size()]
-	var selected_index: int = selected["tile_index"]
-	var selected_detour: TrackTileDefinition = selected["detour_tile"]
-	var mutated_layout: TrackLayout = _build_mutated_layout(source_layout, selected_index, selected_detour)
+	candidates.shuffle()
+	for selected in candidates:
+		var selected_index: int = selected["tile_index"]
+		var selected_detour: TrackTileDefinition = selected["detour_tile"]
+		var mutated_layout: TrackLayout = _build_mutated_layout(source_layout, selected_index, selected_detour)
 
-	var validation_issues: PackedStringArray = mutated_layout.get_validation_issues()
-	if not validation_issues.is_empty():
-		for issue in validation_issues:
-			push_warning("TrackMutator rejected splice: %s" % issue)
-		return source_layout
+		var validation_issues: PackedStringArray = mutated_layout.get_validation_issues()
+		if not validation_issues.is_empty():
+			for issue in validation_issues:
+				push_warning("TrackMutator rejected splice: %s" % issue)
+			continue
 
-	var original_tile: TrackLayoutTile = source_layout.tiles[selected_index]
-	last_mutation_changed = true
-	last_mutation_display_name = selected_detour.display_name
-	last_mutation_world_center = _compute_detour_world_center(
-		source_layout.tile_size,
-		original_tile,
-		selected_detour
-	)
-	var mutated_detour_tile: TrackLayoutTile = mutated_layout.tiles[selected_index]
-	last_mutation_centerline = mutated_detour_tile.get_world_points(mutated_layout.tile_size)
-	last_mutation_original_centerline = original_tile.get_world_points(source_layout.tile_size)
-	return mutated_layout
+		var original_tile: TrackLayoutTile = source_layout.tiles[selected_index]
+		var mutated_detour_tile: TrackLayoutTile = mutated_layout.tiles[selected_index]
+		result.layout = mutated_layout
+		result.changed = true
+		result.display_name = selected_detour.display_name
+		result.world_center = _compute_detour_world_center(
+			source_layout.tile_size,
+			original_tile,
+			selected_detour
+		)
+		result.centerline = mutated_detour_tile.get_world_points(mutated_layout.tile_size)
+		result.original_centerline = original_tile.get_world_points(source_layout.tile_size)
+		return result
+
+	return result
 
 
 func _compute_detour_world_center(
