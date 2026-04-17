@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://o61f78xqx288" path="res://race/hazard_placement_controller.gd" id="hazard_placement_controller_script"]
 [ext_resource type="Script" uid="uid://437ebgb8puho" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
 [ext_resource type="Script" uid="uid://cbkha778a3etd" path="res://main.gd" id="main_script"]
+[ext_resource type="PackedScene" uid="uid://dgbttdgp7ob8w" path="res://car/assets/kenney_car_kit/sedan-sports.glb" id="car_body_scene"]
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
 [ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
@@ -29,12 +30,6 @@ tonemap_mode = 2
 
 [sub_resource type="BoxShape3D" id="car_shape"]
 size = Vector3(2, 0.5, 4)
-
-[sub_resource type="BoxMesh" id="car_mesh"]
-size = Vector3(2, 0.5, 4)
-
-[sub_resource type="StandardMaterial3D" id="car_material"]
-albedo_color = Color(0.2, 0.4, 0.8, 1)
 
 [node name="Main" type="Node3D" unique_id=983565611]
 script = ExtResource("main_script")
@@ -89,9 +84,8 @@ stats = ExtResource("car_stats")
 [node name="Collision" type="CollisionShape3D" parent="Car" unique_id=2075442314]
 shape = SubResource("car_shape")
 
-[node name="Body" type="MeshInstance3D" parent="Car" unique_id=2086963516]
-mesh = SubResource("car_mesh")
-surface_material_override/0 = SubResource("car_material")
+[node name="Body" parent="Car" instance=ExtResource("car_body_scene") unique_id=2086963516]
+transform = Transform3D(-2, 0, 0, 0, 2, 0, 0, 0, -2, 0, -0.25, 0)
 
 [node name="RunHUD" type="CanvasLayer" parent="." unique_id=1952709169]
 script = ExtResource("run_hud_script")
