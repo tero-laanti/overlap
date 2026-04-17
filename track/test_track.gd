@@ -69,6 +69,11 @@ const START_LINE_HEIGHT := 0.04
 const START_LINE_Y_OFFSET := 0.03
 const TRACK_EDGE_PADDING := 0.6
 const PLACEMENT_SURFACE_Y_OFFSET := 0.02
+## Every surface is non-overlapping in XZ and shares boundary vertices with
+## its neighbours, so they all sit on the same plane without cracks or
+## z-fighting. Gameplay elements still use PLACEMENT_SURFACE_Y_OFFSET and
+## START_LINE_Y_OFFSET to float above this plane.
+const SURFACE_Y := 0.0
 const GENERATED_ROOT_NAME := "GeneratedTrack"
 const START_SEGMENT_MAX_TURN_ANGLE := deg_to_rad(10.0)
 const START_SEGMENT_SAMPLE_DISTANCE_RATIO := 0.75
@@ -153,14 +158,47 @@ static func get_centerline_perpendicular(
 	return Vector3(-direction.z, 0.0, direction.x)
 
 
+## Builds the grass in two pieces that share no XZ area with the track, so
+## nothing is coplanar with the sand/tarmac strips. Keeps z-fighting
+## structurally impossible and leaves the centerline free to pick up Y
+## variation later (jumps, banked sections) without reworking the ground.
 func _add_ground() -> void:
+	_add_grass_infield()
+	_add_grass_outer_band()
+
+
+func _add_grass_outer_band() -> void:
+	var inner_offset: float = -(track_width / 2.0 + sand_width)
+	var outer_offset: float = inner_offset - GROUND_MARGIN
+	_add_strip_mesh("GroundOuterBand", inner_offset, outer_offset, SURFACE_Y, GRASS_COLOR)
+
+
+func _add_grass_infield() -> void:
+	if _points.size() < 3:
+		return
+
+	var inner_edge_offset: float = track_width / 2.0 + sand_width
+	var polygon_xz := PackedVector2Array()
+	polygon_xz.resize(_points.size())
+	for i in range(_points.size()):
+		var p: Vector3 = _points[i] + _perp_at(i) * inner_edge_offset
+		polygon_xz[i] = Vector2(p.x, p.z)
+
+	var tri_indices: PackedInt32Array = Geometry2D.triangulate_polygon(polygon_xz)
+	if tri_indices.is_empty():
+		return
+
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_smooth_group(-1)
+	st.set_normal(Vector3.UP)
+	for idx in tri_indices:
+		var v: Vector2 = polygon_xz[idx]
+		st.add_vertex(Vector3(v.x, SURFACE_Y, v.y))
+
 	var mi := MeshInstance3D.new()
-	mi.name = "Ground"
-	var box := BoxMesh.new()
-	var bounds: AABB = _get_track_bounds()
-	box.size = Vector3(maxf(bounds.size.x, 16.0), 0.1, maxf(bounds.size.z, 16.0))
-	mi.mesh = box
-	mi.position = Vector3(bounds.position.x + bounds.size.x * 0.5, -0.05, bounds.position.z + bounds.size.z * 0.5)
+	mi.name = "GroundInfield"
+	mi.mesh = st.commit()
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = GRASS_COLOR
 	mi.material_override = mat
@@ -266,8 +304,12 @@ func get_inside_lateral_sign(progress: float, sample_distance: float = 6.0, min_
 	return -1 if signed_angle > 0.0 else 1
 
 
-## Generates a filled band of given half-width around the centerline.
-func _add_ring_mesh(mesh_name: String, half_w: float, y_offset: float, color: Color) -> void:
+## Builds a mesh strip that follows the centerline. `side_a_offset` is the
+## perpendicular distance to the strip's infield (+perp) edge, `side_b_offset`
+## is the distance to the exterior (-perp) edge. Both are signed; require
+## `side_a_offset > side_b_offset` so the strip has positive area and the
+## generated triangles face +Y.
+func _add_strip_mesh(mesh_name: String, side_a_offset: float, side_b_offset: float, y_offset: float, color: Color) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_smooth_group(-1)
@@ -281,10 +323,10 @@ func _add_ring_mesh(mesh_name: String, half_w: float, y_offset: float, color: Co
 		var n0 := _perp_at(i)
 		var n1 := _perp_at(j)
 
-		var a := p0 + n0 * half_w + y
-		var b := p0 - n0 * half_w + y
-		var c := p1 - n1 * half_w + y
-		var d := p1 + n1 * half_w + y
+		var a := p0 + n0 * side_a_offset + y
+		var b := p0 + n0 * side_b_offset + y
+		var c := p1 + n1 * side_b_offset + y
+		var d := p1 + n1 * side_a_offset + y
 
 		st.set_normal(Vector3.UP)
 		st.add_vertex(b)
@@ -547,8 +589,11 @@ func _rebuild_generated_track() -> void:
 	_build_centerline()
 	_generated_root = _get_or_create_generated_root()
 	_add_ground()
-	_add_ring_mesh("SandSurface", track_width / 2.0 + sand_width, 0.005, SAND_COLOR)
-	_add_ring_mesh("TrackSurface", track_width / 2.0, 0.01, TARMAC_COLOR)
+	var tarmac_half: float = track_width / 2.0
+	var sand_outer: float = tarmac_half + sand_width
+	_add_strip_mesh("SandShoulderInner", sand_outer, tarmac_half, SURFACE_Y, SAND_COLOR)
+	_add_strip_mesh("SandShoulderOuter", -tarmac_half, -sand_outer, SURFACE_Y, SAND_COLOR)
+	_add_strip_mesh("TrackSurface", tarmac_half, -tarmac_half, SURFACE_Y, TARMAC_COLOR)
 	_add_start_finish_line()
 	_add_walls()
 
