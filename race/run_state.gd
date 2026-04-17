@@ -13,16 +13,16 @@ signal lap_rewarded(reward: int)
 signal round_started(round_number: int)
 signal round_finished
 signal run_failed(last_round_number: int, final_currency: int)
-signal buy_time_cost_changed(cost: int)
+signal time_bank_cost_changed(cost: int)
 
 @export var lap_tracker_path: NodePath
 @export var starting_round_time: float = DEFAULT_STARTING_ROUND_TIME
 @export var base_lap_reward: int = 10
 @export var starting_multiplier: int = 1
 @export var auto_start_run: bool = true
-@export var buy_time_base_cost: int = 20
-@export var buy_time_cost_increase: int = 20
-@export var buy_time_seconds: float = 15.0
+@export var time_bank_base_cost: int = 20
+@export var time_bank_cost_increase: int = 20
+@export var time_bank_seconds: float = 5.0
 
 var round_number: int = 0
 var round_time_remaining: float = 0.0
@@ -31,12 +31,13 @@ var last_lap_time: float = 0.0
 var current_multiplier: int = 1
 var currency: int = 0
 var round_earnings: int = 0
-var current_buy_time_cost: int = 0
+var current_time_bank_cost: int = 0
 var is_round_active: bool = false
 var is_run_over: bool = false
 
 var _lap_tracker: LapTracker = null
 var _has_external_clock_driver: bool = false
+var _base_starting_round_time: float = DEFAULT_STARTING_ROUND_TIME
 
 
 func _enter_tree() -> void:
@@ -44,6 +45,7 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	_base_starting_round_time = starting_round_time
 	_resolve_lap_tracker()
 	if auto_start_run and _should_auto_start_run():
 		start_run()
@@ -63,26 +65,29 @@ func start_run() -> void:
 func reset_for_new_run() -> void:
 	currency = 0
 	round_number = 0
-	current_buy_time_cost = maxi(buy_time_base_cost, 0)
+	starting_round_time = _base_starting_round_time
+	current_time_bank_cost = maxi(time_bank_base_cost, 0)
 	is_run_over = false
 	currency_changed.emit(currency)
-	buy_time_cost_changed.emit(current_buy_time_cost)
+	time_bank_cost_changed.emit(current_time_bank_cost)
 
 
-## Attempts to spend currency for a timer extension. Returns the seconds granted
-## (0.0 on failure) and increments the per-run cost when successful, so the next
-## purchase is more expensive. Refuses while a round is active.
-func try_buy_time() -> float:
+## Attempts to spend currency for a permanent timer extension. Returns the
+## seconds granted (0.0 on failure) and increments the per-run cost when
+## successful, so the next purchase is more expensive. Refuses while a round is
+## active.
+func try_buy_time_bank() -> float:
 	if is_round_active:
 		return 0.0
-	if current_buy_time_cost <= 0 or buy_time_seconds <= 0.0:
+	if current_time_bank_cost <= 0 or time_bank_seconds <= 0.0:
 		return 0.0
-	if not spend_currency(current_buy_time_cost):
+	if not spend_currency(current_time_bank_cost):
 		return 0.0
 
-	current_buy_time_cost += maxi(buy_time_cost_increase, 0)
-	buy_time_cost_changed.emit(current_buy_time_cost)
-	return buy_time_seconds
+	starting_round_time += time_bank_seconds
+	current_time_bank_cost += maxi(time_bank_cost_increase, 0)
+	time_bank_cost_changed.emit(current_time_bank_cost)
+	return time_bank_seconds
 
 
 func start_round(extra_start_time: float = 0.0) -> void:

@@ -16,7 +16,7 @@ const THROTTLE_DEAD_ZONE := 0.1
 const MIN_SPEED_FOR_FULL_TURN := 5.0
 ## Y position the car is locked to (ground plane).
 const GROUND_Y := 0.25
-const DEFAULT_GRIP_PENALTY_MULTIPLIER := 1.0
+const DEFAULT_GRIP_MODIFIER_MULTIPLIER := 1.0
 const DEFAULT_SPEED_CAP_FACTOR := 1.0
 ## Fraction of brake_force applied when the car exceeds a speed cap.
 const SPEED_CAP_RESISTANCE := 0.5
@@ -30,8 +30,8 @@ var throttle_input: float = 0.0
 var is_drifting: bool = false
 var controls_enabled: bool = true
 var _surface_provider: Node = null
-var _grip_penalty_multiplier: float = DEFAULT_GRIP_PENALTY_MULTIPLIER
-var _grip_penalty_time_remaining: float = 0.0
+var _grip_modifier_multiplier: float = DEFAULT_GRIP_MODIFIER_MULTIPLIER
+var _grip_modifier_time_remaining: float = 0.0
 var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
 var _pending_reset_transform: Transform3D = Transform3D.IDENTITY
 var _has_pending_reset: bool = false
@@ -55,7 +55,7 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	sleeping = false
 	_pending_reset_transform = spawn_transform
 	_has_pending_reset = true
-	_clear_grip_penalty()
+	_clear_grip_modifier()
 	clear_speed_cap()
 
 	if is_drifting:
@@ -110,14 +110,23 @@ func apply_forward_boost(boost_speed: float) -> void:
 
 
 func apply_grip_penalty(multiplier: float, duration: float) -> void:
-	var safe_multiplier: float = clampf(multiplier, 0.0, 1.0)
+	var safe_multiplier: float = clampf(multiplier, 0.0, DEFAULT_GRIP_MODIFIER_MULTIPLIER)
 	var safe_duration: float = maxf(duration, 0.0)
-	if safe_duration <= 0.0 or safe_multiplier >= DEFAULT_GRIP_PENALTY_MULTIPLIER:
-		_clear_grip_penalty()
+	if safe_duration <= 0.0 or safe_multiplier >= DEFAULT_GRIP_MODIFIER_MULTIPLIER:
+		_clear_grip_modifier()
 		return
 
-	_grip_penalty_multiplier = safe_multiplier
-	_grip_penalty_time_remaining = safe_duration
+	_apply_grip_modifier(safe_multiplier, safe_duration)
+
+
+func apply_grip_bonus(multiplier: float, duration: float) -> void:
+	var safe_multiplier: float = maxf(multiplier, DEFAULT_GRIP_MODIFIER_MULTIPLIER)
+	var safe_duration: float = maxf(duration, 0.0)
+	if safe_duration <= 0.0 or is_equal_approx(safe_multiplier, DEFAULT_GRIP_MODIFIER_MULTIPLIER):
+		_clear_grip_modifier()
+		return
+
+	_apply_grip_modifier(safe_multiplier, safe_duration)
 
 
 func set_speed_cap(factor: float) -> void:
@@ -126,6 +135,18 @@ func set_speed_cap(factor: float) -> void:
 
 func clear_speed_cap() -> void:
 	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+
+
+func clear_temporary_handling_modifiers() -> void:
+	_clear_grip_modifier()
+	clear_speed_cap()
+
+
+func apply_planar_velocity_delta(delta_velocity: Vector3) -> void:
+	var planar_delta: Vector3 = delta_velocity
+	planar_delta.y = 0.0
+	linear_velocity += planar_delta
+	sleeping = false
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
@@ -157,8 +178,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var max_speed: float = stats.max_speed * max_speed_multiplier * _speed_cap_factor
 	var reverse_max_speed: float = stats.reverse_max_speed * max_speed_multiplier * _speed_cap_factor
 	var drift_threshold: float = stats.drift_threshold * drift_threshold_multiplier
-	var grip: float = stats.grip * grip_multiplier * _grip_penalty_multiplier
-	var drift_grip: float = stats.drift_grip * drift_grip_multiplier * _grip_penalty_multiplier
+	var grip: float = stats.grip * grip_multiplier * _grip_modifier_multiplier
+	var drift_grip: float = stats.drift_grip * drift_grip_multiplier * _grip_modifier_multiplier
 	var drift_boost_force: float = stats.drift_boost_force * drift_boost_multiplier
 	var linear_drag: float = stats.linear_drag * linear_drag_multiplier
 	var turn_speed: float = stats.turn_speed * turn_speed_multiplier
@@ -228,7 +249,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var yaw := xform.basis.get_euler().y
 	xform.basis = Basis.from_euler(Vector3(0.0, yaw, 0.0))
 	state.transform = xform
-	_tick_grip_penalty(state.step)
+	_tick_grip_modifier(state.step)
 
 
 func _get_surface_profile(world_position: Vector3) -> SurfaceProfile:
@@ -293,15 +314,20 @@ func _apply_pending_reset(state: PhysicsDirectBodyState3D) -> void:
 	_has_pending_reset = false
 
 
-func _tick_grip_penalty(delta: float) -> void:
-	if _grip_penalty_time_remaining <= 0.0:
+func _tick_grip_modifier(delta: float) -> void:
+	if _grip_modifier_time_remaining <= 0.0:
 		return
 
-	_grip_penalty_time_remaining = maxf(_grip_penalty_time_remaining - delta, 0.0)
-	if is_zero_approx(_grip_penalty_time_remaining):
-		_clear_grip_penalty()
+	_grip_modifier_time_remaining = maxf(_grip_modifier_time_remaining - delta, 0.0)
+	if is_zero_approx(_grip_modifier_time_remaining):
+		_clear_grip_modifier()
 
 
-func _clear_grip_penalty() -> void:
-	_grip_penalty_multiplier = DEFAULT_GRIP_PENALTY_MULTIPLIER
-	_grip_penalty_time_remaining = 0.0
+func _apply_grip_modifier(multiplier: float, duration: float) -> void:
+	_grip_modifier_multiplier = multiplier
+	_grip_modifier_time_remaining = duration
+
+
+func _clear_grip_modifier() -> void:
+	_grip_modifier_multiplier = DEFAULT_GRIP_MODIFIER_MULTIPLIER
+	_grip_modifier_time_remaining = 0.0

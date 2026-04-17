@@ -28,8 +28,12 @@ _how_ to work in the repo.
 - `race/coin.gd` — Collectible coin pickup with multiplier-scaled payouts.
 - `race/hazard_type.gd` — Hazard registry for scene paths, names, and
   descriptions.
+- `race/positive_type.gd` — Positive-offer registry for costs, categories,
+  delivery modes, and placement scene paths.
 - `race/hazard_preview_helper.gd` — Shared material and collision toggling for
   hazard preview vs. placed states.
+- `race/*.gd` — Persistent positive track pieces such as Boost Pads, Coin
+  Gates, Drift Ribbons, and Wash Gates.
 - `race/hazards/*.gd` — Persistent track hazards. Preview visuals and hazard
   effects.
 - `race/lap_tracker.gd` — Lap progression and anti-cheese lap validation.
@@ -171,7 +175,7 @@ _how_ to work in the repo.
   rows for a tighter apex; `chicane` tiles put entry/exit in the middle
   row and peak into the rows on either side for an S-curve. A detour is
   dropped in only when every extra cell it occupies is clear in the layout.
-- Candidate straights are filtered out when any boost pad, hazard, or the
+- Candidate straights are filtered out when any placed positive, hazard, or the
   car spawn position falls inside their footprint — a mutation never orphans
   a placed item.
 - When a splice lands, `TrackMutator` exposes `last_mutation_changed`,
@@ -190,19 +194,36 @@ _how_ to work in the repo.
 
 ### Pit Stop Flow
 
-- Between rounds the pit stop runs three phases in order: buy positives (boost
-  pads and timer extensions, with timer-extension cost scaling per purchase),
-  draft 1 of 2 offered hazards, then place the drafted hazard on the track.
-  `main.gd` orchestrates this sequencing alongside track placement state.
+- Between rounds the pit stop runs three phases in order: buy 3 positive offers
+  (always 1 utility, 1 greed, 1 handling/line-edit), draft 1 of 2 offered
+  hazards (always 1 line-tax and 1 hard-reroute), then place queued positives
+  and the drafted hazard on the track. `main.gd` orchestrates this sequencing
+  alongside track placement state.
+- `Time Bank` is the anchor utility positive: each purchase permanently adds
+  `+5s` to the run's base starting round timer and raises the next Time Bank
+  cost for the same run.
 - Placed positives and hazards persist on the track for subsequent rounds.
+
+### Positive types
+
+| Name         | Scene path                      | Effect                                                              | Collision layer          |
+| ------------ | ------------------------------- | ------------------------------------------------------------------- | ------------------------ |
+| Time Bank    | N/A (`instant`)                | Permanently adds `+5s` to the run timer.                            | None                     |
+| Boost Pad    | `res://race/boost_pad.tscn`     | Adds a reusable forward speed burst to a chosen line.               | 5 (`track_modifier`)     |
+| Coin Gate    | `res://race/coin_gate.tscn`     | Rewards a centered pass once per lap with a multiplier-scaled cash burst. | 5 (`track_modifier`) |
+| Drift Ribbon | `res://race/drift_ribbon.tscn`  | Rewards the first in-zone drift each lap with extra carry and grip. | 5 (`track_modifier`)     |
+| Wash Gate    | `res://race/wash_gate.tscn`     | Clears temporary grip and speed penalties on pass-through.          | 5 (`track_modifier`)     |
 
 ### Hazard types
 
-| Name         | Scene path                             | Effect                                                      | Collision layer      |
-| ------------ | -------------------------------------- | ----------------------------------------------------------- | -------------------- |
-| Oil Slick    | `res://race/hazards/oil_slick.tscn`    | Collapses grip on the car for 1.5s after it passes through. | 5 (`track_modifier`) |
-| Slow Zone    | `res://race/hazards/slow_zone.tscn`    | Caps the car's speed while it remains inside the volume.    | 5 (`track_modifier`) |
-| Wall Barrier | `res://race/hazards/wall_barrier.tscn` | Solid blocker — throws the car back on impact.              | 2 (`track_wall`)     |
+| Name          | Scene path                                | Effect                                                      | Collision layer      |
+| ------------- | ----------------------------------------- | ----------------------------------------------------------- | -------------------- |
+| Oil Slick     | `res://race/hazards/oil_slick.tscn`       | Collapses grip on the car for 1.5s after it passes through. | 5 (`track_modifier`) |
+| Slow Zone     | `res://race/hazards/slow_zone.tscn`       | Caps the car's speed while it remains inside the volume.    | 5 (`track_modifier`) |
+| Gravel Spill  | `res://race/hazards/gravel_spill.tscn`    | Bleeds traction and speed while the car sits in the patch.  | 5 (`track_modifier`) |
+| Crosswind Fan | `res://race/hazards/crosswind_fan.tscn`   | Pushes the car laterally off the ideal line.                | 5 (`track_modifier`) |
+| Wall Barrier  | `res://race/hazards/wall_barrier.tscn`    | Solid blocker — throws the car back on impact.              | 2 (`track_wall`)     |
+| Cone Chicane  | `res://race/hazards/cone_chicane.tscn`    | Staggered blockers that force a slalom through the segment. | 2 (`track_wall`)     |
 
 ### Adding a hazard
 
@@ -220,8 +241,8 @@ _how_ to work in the repo.
    round cannot leave stale penalties.
 3. **Register in the hazard registry.** Add a new enum value to
    `HazardType.Type` in `race/hazard_type.gd`, then add matching entries to
-   `SCENE_PATHS`, `DISPLAY_NAMES`, `DESCRIPTIONS`, and `NODE_NAMES`, and include
-   the enum value in `get_available_types()`.
+   `SCENE_PATHS`, `DISPLAY_NAMES`, `DESCRIPTIONS`, `NODE_NAMES`, `CATEGORIES`,
+   and `DRAFT_WEIGHTS`, and include the enum value in `get_available_types()`.
 4. **Preview helper wiring.** In `_configure_materials`, call
    `HazardPreviewHelper.configure_materials` with the two `MeshInstance3D`
    children and two `StandardMaterial3D` instances. In `_apply_visual_state`,

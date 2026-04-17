@@ -2,9 +2,10 @@ class_name MainSceneController
 extends Node3D
 
 const HazardTypeRegistry := preload("res://race/hazard_type.gd")
-const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
+const PositiveTypeRegistry := preload("res://race/positive_type.gd")
 const COIN_SCENE: PackedScene = preload("res://race/coin.tscn")
 const TRACK_COIN_ROOT_NAME := "Coins"
+const TRACK_POSITIVE_ROOT_NAME := "Positives"
 const COIN_TRACK_Y_OFFSET := 0.01
 const COIN_PLACEMENT_BAND_ATTEMPTS := 5
 const COIN_PLACEMENT_FALLBACK_ATTEMPTS := 48
@@ -12,6 +13,7 @@ const COIN_PROGRESS_JITTER_RATIO := 0.35
 const COIN_TRACK_CLEARANCE := 1.25
 const COIN_MIN_OCCUPIED_DISTANCE := 3.0
 const COIN_LATERAL_OFFSET_RATIO := 0.2
+const TRACK_ITEM_PLACEMENT_SAMPLE_CLEARANCE := 1.0
 const TRACK_ITEM_FOOTPRINT_SAMPLES := [
 	Vector2.ZERO,
 	Vector2(-1.0, 0.0),
@@ -37,7 +39,6 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var run_state_path: NodePath
 @export var round_end_screen_path: NodePath
 @export var camera_path: NodePath
-@export var buy_boost_pad_cost: int = 30
 @export_range(0, 32, 1) var coin_count: int = 6
 @export var placement_progress_speed: float = 0.18
 @export var placement_lateral_speed: float = 7.0
@@ -62,13 +63,14 @@ var _run_state: RunState = null
 var _round_end_screen: RoundEndScreen = null
 var _camera: GameCamera = null
 var _car_spawn_transform: Transform3D = Transform3D.IDENTITY
-var _pending_start_time_bonus: float = 0.0
-var _pending_boost_pad_count: int = 0
-var _boost_pad_root: Node3D = null
+var _current_positive_offers: Array[int] = []
+var _pending_positive_queue: Array[int] = []
+var _positive_root: Node3D = null
 var _placement_overlay: CanvasLayer = null
 var _placement_panel: PanelContainer = null
 var _placement_label: Label = null
-var _placement_preview: BoostPad = null
+var _placement_preview: Node3D = null
+var _placement_preview_type: int = PositiveTypeRegistry.NONE
 var _placement_progress: float = 0.0
 var _placement_lateral_offset: float = 0.0
 var _is_placement_active: bool = false
@@ -109,7 +111,7 @@ func _ready() -> void:
 	if not _camera:
 		push_warning("MainSceneController could not find the camera.")
 
-	_ensure_boost_pad_root()
+	_ensure_positive_root()
 	_hazard_controller.configure(_track, boost_pad_track_clearance)
 	_mutation_preview.configure(_track, _camera)
 	_rebuild_track_coins()
@@ -125,16 +127,12 @@ func _ready() -> void:
 		_hazard_controller.placement_abandoned.connect(_on_hazard_placement_resolved)
 
 	if _round_end_screen:
-		_sync_buy_time_option()
-		_round_end_screen.configure_buy_boost_pad_option(buy_boost_pad_cost)
-		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
-		_round_end_screen.set_pending_boost_pad_count(_pending_boost_pad_count)
+		_round_end_screen.configure_positive_offers(_current_positive_offers)
+		_round_end_screen.set_pending_positive_types(_pending_positive_queue)
 		_round_end_screen.clear_hazard_draft()
 
-		if not _round_end_screen.buy_time_requested.is_connected(_on_buy_time_requested):
-			_round_end_screen.buy_time_requested.connect(_on_buy_time_requested)
-		if not _round_end_screen.buy_boost_pad_requested.is_connected(_on_buy_boost_pad_requested):
-			_round_end_screen.buy_boost_pad_requested.connect(_on_buy_boost_pad_requested)
+		if not _round_end_screen.positive_offer_requested.is_connected(_on_positive_offer_requested):
+			_round_end_screen.positive_offer_requested.connect(_on_positive_offer_requested)
 		if not _round_end_screen.hazard_drafted.is_connected(_on_hazard_drafted):
 			_round_end_screen.hazard_drafted.connect(_on_hazard_drafted)
 		if not _round_end_screen.continue_requested.is_connected(_on_continue_requested):
@@ -146,8 +144,8 @@ func _ready() -> void:
 			_run_state.round_finished.connect(_on_round_finished)
 		if not _run_state.round_started.is_connected(_on_round_started):
 			_run_state.round_started.connect(_on_round_started)
-		if not _run_state.buy_time_cost_changed.is_connected(_on_buy_time_cost_changed):
-			_run_state.buy_time_cost_changed.connect(_on_buy_time_cost_changed)
+		if not _run_state.time_bank_cost_changed.is_connected(_on_time_bank_cost_changed):
+			_run_state.time_bank_cost_changed.connect(_on_time_bank_cost_changed)
 		if not _run_state.run_failed.is_connected(_on_run_failed):
 			_run_state.run_failed.connect(_on_run_failed)
 		if not _run_state.last_lap_time_changed.is_connected(_on_last_lap_time_changed):
@@ -211,37 +209,30 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("place_boost_pad"):
 		get_viewport().set_input_as_handled()
-		_confirm_boost_pad_placement()
+		_confirm_positive_placement()
 
 
-func _on_buy_time_requested() -> void:
-	if _run_state == null:
+func _on_positive_offer_requested(offer_index: int) -> void:
+	if _run_state == null or _run_state.is_round_active:
+		return
+	if offer_index < 0 or offer_index >= _current_positive_offers.size():
 		return
 
-	var seconds_granted: float = _run_state.try_buy_time()
-	if seconds_granted <= 0.0:
-		return
+	var positive_type: int = _current_positive_offers[offer_index]
+	if positive_type == PositiveTypeRegistry.Type.TIME_BANK:
+		if _run_state.try_buy_time_bank() <= 0.0:
+			return
+	else:
+		var cost: int = PositiveTypeRegistry.get_base_cost(positive_type)
+		if cost <= 0 or not _run_state.spend_currency(cost):
+			return
+		_pending_positive_queue.append(positive_type)
 
-	_pending_start_time_bonus += seconds_granted
-	if _round_end_screen:
-		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
+	_sync_round_end_screen()
 
 
-func _on_buy_time_cost_changed(_cost: int) -> void:
-	_sync_buy_time_option()
-
-
-func _on_buy_boost_pad_requested() -> void:
-	if not _run_state or _run_state.is_round_active:
-		return
-	if buy_boost_pad_cost <= 0:
-		return
-	if not _run_state.spend_currency(buy_boost_pad_cost):
-		return
-
-	_pending_boost_pad_count += 1
-	if _round_end_screen:
-		_round_end_screen.set_pending_boost_pad_count(_pending_boost_pad_count)
+func _on_time_bank_cost_changed(_cost: int) -> void:
+	_sync_round_end_screen()
 
 
 func _on_hazard_drafted(hazard_type: int) -> void:
@@ -256,8 +247,8 @@ func _on_continue_requested() -> void:
 	if _should_require_hazard_draft() and not _hazard_controller.has_pending_draft():
 		return
 
-	if _pending_boost_pad_count > 0:
-		_begin_boost_pad_placement()
+	if not _pending_positive_queue.is_empty():
+		_begin_positive_placement()
 		return
 
 	if _hazard_controller.has_pending_draft():
@@ -270,10 +261,13 @@ func _on_continue_requested() -> void:
 func _on_round_finished() -> void:
 	_log_round_telemetry()
 	var mutation_result: TrackMutationResult = _mutate_track_if_needed()
+	_current_positive_offers = _get_positive_offer_types()
 	_hazard_controller.clear_pending()
 	if _car:
 		_car.set_frozen(true)
 	if _round_end_screen:
+		_round_end_screen.configure_positive_offers(_current_positive_offers)
+		_round_end_screen.set_pending_positive_types(_pending_positive_queue)
 		_round_end_screen.configure_hazard_draft(_get_hazard_draft_options())
 	_update_car_controls()
 
@@ -349,6 +343,8 @@ func _on_run_failed(_last_round_number: int, _final_currency: int) -> void:
 	# The GameOverScreen handles the UI; main just has to make sure nothing
 	# drifts into the pit-stop flow — no hazard draft, car stays frozen, no
 	# lingering placement preview or mutation preview.
+	_current_positive_offers.clear()
+	_pending_positive_queue.clear()
 	_hazard_controller.clear_pending()
 	_is_placement_active = false
 	_clear_placement_preview()
@@ -357,12 +353,16 @@ func _on_run_failed(_last_round_number: int, _final_currency: int) -> void:
 		_car.set_frozen(true)
 	if _round_end_screen:
 		_round_end_screen.visible = false
+		_round_end_screen.clear_positive_offers()
+		_round_end_screen.set_pending_positive_types(_pending_positive_queue)
 		_round_end_screen.clear_hazard_draft()
 	_update_car_controls()
 	_update_placement_overlay()
 
 
 func _on_round_started(_round_number: int) -> void:
+	_current_positive_offers.clear()
+	_pending_positive_queue.clear()
 	_is_placement_active = false
 	_clear_placement_preview()
 	_mutation_preview.hide_preview()
@@ -373,21 +373,20 @@ func _on_round_started(_round_number: int) -> void:
 	if _car:
 		_car.set_frozen(false)
 	if _round_end_screen:
+		_round_end_screen.clear_positive_offers()
+		_round_end_screen.set_pending_positive_types(_pending_positive_queue)
 		_round_end_screen.clear_hazard_draft()
 	_update_car_controls()
 	_update_placement_overlay()
 	_focus_camera_on(_car, false)
 
 
-func _sync_buy_time_option() -> void:
+func _sync_round_end_screen() -> void:
 	if _round_end_screen == null or _run_state == null:
 		return
 
-	_round_end_screen.configure_buy_time_option(
-		_run_state.current_buy_time_cost,
-		_run_state.buy_time_seconds,
-		maxi(_run_state.buy_time_cost_increase, 0)
-	)
+	_round_end_screen.configure_positive_offers(_current_positive_offers)
+	_round_end_screen.set_pending_positive_types(_pending_positive_queue)
 
 
 func _start_next_round() -> void:
@@ -395,20 +394,17 @@ func _start_next_round() -> void:
 		return
 	if _is_placement_active or _hazard_controller.is_active():
 		return
-
-	var extra_start_time: float = _pending_start_time_bonus
-	_pending_start_time_bonus = 0.0
-	if _round_end_screen:
-		_round_end_screen.set_pending_start_time_bonus(_pending_start_time_bonus)
-		_round_end_screen.set_pending_boost_pad_count(_pending_boost_pad_count)
+	if not _pending_positive_queue.is_empty():
+		_begin_positive_placement()
+		return
 
 	_car.reset_to_transform(_get_car_start_transform())
 	_focus_camera_on(_car, true)
-	_run_state.start_round(extra_start_time)
+	_run_state.start_round()
 
 
-func _begin_boost_pad_placement() -> void:
-	if not _track or BOOST_PAD_SCENE == null:
+func _begin_positive_placement() -> void:
+	if not _track or _pending_positive_queue.is_empty():
 		_start_next_round()
 		return
 
@@ -426,31 +422,53 @@ func _begin_boost_pad_placement() -> void:
 		_round_end_screen.visible = false
 
 	_spawn_placement_preview()
+	if _placement_preview == null:
+		if not _pending_positive_queue.is_empty():
+			_pending_positive_queue.remove_at(0)
+			_sync_round_end_screen()
+		_is_placement_active = false
+		_update_car_controls()
+		_update_placement_overlay()
+		if not _pending_positive_queue.is_empty():
+			_begin_positive_placement()
+			return
+		if _hazard_controller.has_pending_draft():
+			_begin_hazard_position_selection()
+		else:
+			_start_next_round()
+		return
+
 	_update_car_controls()
 	_update_placement_preview()
 	_update_placement_overlay()
 	_focus_camera_on(_placement_preview, true)
 
 
-func _confirm_boost_pad_placement() -> void:
+func _confirm_positive_placement() -> void:
 	if not _track or not _placement_preview:
 		return
 
-	var can_place: bool = _can_place_boost_pad(_placement_progress, _placement_lateral_offset)
+	var can_place: bool = _can_place_positive(_placement_progress, _placement_lateral_offset)
 	if not can_place:
 		return
 
-	_placement_preview.set_preview_mode(false)
-	_placement_preview.name = "BoostPad"
+	HazardPreviewHelper.set_preview(_placement_preview, false, true, true)
+	var base_name: String = PositiveTypeRegistry.get_node_name(_placement_preview_type)
+	_placement_preview.name = "%s%d" % [
+		base_name,
+		_count_track_items_with_base_name(base_name, _positive_root, _placement_preview) + 1,
+	]
 	_placement_preview = null
-	_pending_boost_pad_count = maxi(_pending_boost_pad_count - 1, 0)
-	if _round_end_screen:
-		_round_end_screen.set_pending_boost_pad_count(_pending_boost_pad_count)
+	_placement_preview_type = PositiveTypeRegistry.NONE
+	if not _pending_positive_queue.is_empty():
+		_pending_positive_queue.remove_at(0)
+	_sync_round_end_screen()
 
-	if _pending_boost_pad_count > 0:
+	if not _pending_positive_queue.is_empty():
 		_spawn_placement_preview()
 		_update_placement_preview()
-		_focus_camera_on(_placement_preview, true)
+		if _placement_preview:
+			_focus_camera_on(_placement_preview, true)
 		return
 
 	_is_placement_active = false
@@ -509,27 +527,39 @@ func _update_placement_preview() -> void:
 		return
 
 	var preview_transform: Transform3D = _track.get_track_transform(_placement_progress, _placement_lateral_offset)
-	var can_place: bool = _can_place_boost_pad(_placement_progress, _placement_lateral_offset)
+	var can_place: bool = _can_place_positive(_placement_progress, _placement_lateral_offset)
 	_placement_preview.global_transform = preview_transform
-	_placement_preview.set_preview_valid(can_place)
+	HazardPreviewHelper.set_preview(_placement_preview, true, can_place, true)
 	_update_placement_overlay()
 
 
 func _spawn_placement_preview() -> void:
 	_clear_placement_preview()
-	if _boost_pad_root == null:
-		_ensure_boost_pad_root()
-	if _boost_pad_root == null:
+	if _positive_root == null:
+		_ensure_positive_root()
+	if _positive_root == null or _pending_positive_queue.is_empty():
 		return
 
-	_placement_preview = BOOST_PAD_SCENE.instantiate() as BoostPad
+	_placement_preview_type = _pending_positive_queue[0]
+	var scene_path: String = PositiveTypeRegistry.get_scene_path(_placement_preview_type)
+	if scene_path.is_empty():
+		push_warning("MainSceneController has no placeable scene for positive type %d." % _placement_preview_type)
+		return
+
+	var preview_scene: PackedScene = load(scene_path) as PackedScene
+	if preview_scene == null:
+		push_warning("MainSceneController failed to load a positive scene for type %d." % _placement_preview_type)
+		return
+
+	_placement_preview = preview_scene.instantiate() as Node3D
 	if _placement_preview == null:
-		push_warning("MainSceneController failed to instantiate the boost pad preview.")
+		push_warning("MainSceneController failed to instantiate the positive preview for type %d." % _placement_preview_type)
+		_placement_preview_type = PositiveTypeRegistry.NONE
 		return
 
-	_placement_preview.name = "BoostPadPreview"
-	_placement_preview.set_preview_mode(true)
-	_boost_pad_root.add_child(_placement_preview)
+	_placement_preview.name = "%sPreview" % PositiveTypeRegistry.get_node_name(_placement_preview_type)
+	HazardPreviewHelper.set_preview(_placement_preview, true, true, true)
+	_positive_root.add_child(_placement_preview)
 
 
 func _clear_placement_preview() -> void:
@@ -538,19 +568,20 @@ func _clear_placement_preview() -> void:
 
 	_placement_preview.queue_free()
 	_placement_preview = null
+	_placement_preview_type = PositiveTypeRegistry.NONE
 
 
-func _ensure_boost_pad_root() -> void:
+func _ensure_positive_root() -> void:
 	if _track == null:
 		return
 
-	_boost_pad_root = _track.get_node_or_null("BoostPads") as Node3D
-	if _boost_pad_root:
+	_positive_root = _track.get_node_or_null(TRACK_POSITIVE_ROOT_NAME) as Node3D
+	if _positive_root:
 		return
 
-	_boost_pad_root = Node3D.new()
-	_boost_pad_root.name = "BoostPads"
-	_track.add_child(_boost_pad_root)
+	_positive_root = Node3D.new()
+	_positive_root.name = TRACK_POSITIVE_ROOT_NAME
+	_track.add_child(_positive_root)
 
 
 func _ensure_placement_overlay() -> void:
@@ -602,20 +633,25 @@ func _update_placement_overlay() -> void:
 			_placement_lateral_offset,
 			boost_pad_track_clearance
 		)
-		var is_overlapping_existing_pad: bool = false
+		var is_overlapping_existing_item: bool = false
 		if is_on_valid_track:
 			var placement_transform: Transform3D = _track.get_track_transform(_placement_progress, _placement_lateral_offset)
-			is_overlapping_existing_pad = _does_boost_pad_overlap_existing(placement_transform)
+			is_overlapping_existing_item = not _is_track_item_clear(
+				_placement_preview,
+				placement_transform,
+				_get_occupied_track_item_positions()
+			)
 
-		var can_place: bool = is_on_valid_track and not is_overlapping_existing_pad
-		var remaining_after_place: int = maxi(_pending_boost_pad_count - 1, 0)
+		var can_place: bool = is_on_valid_track and not is_overlapping_existing_item
+		var remaining_after_place: int = maxi(_pending_positive_queue.size() - 1, 0)
 		var status_text: String = "Ready to place on tarmac"
 		if not is_on_valid_track:
 			status_text = "Move onto the tarmac to place"
-		elif is_overlapping_existing_pad:
-			status_text = "Move away from another boost pad"
+		elif is_overlapping_existing_item:
+			status_text = "Move away from another placed item"
 
-		_placement_label.text = "Place Boost Pad\nThrottle / Brake: move around the track\nSteer: shift across the lane\nSpace / Enter: place\n%s\nPads left after this: %d" % [
+		_placement_label.text = "Place %s\nThrottle / Brake: move around the track\nSteer: shift across the lane\nSpace / Enter: place\n%s\nQueued after this: %d" % [
+			PositiveTypeRegistry.get_display_name(_placement_preview_type),
 			status_text,
 			remaining_after_place,
 		]
@@ -678,40 +714,81 @@ func _focus_camera_on(target: Node3D, snap: bool) -> void:
 		_camera.snap_to_target()
 
 
-func _can_place_boost_pad(progress: float, lateral_offset: float) -> bool:
-	if _track == null:
+func _can_place_positive(progress: float, lateral_offset: float) -> bool:
+	if _track == null or _placement_preview == null:
 		return false
 	if not _track.is_track_position_valid(progress, lateral_offset, boost_pad_track_clearance):
 		return false
 
 	var placement_transform: Transform3D = _track.get_track_transform(progress, lateral_offset)
-	return not _does_boost_pad_overlap_existing(placement_transform)
-
-
-func _does_boost_pad_overlap_existing(placement_transform: Transform3D) -> bool:
-	if _boost_pad_root == null:
-		return false
-
-	for child in _boost_pad_root.get_children():
-		var existing_pad: BoostPad = child as BoostPad
-		if existing_pad == null or existing_pad == _placement_preview:
-			continue
-
-		if BoostPad.footprints_overlap(placement_transform, existing_pad.global_transform):
-			return true
-
-	return false
+	return _is_track_item_clear(_placement_preview, placement_transform, _get_occupied_track_item_positions())
 
 
 func _get_hazard_draft_options() -> Array[int]:
 	if not _should_require_hazard_draft():
 		return []
-	var all_types: Array[int] = HazardTypeRegistry.get_available_types()
-	all_types.shuffle()
 	var offered: Array[int] = []
-	for i in range(mini(HAZARD_DRAFT_OPTION_COUNT, all_types.size())):
-		offered.append(all_types[i])
+	var line_tax_type: int = _pick_weighted_hazard_type(
+		HazardTypeRegistry.get_available_types_for_category(HazardTypeRegistry.Category.LINE_TAX)
+	)
+	var hard_reroute_type: int = _pick_weighted_hazard_type(
+		HazardTypeRegistry.get_available_types_for_category(HazardTypeRegistry.Category.HARD_REROUTE)
+	)
+	if HazardTypeRegistry.is_valid_type(line_tax_type):
+		offered.append(line_tax_type)
+	if HazardTypeRegistry.is_valid_type(hard_reroute_type):
+		offered.append(hard_reroute_type)
 	return offered
+
+
+func _get_positive_offer_types() -> Array[int]:
+	var offered: Array[int] = []
+	for category in PositiveTypeRegistry.get_offer_categories():
+		var positive_type: int = _pick_weighted_positive_type(
+			PositiveTypeRegistry.get_available_types_for_category(category)
+		)
+		if PositiveTypeRegistry.is_valid_type(positive_type):
+			offered.append(positive_type)
+	return offered
+
+
+func _pick_weighted_positive_type(candidates: Array[int]) -> int:
+	return _pick_weighted_type(
+		candidates,
+		func(candidate: int) -> int:
+			return PositiveTypeRegistry.get_offer_weight(candidate),
+		PositiveTypeRegistry.NONE
+	)
+
+
+func _pick_weighted_hazard_type(candidates: Array[int]) -> int:
+	return _pick_weighted_type(
+		candidates,
+		func(candidate: int) -> int:
+			return HazardTypeRegistry.get_draft_weight(candidate),
+		HazardTypeRegistry.NONE
+	)
+
+
+func _pick_weighted_type(candidates: Array[int], weight_getter: Callable, fallback: int) -> int:
+	if candidates.is_empty():
+		return fallback
+
+	var total_weight: int = 0
+	for candidate in candidates:
+		total_weight += maxi(int(weight_getter.call(candidate)), 0)
+
+	if total_weight <= 0:
+		return candidates[0]
+
+	var roll: int = randi_range(1, total_weight)
+	var running_weight: int = 0
+	for candidate in candidates:
+		running_weight += maxi(int(weight_getter.call(candidate)), 0)
+		if roll <= running_weight:
+			return candidate
+
+	return candidates[0]
 
 
 func _should_require_hazard_draft() -> bool:
@@ -721,7 +798,7 @@ func _should_require_hazard_draft() -> bool:
 func _get_occupied_track_item_positions() -> Array[Vector3]:
 	var occupied_positions: Array[Vector3] = []
 	_append_node_footprint_samples(_car, occupied_positions, _get_car_start_transform(), true)
-	_append_track_item_positions(_boost_pad_root, occupied_positions)
+	_append_track_item_positions(_positive_root, occupied_positions)
 	_append_track_item_positions(_hazard_controller.get_hazard_root(), occupied_positions)
 	return occupied_positions
 
@@ -746,42 +823,82 @@ func _append_node_footprint_samples(
 	if node == null:
 		return
 
+	occupied_positions.append_array(_get_node_footprint_samples(node, root_transform, use_root_transform))
+
+
+func _get_node_footprint_samples(
+	node: Node3D,
+	root_transform: Transform3D = Transform3D.IDENTITY,
+	use_root_transform: bool = false
+) -> Array[Vector3]:
+	var sample_positions: Array[Vector3] = []
+	if node == null:
+		return sample_positions
+
 	var sample_transform: Transform3D = root_transform if use_root_transform else node.global_transform
-	occupied_positions.append(sample_transform.origin)
+	sample_positions.append(sample_transform.origin)
 
-	var collision_shape: CollisionShape3D = _find_collision_shape(node)
-	if collision_shape == null or collision_shape.shape == null:
-		return
+	for collision_shape in _get_collision_shapes(node):
+		if collision_shape == null or collision_shape.shape == null:
+			continue
 
-	var half_extents: Vector2 = _get_collision_half_extents(collision_shape.shape)
-	if half_extents.length_squared() <= 0.0001:
-		return
+		var half_extents: Vector2 = _get_collision_half_extents(collision_shape.shape)
+		if half_extents.length_squared() <= 0.0001:
+			continue
 
-	var collision_transform: Transform3D = sample_transform * collision_shape.transform
-	var right: Vector3 = collision_transform.basis.x
-	var forward: Vector3 = collision_transform.basis.z
-	if right.length_squared() < 0.0001:
-		right = Vector3.RIGHT
-	else:
-		right = right.normalized()
-	if forward.length_squared() < 0.0001:
-		forward = Vector3.BACK
-	else:
-		forward = forward.normalized()
+		var collision_transform: Transform3D = sample_transform * collision_shape.transform
+		var right: Vector3 = collision_transform.basis.x
+		var forward: Vector3 = collision_transform.basis.z
+		if right.length_squared() < 0.0001:
+			right = Vector3.RIGHT
+		else:
+			right = right.normalized()
+		if forward.length_squared() < 0.0001:
+			forward = Vector3.BACK
+		else:
+			forward = forward.normalized()
 
-	for sample in TRACK_ITEM_FOOTPRINT_SAMPLES:
-		var sample_position: Vector3 = collision_transform.origin \
-			+ right * (sample.x * half_extents.x) \
-			+ forward * (sample.y * half_extents.y)
-		occupied_positions.append(sample_position)
+		for sample in TRACK_ITEM_FOOTPRINT_SAMPLES:
+			var sample_position: Vector3 = collision_transform.origin \
+				+ right * (sample.x * half_extents.x) \
+				+ forward * (sample.y * half_extents.y)
+			sample_positions.append(sample_position)
+
+	return sample_positions
 
 
-func _find_collision_shape(node: Node3D) -> CollisionShape3D:
+func _get_collision_shapes(node: Node3D) -> Array[CollisionShape3D]:
+	var collision_shapes: Array[CollisionShape3D] = []
 	for child in node.get_children():
 		var collision_shape: CollisionShape3D = child as CollisionShape3D
 		if collision_shape != null:
-			return collision_shape
-	return null
+			collision_shapes.append(collision_shape)
+	return collision_shapes
+
+
+func _is_track_item_clear(
+	node: Node3D,
+	item_transform: Transform3D,
+	occupied_positions: Array[Vector3]
+) -> bool:
+	var candidate_positions: Array[Vector3] = _get_node_footprint_samples(node, item_transform, true)
+	for candidate_position in candidate_positions:
+		for occupied_position in occupied_positions:
+			if candidate_position.distance_to(occupied_position) < TRACK_ITEM_PLACEMENT_SAMPLE_CLEARANCE:
+				return false
+	return true
+
+
+func _count_track_items_with_base_name(base_name: String, root: Node3D, exclude: Node3D) -> int:
+	if root == null:
+		return 0
+	var count: int = 0
+	for child in root.get_children():
+		if child == exclude:
+			continue
+		if child.name.begins_with(base_name):
+			count += 1
+	return count
 
 
 func _get_collision_half_extents(shape: Shape3D) -> Vector2:

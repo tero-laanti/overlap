@@ -1,0 +1,71 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://race/hazards/cone_chicane.gd" id="1"]
+
+[sub_resource type="BoxShape3D" id="1"]
+size = Vector3(1.0, 1.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="2"]
+size = Vector3(1.0, 1.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="3"]
+size = Vector3(1.0, 1.2, 0.8)
+
+[sub_resource type="BoxMesh" id="4"]
+size = Vector3(1.0, 1.2, 0.8)
+
+[sub_resource type="BoxMesh" id="5"]
+size = Vector3(1.0, 1.2, 0.8)
+
+[sub_resource type="BoxMesh" id="6"]
+size = Vector3(1.0, 1.2, 0.8)
+
+[sub_resource type="BoxMesh" id="7"]
+size = Vector3(1.12, 0.16, 0.92)
+
+[sub_resource type="BoxMesh" id="8"]
+size = Vector3(1.12, 0.16, 0.92)
+
+[sub_resource type="BoxMesh" id="9"]
+size = Vector3(1.12, 0.16, 0.92)
+
+[node name="ConeChicane" type="StaticBody3D"]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(-1.35, 0.6, -0.85)
+shape = SubResource("1")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="."]
+position = Vector3(1.2, 0.6, 0)
+shape = SubResource("2")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="."]
+position = Vector3(-0.95, 0.6, 0.9)
+shape = SubResource("3")
+
+[node name="BaseMeshA" type="MeshInstance3D" parent="."]
+position = Vector3(-1.35, 0.6, -0.85)
+mesh = SubResource("4")
+
+[node name="BaseMeshB" type="MeshInstance3D" parent="."]
+position = Vector3(1.2, 0.6, 0)
+mesh = SubResource("5")
+
+[node name="BaseMeshC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.95, 0.6, 0.9)
+mesh = SubResource("6")
+
+[node name="AccentMeshA" type="MeshInstance3D" parent="."]
+position = Vector3(-1.35, 1.28, -0.85)
+mesh = SubResource("7")
+
+[node name="AccentMeshB" type="MeshInstance3D" parent="."]
+position = Vector3(1.2, 1.28, 0)
+mesh = SubResource("8")
+
+[node name="AccentMeshC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.95, 1.28, 0.9)
+mesh = SubResource("9")
