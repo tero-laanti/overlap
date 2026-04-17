@@ -1,9 +1,9 @@
 class_name DriftFeedback
 extends Node3D
 
-## Rear emitter offsets match the current 2x0.5x4 grey-box car body in main.tscn.
-const LEFT_REAR_SMOKE_OFFSET := Vector3(-0.75, -0.18, 1.35)
-const RIGHT_REAR_SMOKE_OFFSET := Vector3(0.75, -0.18, 1.35)
+## Rear emitter offsets line up with the Kenney sedan-sports rear wheels under Car/Body.
+const LEFT_REAR_SMOKE_OFFSET := Vector3(-0.85, -0.18, 1.35)
+const RIGHT_REAR_SMOKE_OFFSET := Vector3(0.85, -0.18, 1.35)
 const SMOKE_AMOUNT := 18
 const SMOKE_LIFETIME := 0.45
 const SMOKE_SPREAD := 30.0
