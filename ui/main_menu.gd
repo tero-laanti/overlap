@@ -31,11 +31,13 @@ const START_TRIGGER_IGNORED_KEYCODES: Array[int] = [
 @export var track_path: NodePath
 @export var camera_path: NodePath
 @export var track_row_path: NodePath
+@export var mute_button_path: NodePath
 @export var camera_height: float = 90.0
 @export var camera_radius: float = 40.0
 
 var _track: TestTrack = null
 var _menu_camera: Camera3D = null
+var _mute_button: Button = null
 var _track_buttons: Array[Button] = []
 var _orbit_focus: Vector3 = Vector3.ZERO
 var _orbit_angle: float = 0.0
@@ -45,9 +47,11 @@ var _buttons_collected: bool = false
 func _ready() -> void:
 	_track = get_node_or_null(track_path) as TestTrack
 	_menu_camera = get_node_or_null(camera_path) as Camera3D
+	_mute_button = get_node_or_null(mute_button_path) as Button
 	_collect_track_buttons()
 	_warn_about_track_option_drift()
 	_apply_selection(GameSession.selected_track_index)
+	_setup_mute_button()
 
 
 func _process(delta: float) -> void:
@@ -177,6 +181,25 @@ func _make_selected_button_style() -> StyleBoxFlat:
 	style.corner_radius_bottom_right = 8
 	style.corner_radius_bottom_left = 8
 	return style
+
+
+func _setup_mute_button() -> void:
+	if _mute_button == null:
+		return
+	if not _mute_button.pressed.is_connected(_on_mute_button_pressed):
+		_mute_button.pressed.connect(_on_mute_button_pressed)
+	_refresh_mute_button_label()
+
+
+func _on_mute_button_pressed() -> void:
+	GameSession.toggle_audio_muted()
+	_refresh_mute_button_label()
+
+
+func _refresh_mute_button_label() -> void:
+	if _mute_button == null:
+		return
+	_mute_button.text = "Sound Off" if GameSession.is_audio_muted else "Sound On"
 
 
 func _update_camera_pose() -> void:
