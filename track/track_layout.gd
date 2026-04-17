@@ -15,12 +15,10 @@ const CONNECTION_EPSILON := 0.05
 var _observed_tiles: Array[TrackLayoutTileResource] = []
 
 
-func _init() -> void:
-	_refresh_tile_observers()
-
-
 ## TestTrack calls this after loading or swapping layouts so nested tile
 ## resources still bubble `changed` up without relying on setter exports.
+## Resource load populates `tiles` after `_init` runs, so wiring observers
+## here (instead of in `_init`) is the only way to see the real tiles.
 func refresh_tile_observers() -> void:
 	_refresh_tile_observers()
 
