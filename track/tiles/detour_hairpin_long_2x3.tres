@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TrackTileDefinition" format=3 uid="uid://cfluejcky4gw2"]
+
+[ext_resource type="Script" uid="uid://rimhwyviaouc" path="res://track/track_tile_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Detour Hairpin Long 2x3"
+footprint = Vector2i(2, 3)
+entry_cell = Vector2i(0, 2)
+exit_cell = Vector2i(1, 2)
+interior_points = PackedVector3Array(-0.3, 0, 1.8, -0.1, 0, 1.26, 0.1, 0, 0.59, 0.3, 0, 0.05, 0.42, 0, -0.15, 0.58, 0, -0.15, 0.7, 0, 0.05, 0.9, 0, 0.59, 1.1, 0, 1.26, 1.3, 0, 1.8)

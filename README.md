@@ -12,6 +12,7 @@ Overlap is an early-stage Godot 4.6 arcade racing game prototype built around an
 - Repeatable round loop with countdown, lap timer, multiplier, and lap-reward currency HUD
 - Basic coin collectibles with multiplier-scaled payouts, per-lap respawn, and runtime round-start placement on the active track
 - Round-end pit stop with a three-phase flow: buy positives (boost pads and timer extensions, with timer-extension cost scaling per purchase), draft 1 of 2 offered hazards, then place the drafted hazard on the track before the next round
+- Between-round track evolution: starting at round 2, one straight is spliced into a detour module so laps grow longer over the course of a run
 - Dynamic follow camera with speed-based zoom
 - Jolt Physics at 120Hz tick rate
 - Godot MCP Bridge for editor automation

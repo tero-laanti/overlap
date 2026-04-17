@@ -298,7 +298,7 @@ func _build_visual_layout() -> void:
 	if _shop_section_label == null:
 		_shop_section_label = Label.new()
 		_shop_section_label.name = "ShopSectionLabel"
-		_shop_section_label.text = "1. Buy Track Setup"
+		_shop_section_label.text = "Buy Track Setup"
 		_shop_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		_shop_section_label.add_theme_color_override("font_color", SECTION_TEXT_COLOR)
 		options_box.add_child(_shop_section_label)
@@ -567,7 +567,7 @@ func _refresh_display() -> void:
 	if _hazard_draft_section:
 		_hazard_draft_section.visible = _requires_hazard_draft
 		if _hazard_draft_title:
-			_hazard_draft_title.text = "2. Draft the Lesser Evil"
+			_hazard_draft_title.text = "Draft the Lesser Evil"
 		for button_index in range(_hazard_draft_buttons.size()):
 			var hazard_button: Button = _hazard_draft_buttons[button_index]
 			var has_option: bool = button_index < _hazard_draft_options.size()

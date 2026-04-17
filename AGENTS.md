@@ -41,6 +41,8 @@ _how_ to work in the repo.
   track tiles.
 - `track/track_tile_definition.gd` — Tile shape resource describing entry/exit
   sockets and local centerline points.
+- `track/track_mutator.gd` — Round-end track evolution. Replaces one straight
+  tile with a detour module so laps lengthen over the course of a run.
 - `ui/run_hud.gd` — Prototype race HUD for lap/timer/economy state.
 - `main.tscn` — Main scene. Car, track, camera, lighting, environment.
 
@@ -149,6 +151,42 @@ _how_ to work in the repo.
   pieces.
 - Keep using deliberate collision layers as new collidable types are added. Do
   not reuse layer 1 as the default for unrelated objects.
+
+### Track evolution
+
+- `TrackMutator` (`track/track_mutator.gd`) splices a detour tile into the
+  active `TrackLayout` on round end via `main.gd._mutate_track_if_needed()`,
+  starting at `track_mutation_start_round` (default 2). Round 1 always runs
+  the authored layout.
+- The mutator builds a fresh `TrackLayout` each time instead of mutating the
+  loaded `.tres` in place; the source resource stays clean. `TestTrack.set_active_layout()`
+  swaps the live layout and synchronously rebuilds centerline, meshes, and
+  length cache so downstream consumers (coin rebuild, hazard placement, car
+  respawn) read the new geometry.
+- Detour modules live in `track/tiles/detour_*.tres`. Each must share the
+  base entry/exit directions of the straights it replaces and carry one or
+  more extra rows orthogonal to travel (`footprint.y` ≥ 2) so the detour
+  geometry sits in previously empty grid cells. Shallow 1x2 / 2x2 `bump`
+  tiles add one orthogonal row; deeper 1x3 / 2x3 `hairpin` tiles add two
+  rows for a tighter apex; `chicane` tiles put entry/exit in the middle
+  row and peak into the rows on either side for an S-curve. A detour is
+  dropped in only when every extra cell it occupies is clear in the layout.
+- Candidate straights are filtered out when any boost pad, hazard, or the
+  car spawn position falls inside their footprint — a mutation never orphans
+  a placed item.
+- When a splice lands, `TrackMutator` exposes `last_mutation_changed`,
+  `last_mutation_world_center`, and `last_mutation_display_name` so callers
+  can telegraph the change. `main.gd` focuses the camera on the new section
+  and shows a full-screen "Track Evolved" preview overlay; the pit-stop
+  screen only appears after the player presses `continue_round` /
+  `place_boost_pad`.
+- Set `debug_round_telemetry` on the `Main` node to have per-round lap times
+  printed to stdout — useful for sanity-checking that new detour shapes are
+  actually slowing laps down across a run.
+- Run `godot --headless --path . --script res://scripts/validate_track_mutator.gd`
+  when touching `track_mutator.gd`, a detour tile, or the layout data model.
+  It iterates six mutations per starter layout and fails if the produced
+  layout ever breaks validation.
 
 ### Pit Stop Flow
 

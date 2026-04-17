@@ -20,6 +20,12 @@ const PLACEMENT_PANEL_BORDER := Color(0.48, 0.58, 0.72, 0.5)
 const PLACEMENT_WARNING_BORDER := Color(1.0, 0.45, 0.35, 0.9)
 const PLACEMENT_TEXT_COLOR := Color(0.95, 0.97, 1.0, 1.0)
 const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
+const MUTATION_PREVIEW_CAMERA_HEIGHT := 95.0
+const MUTATION_PREVIEW_CAMERA_OFFSET := 14.0
+const MUTATION_HIGHLIGHT_Y_OFFSET := 0.04
+const MUTATION_HIGHLIGHT_COLOR := Color(1.0, 0.55, 0.88, 0.42)
+const MUTATION_GHOST_Y_OFFSET := 0.025
+const MUTATION_GHOST_COLOR := Color(0.9, 0.96, 1.0, 0.22)
 
 @export var track_path: NodePath
 @export var car_path: NodePath
@@ -33,6 +39,17 @@ const PLACEMENT_WARNING_TEXT_COLOR := Color(1.0, 0.78, 0.72, 1.0)
 @export var boost_pad_track_clearance: float = 1.5
 ## Fixed RNG seed for deterministic runs. 0 = use randomize() (non-deterministic).
 @export var deterministic_seed: int = 0
+
+@export_group("Track Mutation")
+@export var track_mutation_enabled: bool = true
+## The first round after which the track starts mutating. Round 1 plays
+## on the authored layout so players establish a baseline racing line.
+@export_range(2, 32, 1) var track_mutation_start_round: int = 2
+
+@export_group("Debug")
+## Prints per-round lap times to stdout when true. Lets playtest sessions
+## show how detours reshape lap pacing across a run.
+@export var debug_round_telemetry: bool = false
 
 var _track: TestTrack = null
 var _car: Car = null
@@ -50,6 +67,14 @@ var _placement_preview: BoostPad = null
 var _placement_progress: float = 0.0
 var _placement_lateral_offset: float = 0.0
 var _is_placement_active: bool = false
+var _track_mutator: TrackMutator = TrackMutator.new()
+var _mutation_overlay: CanvasLayer = null
+var _mutation_overlay_panel: PanelContainer = null
+var _mutation_overlay_body: Label = null
+var _mutation_highlight_mesh: MeshInstance3D = null
+var _mutation_ghost_mesh: MeshInstance3D = null
+var _is_mutation_reveal_active: bool = false
+var _round_lap_times: Array[float] = []
 
 @onready var _hazard_controller: HazardPlacementController = $HazardPlacementController
 
@@ -121,6 +146,8 @@ func _ready() -> void:
 			_run_state.buy_time_cost_changed.connect(_on_buy_time_cost_changed)
 		if not _run_state.run_failed.is_connected(_on_run_failed):
 			_run_state.run_failed.connect(_on_run_failed)
+		if not _run_state.last_lap_time_changed.is_connected(_on_last_lap_time_changed):
+			_run_state.last_lap_time_changed.connect(_on_last_lap_time_changed)
 
 	if _track:
 		_placement_progress = _track.get_lap_start_progress()
@@ -147,6 +174,12 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo():
+		return
+
+	if _is_mutation_reveal_active:
+		if event.is_action_pressed("continue_round") or event.is_action_pressed("place_boost_pad"):
+			get_viewport().set_input_as_handled()
+			_close_mutation_reveal()
 		return
 
 	if _hazard_controller.is_active():
@@ -231,6 +264,8 @@ func _on_continue_requested() -> void:
 
 
 func _on_round_finished() -> void:
+	_log_round_telemetry()
+	_mutate_track_if_needed()
 	_hazard_controller.clear_pending()
 	if _car:
 		_car.set_frozen(true)
@@ -238,14 +273,301 @@ func _on_round_finished() -> void:
 		_round_end_screen.configure_hazard_draft(_get_hazard_draft_options())
 	_update_car_controls()
 
+	if _track_mutator.last_mutation_changed:
+		_reveal_mutation(
+			_track_mutator.last_mutation_world_center,
+			_track_mutator.last_mutation_display_name
+		)
+
+
+func _mutate_track_if_needed() -> void:
+	if not track_mutation_enabled:
+		return
+	if _track == null or _run_state == null:
+		return
+	if _run_state.round_number < track_mutation_start_round:
+		return
+
+	var active_layout: TrackLayout = _track.get_active_layout()
+	if active_layout == null:
+		return
+
+	var mutated_layout: TrackLayout = _track_mutator.mutate_layout(
+		active_layout,
+		_get_occupied_track_item_positions()
+	)
+	if mutated_layout == null or mutated_layout == active_layout:
+		return
+
+	_track.set_active_layout(mutated_layout)
+
+
+func _reveal_mutation(world_center: Vector3, detour_name: String) -> void:
+	_ensure_mutation_overlay()
+
+	if _round_end_screen:
+		_round_end_screen.visible = false
+	_position_camera_for_mutation_preview(world_center)
+	_spawn_mutation_highlight(_track_mutator.last_mutation_centerline)
+
+	if _mutation_overlay_body:
+		var detour_label: String = detour_name if not detour_name.is_empty() else "new detour"
+		_mutation_overlay_body.text = "Spliced in: %s" % detour_label
+	if _mutation_overlay:
+		_mutation_overlay.visible = true
+	_is_mutation_reveal_active = true
+
+
+func _close_mutation_reveal() -> void:
+	if not _is_mutation_reveal_active:
+		return
+
+	_is_mutation_reveal_active = false
+	if _mutation_overlay:
+		_mutation_overlay.visible = false
+	_clear_mutation_highlight()
+
+	if _run_state and _run_state.is_run_over:
+		return
+	if _run_state and _run_state.is_round_active:
+		return
+
+	if _car:
+		_focus_camera_on(_car, true)
+	if _round_end_screen:
+		_round_end_screen.visible = true
+
+
+## Drops the game camera's follow target and places it high above the
+## spliced detour so the whole new section is visible. Called only during
+## the mutation preview; `_focus_camera_on(_car, true)` restores follow mode
+## when the preview dismisses.
+func _position_camera_for_mutation_preview(world_center: Vector3) -> void:
+	if _camera == null:
+		return
+
+	_camera.target = null
+	var camera_position: Vector3 = world_center \
+		+ Vector3.UP * MUTATION_PREVIEW_CAMERA_HEIGHT \
+		+ Vector3(0.0, 0.0, MUTATION_PREVIEW_CAMERA_OFFSET)
+	_camera.global_position = camera_position
+	_camera.look_at(world_center, Vector3.UP)
+
+
+func _spawn_mutation_highlight(centerline_points: Array[Vector3]) -> void:
+	_clear_mutation_highlight()
+	if _track == null:
+		return
+
+	_mutation_ghost_mesh = _spawn_mutation_ribbon(
+		_track_mutator.last_mutation_original_centerline,
+		MUTATION_GHOST_COLOR,
+		MUTATION_GHOST_Y_OFFSET,
+		"MutationGhost",
+		0
+	)
+	_mutation_highlight_mesh = _spawn_mutation_ribbon(
+		centerline_points,
+		MUTATION_HIGHLIGHT_COLOR,
+		MUTATION_HIGHLIGHT_Y_OFFSET,
+		"MutationHighlight",
+		1
+	)
+
+
+func _clear_mutation_highlight() -> void:
+	if _mutation_highlight_mesh != null and is_instance_valid(_mutation_highlight_mesh):
+		_mutation_highlight_mesh.queue_free()
+	_mutation_highlight_mesh = null
+	if _mutation_ghost_mesh != null and is_instance_valid(_mutation_ghost_mesh):
+		_mutation_ghost_mesh.queue_free()
+	_mutation_ghost_mesh = null
+
+
+func _spawn_mutation_ribbon(
+	centerline_points: Array[Vector3],
+	color: Color,
+	y_offset: float,
+	node_name: String,
+	render_priority: int
+) -> MeshInstance3D:
+	if _track == null or centerline_points.size() < 2:
+		return null
+
+	var half_width: float = _track.track_width * 0.5
+	var ribbon_mesh: Mesh = _build_ribbon_mesh(centerline_points, half_width, y_offset)
+	if ribbon_mesh == null:
+		return null
+
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = color
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.render_priority = render_priority
+
+	var mesh_instance: MeshInstance3D = MeshInstance3D.new()
+	mesh_instance.name = node_name
+	mesh_instance.mesh = ribbon_mesh
+	mesh_instance.material_override = material
+	_track.add_child(mesh_instance)
+	return mesh_instance
+
+
+func _build_ribbon_mesh(centerline_points: Array[Vector3], half_width: float, y_offset: float) -> Mesh:
+	var surface_tool: SurfaceTool = SurfaceTool.new()
+	surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var y_lift: Vector3 = Vector3.UP * y_offset
+
+	for index in range(centerline_points.size() - 1):
+		var p0: Vector3 = centerline_points[index]
+		var p1: Vector3 = centerline_points[index + 1]
+		var perp_0: Vector3 = _centerline_perpendicular(centerline_points, index)
+		var perp_1: Vector3 = _centerline_perpendicular(centerline_points, index + 1)
+
+		var a: Vector3 = p0 + perp_0 * half_width + y_lift
+		var b: Vector3 = p0 - perp_0 * half_width + y_lift
+		var c: Vector3 = p1 - perp_1 * half_width + y_lift
+		var d: Vector3 = p1 + perp_1 * half_width + y_lift
+
+		surface_tool.set_normal(Vector3.UP)
+		surface_tool.add_vertex(b)
+		surface_tool.add_vertex(c)
+		surface_tool.add_vertex(d)
+
+		surface_tool.set_normal(Vector3.UP)
+		surface_tool.add_vertex(b)
+		surface_tool.add_vertex(d)
+		surface_tool.add_vertex(a)
+
+	return surface_tool.commit()
+
+
+func _centerline_perpendicular(points: Array[Vector3], index: int) -> Vector3:
+	var direction: Vector3
+	if index <= 0:
+		direction = points[1] - points[0]
+	elif index >= points.size() - 1:
+		direction = points[points.size() - 1] - points[points.size() - 2]
+	else:
+		direction = points[index + 1] - points[index - 1]
+
+	if direction.length_squared() < 0.0001:
+		return Vector3(0.0, 0.0, 1.0)
+	direction = direction.normalized()
+	return Vector3(-direction.z, 0.0, direction.x)
+
+
+func _ensure_mutation_overlay() -> void:
+	if _mutation_overlay != null and _mutation_overlay_panel != null and _mutation_overlay_body != null:
+		return
+
+	_mutation_overlay = CanvasLayer.new()
+	_mutation_overlay.name = "MutationRevealOverlay"
+	_mutation_overlay.layer = 4
+	_mutation_overlay.visible = false
+	add_child(_mutation_overlay)
+
+	var center: CenterContainer = CenterContainer.new()
+	center.anchor_right = 1.0
+	center.anchor_bottom = 1.0
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mutation_overlay.add_child(center)
+
+	_mutation_overlay_panel = PanelContainer.new()
+	_mutation_overlay_panel.name = "MutationRevealPanel"
+	_mutation_overlay_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mutation_overlay_panel.custom_minimum_size = Vector2(420.0, 0.0)
+	_mutation_overlay_panel.add_theme_stylebox_override("panel", _create_mutation_overlay_style())
+	center.add_child(_mutation_overlay_panel)
+
+	var panel_margin: MarginContainer = MarginContainer.new()
+	panel_margin.add_theme_constant_override("margin_left", 28)
+	panel_margin.add_theme_constant_override("margin_top", 22)
+	panel_margin.add_theme_constant_override("margin_right", 28)
+	panel_margin.add_theme_constant_override("margin_bottom", 22)
+	_mutation_overlay_panel.add_child(panel_margin)
+
+	var vbox: VBoxContainer = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	panel_margin.add_child(vbox)
+
+	var title_label: Label = Label.new()
+	title_label.name = "MutationRevealTitle"
+	title_label.text = "Track Evolved"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_size_override("font_size", 40)
+	title_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.98, 1.0))
+	vbox.add_child(title_label)
+
+	_mutation_overlay_body = Label.new()
+	_mutation_overlay_body.name = "MutationRevealBody"
+	_mutation_overlay_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mutation_overlay_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_mutation_overlay_body.add_theme_font_size_override("font_size", 22)
+	_mutation_overlay_body.add_theme_color_override("font_color", Color(0.86, 0.92, 1.0, 1.0))
+	vbox.add_child(_mutation_overlay_body)
+
+	var hint_label: Label = Label.new()
+	hint_label.name = "MutationRevealHint"
+	hint_label.text = "Space / Enter to continue"
+	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint_label.add_theme_font_size_override("font_size", 18)
+	hint_label.add_theme_color_override("font_color", Color(0.82, 0.88, 0.94, 1.0))
+	vbox.add_child(hint_label)
+
+
+func _create_mutation_overlay_style() -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.08, 0.18, 0.96)
+	style.corner_radius_top_left = 20
+	style.corner_radius_top_right = 20
+	style.corner_radius_bottom_right = 20
+	style.corner_radius_bottom_left = 20
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(1.0, 0.65, 0.95, 0.78)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	style.shadow_size = 22
+	return style
+
+
+func _on_last_lap_time_changed(lap_time: float) -> void:
+	if lap_time <= 0.0:
+		return
+	_round_lap_times.append(lap_time)
+
+
+func _log_round_telemetry() -> void:
+	if not debug_round_telemetry or _run_state == null:
+		return
+
+	var formatted_times: PackedStringArray = PackedStringArray()
+	for lap_time in _round_lap_times:
+		formatted_times.append("%.2fs" % lap_time)
+
+	print(
+		"[round-telemetry] round=%d laps=%d times=[%s]" % [
+			_run_state.round_number,
+			_round_lap_times.size(),
+			", ".join(formatted_times),
+		]
+	)
+
 
 func _on_run_failed(_last_round_number: int, _final_currency: int) -> void:
 	# The GameOverScreen handles the UI; main just has to make sure nothing
 	# drifts into the pit-stop flow — no hazard draft, car stays frozen, no
-	# lingering placement preview.
+	# lingering placement preview or mutation preview.
 	_hazard_controller.clear_pending()
 	_is_placement_active = false
 	_clear_placement_preview()
+	_is_mutation_reveal_active = false
+	if _mutation_overlay:
+		_mutation_overlay.visible = false
+	_clear_mutation_highlight()
 	if _car:
 		_car.set_frozen(true)
 	if _round_end_screen:
@@ -258,8 +580,13 @@ func _on_run_failed(_last_round_number: int, _final_currency: int) -> void:
 func _on_round_started(_round_number: int) -> void:
 	_is_placement_active = false
 	_clear_placement_preview()
+	_is_mutation_reveal_active = false
+	if _mutation_overlay:
+		_mutation_overlay.visible = false
+	_clear_mutation_highlight()
 	_hazard_controller.clear_selection()
 	_hazard_controller.clear_pending()
+	_round_lap_times.clear()
 	_rebuild_track_coins()
 	if _car:
 		_car.set_frozen(false)

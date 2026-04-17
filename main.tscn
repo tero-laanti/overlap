@@ -41,6 +41,7 @@ car_path = NodePath("Car")
 run_state_path = NodePath("RunState")
 round_end_screen_path = NodePath("RoundEndScreen")
 camera_path = NodePath("GameCamera")
+debug_round_telemetry = true
 
 [node name="WorldEnv" type="WorldEnvironment" parent="." unique_id=1062281694]
 environment = SubResource("env")

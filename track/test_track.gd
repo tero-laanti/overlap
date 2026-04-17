@@ -550,6 +550,23 @@ func _get_active_layout() -> TrackLayoutResource:
 	return starter_layouts[safe_index]
 
 
+func get_active_layout() -> TrackLayoutResource:
+	return _get_active_layout()
+
+
+## Swaps the active layout resource and rebuilds the generated geometry
+## synchronously so callers can read the new centerline immediately.
+func set_active_layout(new_layout: TrackLayoutResource) -> void:
+	if starter_layouts.is_empty():
+		push_warning("TestTrack.set_active_layout called with no starter_layouts configured.")
+		return
+
+	var safe_index: int = clampi(active_starter_layout_index, 0, starter_layouts.size() - 1)
+	_starter_layouts[safe_index] = new_layout
+	_refresh_layout_observers()
+	_rebuild_generated_track()
+
+
 func _warn_about_layout_issues(layout: TrackLayoutResource) -> void:
 	for issue in layout.get_validation_issues():
 		push_warning(issue)

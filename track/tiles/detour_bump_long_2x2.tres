@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TrackTileDefinition" format=3 uid="uid://cnebvwjyjh5ok"]
+
+[ext_resource type="Script" uid="uid://rimhwyviaouc" path="res://track/track_tile_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Detour Bump Long 2x2"
+footprint = Vector2i(2, 2)
+entry_cell = Vector2i(0, 1)
+exit_cell = Vector2i(1, 1)
+interior_points = PackedVector3Array(-0.28, 0, 0.88, -0.05, 0, 0.54, 0.2, 0, 0.15, 0.4, 0, -0.08, 0.6, 0, -0.08, 0.8, 0, 0.15, 1.05, 0, 0.54, 1.28, 0, 0.88)
