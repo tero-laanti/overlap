@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://437ebgb8puho" path="res://race/lap_tracker.gd" id="lap_tracker_script"]
 [ext_resource type="Script" uid="uid://cbkha778a3etd" path="res://main.gd" id="main_script"]
 [ext_resource type="PackedScene" uid="uid://dgbttdgp7ob8w" path="res://car/assets/kenney_car_kit/sedan-sports.glb" id="car_body_scene"]
+[ext_resource type="PackedScene" path="res://race/jump_ramp.tscn" id="jump_ramp_scene"]
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
 [ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
@@ -39,6 +40,7 @@ run_state_path = NodePath("RunState")
 round_end_screen_path = NodePath("RoundEndScreen")
 camera_path = NodePath("GameCamera")
 debug_round_telemetry = false
+track_mutation_enabled = false
 
 [node name="WorldEnv" type="WorldEnvironment" parent="." unique_id=1062281694]
 environment = SubResource("env")
@@ -60,6 +62,9 @@ active_starter_layout_index = 1
 
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
 
+[node name="JumpRamp" parent="Track" instance=ExtResource("jump_ramp_scene") unique_id=2133577482]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
 [node name="LapTracker" type="Node" parent="." unique_id=248903443]
 script = ExtResource("lap_tracker_script")
 car_path = NodePath("../Car")
@@ -71,9 +76,9 @@ lap_tracker_path = NodePath("../LapTracker")
 
 [node name="Car" type="RigidBody3D" parent="." unique_id=183954873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
-collision_mask = 2
+collision_mask = 6
 mass = 1.5
-gravity_scale = 0.0
+gravity_scale = 1.0
 can_sleep = false
 continuous_cd = true
 contact_monitor = true

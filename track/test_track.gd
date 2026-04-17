@@ -59,6 +59,8 @@ var _active_starter_layout_index: int = 0
 @export_range(0.0, 1.0, 0.01) var lap_start_progress: float = 0.5
 
 const WALL_COLLISION_LAYER := 2
+const TRACK_SURFACE_COLLISION_LAYER := 3
+const GROUND_COLLIDER_THICKNESS := 1.0
 const TARMAC_COLOR := Color(0.20, 0.20, 0.25)
 const SAND_COLOR := Color(0.76, 0.70, 0.50)
 const GRASS_COLOR := Color(0.30, 0.45, 0.22)
@@ -203,6 +205,34 @@ func _add_grass_infield() -> void:
 	mat.albedo_color = GRASS_COLOR
 	mi.material_override = mat
 	_add_generated_child(mi)
+
+
+## Invisible floor spanning the full track bounds so the car has something to
+## land on once gravity is enabled. One slab, layer 3 (`track_surface`), mask 0.
+func _add_ground_collider() -> void:
+	var bounds: AABB = _get_track_bounds()
+	var slab_size: Vector3 = Vector3(
+		maxf(bounds.size.x, 16.0),
+		GROUND_COLLIDER_THICKNESS,
+		maxf(bounds.size.z, 16.0)
+	)
+
+	var body := StaticBody3D.new()
+	body.name = "GroundCollider"
+	body.collision_layer = 1 << (TRACK_SURFACE_COLLISION_LAYER - 1)
+	body.collision_mask = 0
+	body.position = Vector3(
+		bounds.position.x + bounds.size.x * 0.5,
+		SURFACE_Y - GROUND_COLLIDER_THICKNESS * 0.5,
+		bounds.position.z + bounds.size.z * 0.5
+	)
+	_add_generated_child(body)
+
+	var shape := BoxShape3D.new()
+	shape.size = slab_size
+	var col := CollisionShape3D.new()
+	col.shape = shape
+	body.add_child(col)
 
 
 func get_surface_profile_at_position(world_position: Vector3) -> SurfaceProfile:
@@ -589,6 +619,7 @@ func _rebuild_generated_track() -> void:
 	_build_centerline()
 	_generated_root = _get_or_create_generated_root()
 	_add_ground()
+	_add_ground_collider()
 	var tarmac_half: float = track_width / 2.0
 	var sand_outer: float = tarmac_half + sand_width
 	_add_strip_mesh("SandShoulderInner", sand_outer, tarmac_half, SURFACE_Y, SAND_COLOR)

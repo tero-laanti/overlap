@@ -27,6 +27,17 @@ const OVERSPEED_BRAKE_RATIO := 0.65
 ## Maximum front-wheel steering angle for purely visual feedback.
 const MAX_VISUAL_STEER_ANGLE := deg_to_rad(30.0)
 const WHEEL_STEER_SMOOTH_RATE := 15.0
+## Visual suspension: body dips on landing and rocks into turns. All numbers
+## feed a spring-damper applied to the Body node — pure cosmetics, no physics.
+const BODY_BASE_Y := -0.25
+const SUSPENSION_STIFFNESS := 120.0
+const SUSPENSION_DAMPING := 12.0
+const SUSPENSION_IMPACT_THRESHOLD := 1.0
+const SUSPENSION_IMPACT_SCALE := 0.04
+const MAX_SUSPENSION_COMPRESSION := 0.18
+const MAX_SUSPENSION_LIFT := 0.08
+const MAX_VISUAL_TILT_ANGLE := deg_to_rad(12.0)
+const BODY_TILT_SMOOTH_RATE := 8.0
 
 var steering_input: float = 0.0
 var throttle_input: float = 0.0
@@ -39,7 +50,12 @@ var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
 var _pending_reset_transform: Transform3D = Transform3D.IDENTITY
 var _has_pending_reset: bool = false
 var _visual_steer_angle: float = 0.0
+var _prev_linear_velocity_y: float = 0.0
+var _suspension_offset: float = 0.0
+var _suspension_velocity: float = 0.0
+var _visual_body_tilt: float = 0.0
 
+@onready var _body_node: Node3D = get_node_or_null(^"Body")
 @onready var _wheel_front_left: Node3D = get_node_or_null(^"Body/wheel-front-left")
 @onready var _wheel_front_right: Node3D = get_node_or_null(^"Body/wheel-front-right")
 
@@ -56,6 +72,12 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_wheel_steering(delta)
+	_update_suspension(delta)
+	_update_body_tilt(delta)
+
+
+func _update_wheel_steering(delta: float) -> void:
 	if _wheel_front_left == null or _wheel_front_right == null:
 		return
 	var target_angle: float = steering_input * MAX_VISUAL_STEER_ANGLE
@@ -63,6 +85,33 @@ func _process(delta: float) -> void:
 	_visual_steer_angle = lerpf(_visual_steer_angle, target_angle, weight)
 	_wheel_front_left.rotation.y = _visual_steer_angle
 	_wheel_front_right.rotation.y = _visual_steer_angle
+
+
+func _update_suspension(delta: float) -> void:
+	if _body_node == null:
+		return
+	var y_vel: float = linear_velocity.y
+	var dy: float = y_vel - _prev_linear_velocity_y
+	if dy > SUSPENSION_IMPACT_THRESHOLD:
+		_suspension_velocity -= dy * SUSPENSION_IMPACT_SCALE
+	var spring_force: float = -SUSPENSION_STIFFNESS * _suspension_offset - SUSPENSION_DAMPING * _suspension_velocity
+	_suspension_velocity += spring_force * delta
+	_suspension_offset += _suspension_velocity * delta
+	_suspension_offset = clampf(_suspension_offset, -MAX_SUSPENSION_COMPRESSION, MAX_SUSPENSION_LIFT)
+	_body_node.position.y = BODY_BASE_Y + _suspension_offset
+	_prev_linear_velocity_y = y_vel
+
+
+func _update_body_tilt(delta: float) -> void:
+	if _body_node == null or stats == null:
+		return
+	var forward: Vector3 = _get_flat_forward_vector()
+	var fwd_speed: float = forward.dot(linear_velocity)
+	var speed_factor: float = clampf(absf(fwd_speed) / maxf(stats.max_speed, 1.0), 0.0, 1.0)
+	var target_tilt: float = steering_input * MAX_VISUAL_TILT_ANGLE * speed_factor
+	var weight: float = clampf(delta * BODY_TILT_SMOOTH_RATE, 0.0, 1.0)
+	_visual_body_tilt = lerpf(_visual_body_tilt, target_tilt, weight)
+	_body_node.rotation.z = _visual_body_tilt
 
 
 func reset_to_transform(spawn_transform: Transform3D) -> void:
@@ -86,6 +135,13 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 		_wheel_front_left.rotation.y = 0.0
 	if _wheel_front_right != null:
 		_wheel_front_right.rotation.y = 0.0
+	_prev_linear_velocity_y = 0.0
+	_suspension_offset = 0.0
+	_suspension_velocity = 0.0
+	_visual_body_tilt = 0.0
+	if _body_node != null:
+		_body_node.position.y = BODY_BASE_Y
+		_body_node.rotation.z = 0.0
 
 
 func set_controls_enabled(is_enabled: bool) -> void:
@@ -267,13 +323,6 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		steer *= -1.0
 	state.angular_velocity = Vector3(0.0, steer, 0.0)
 
-	# --- Constrain to ground plane ---
-	state.linear_velocity.y = 0.0
-	var xform := state.transform
-	xform.origin.y = GROUND_Y
-	var yaw := xform.basis.get_euler().y
-	xform.basis = Basis.from_euler(Vector3(0.0, yaw, 0.0))
-	state.transform = xform
 	_tick_grip_modifier(state.step)
 
 

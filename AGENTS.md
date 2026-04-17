@@ -101,7 +101,7 @@ _how_ to work in the repo.
 | ----- | ---------------- | ------------------------------------------------------------------- |
 | 1     | `car`            | Car `RigidBody3D`                                                   |
 | 2     | `track_wall`     | Track wall `StaticBody3D`s and placed wall barriers                 |
-| 3     | `track_surface`  | Reserved for future use                                             |
+| 3     | `track_surface`  | Ground collider under every track plus jump ramps                   |
 | 4     | `collectible`    | Coins and future pickups                                            |
 | 5     | `track_modifier` | Boost pads, oil slicks, slow zones, and future placed track effects |
 
