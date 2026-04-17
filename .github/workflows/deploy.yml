@@ -2,21 +2,18 @@ name: Deploy to itch.io
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 env:
   GODOT_VERSION: 4.6.2
-  # Set this as a repo *variable* (Settings → Secrets and variables → Actions → Variables)
-  # to e.g. "yourname/overlap". Not a secret — the slug is public on your itch page.
   ITCH_TARGET: ${{ vars.ITCH_TARGET }}
 
-# Group by commit SHA so two tags pointing at the same commit (e.g. a typo
-# retag like v.0.0.8 -> v0.0.8) collapse into one deploy instead of racing
-# to push duplicate itch.io userversions. cancel-in-progress: true kills
-# the earlier run when a newer tag on the same commit arrives.
+# Only allow one deploy workflow at a time. A newly triggered deploy cancels
+# any in-flight export/publish run so we never spend CI time on superseded
+# builds or push multiple overlapping versions to itch.io.
 concurrency:
-  group: deploy-${{ github.sha }}
+  group: deploy-itchio
   cancel-in-progress: true
 
 jobs:
