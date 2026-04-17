@@ -219,8 +219,9 @@ func _on_positive_offer_requested(offer_index: int) -> void:
 		return
 
 	var positive_type: int = _current_positive_offers[offer_index]
-	if positive_type == PositiveTypeRegistry.Type.TIME_BANK:
-		if _run_state.try_buy_time_bank() <= 0.0:
+	var delivery_mode: int = PositiveTypeRegistry.get_delivery_mode(positive_type)
+	if delivery_mode == PositiveTypeRegistry.DeliveryMode.INSTANT:
+		if not _try_apply_instant_positive(positive_type):
 			return
 	else:
 		var cost: int = PositiveTypeRegistry.get_base_cost(positive_type)
@@ -229,6 +230,13 @@ func _on_positive_offer_requested(offer_index: int) -> void:
 		_pending_positive_queue.append(positive_type)
 
 	_sync_round_end_screen()
+
+
+func _try_apply_instant_positive(positive_type: int) -> bool:
+	if positive_type == PositiveTypeRegistry.Type.TIME_BANK:
+		return _run_state.try_buy_time_bank() > 0.0
+	push_warning("MainSceneController has no handler for instant positive type %d." % positive_type)
+	return false
 
 
 func _on_time_bank_cost_changed(_cost: int) -> void:

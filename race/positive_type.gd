@@ -22,11 +22,6 @@ enum DeliveryMode {
 	HAND,
 }
 
-enum StackingRule {
-	STACKS,
-	UNIQUE,
-}
-
 const NONE := -1
 
 const DISPLAY_NAMES := {
@@ -67,14 +62,6 @@ const DELIVERY_MODES := {
 	Type.COIN_GATE: DeliveryMode.PLACEABLE,
 	Type.DRIFT_RIBBON: DeliveryMode.PLACEABLE,
 	Type.WASH_GATE: DeliveryMode.PLACEABLE,
-}
-
-const STACKING_RULES := {
-	Type.TIME_BANK: StackingRule.STACKS,
-	Type.BOOST_PAD: StackingRule.STACKS,
-	Type.COIN_GATE: StackingRule.STACKS,
-	Type.DRIFT_RIBBON: StackingRule.STACKS,
-	Type.WASH_GATE: StackingRule.STACKS,
 }
 
 const OFFER_WEIGHTS := {
@@ -149,10 +136,6 @@ static func get_category(positive_type: int) -> int:
 
 static func get_delivery_mode(positive_type: int) -> int:
 	return DELIVERY_MODES.get(positive_type, DeliveryMode.PLACEABLE)
-
-
-static func get_stacking_rule(positive_type: int) -> int:
-	return STACKING_RULES.get(positive_type, StackingRule.STACKS)
 
 
 static func get_offer_weight(positive_type: int) -> int:
