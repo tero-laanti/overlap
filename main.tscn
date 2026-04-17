@@ -14,6 +14,7 @@
 [ext_resource type="Resource" uid="uid://b08ipsbn6kfqk" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
 [ext_resource type="Resource" uid="uid://d1m1yrhibrbyo" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
 [ext_resource type="Resource" uid="uid://cu7ebht5rmoj5" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
+[ext_resource type="Resource" uid="uid://cyiogqjoaufgp" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
 [ext_resource type="Resource" uid="uid://cpuh6760p7w1p" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
 [ext_resource type="Script" uid="uid://cpfvs67kqxbqn" path="res://track/test_track.gd" id="track_script"]
 
@@ -58,7 +59,7 @@ target_path = NodePath("../Car")
 
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
-starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout")])
+starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
 active_starter_layout_index = 1
 
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]

@@ -554,6 +554,19 @@ func get_active_layout() -> TrackLayoutResource:
 	return _get_active_layout()
 
 
+## Synchronously switches the active starter layout by index so callers can
+## rely on the new geometry being live immediately (car spawn, coin rebuild).
+func set_starter_layout_index(index: int) -> void:
+	if starter_layouts.is_empty():
+		return
+	var safe_index: int = clampi(index, 0, starter_layouts.size() - 1)
+	if safe_index == _active_starter_layout_index and not _points.is_empty():
+		return
+	_active_starter_layout_index = safe_index
+	if is_inside_tree():
+		_rebuild_generated_track()
+
+
 ## Returns the world-space center of the track's point cloud. Lets callers
 ## (e.g. the main menu camera) frame the whole layout without peeking at the
 ## generated geometry.

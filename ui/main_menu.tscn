@@ -1,9 +1,13 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://ui/main_menu.gd" id="menu_script"]
 [ext_resource type="Script" path="res://track/test_track.gd" id="track_script"]
 [ext_resource type="Script" path="res://track/track_layout.gd" id="track_layout_script"]
+[ext_resource type="Resource" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
+[ext_resource type="Resource" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -29,6 +33,7 @@ border_color = Color(1, 0.92, 0.65, 0.35)
 script = ExtResource("menu_script")
 track_path = NodePath("Track")
 camera_path = NodePath("MenuCamera")
+track_row_path = NodePath("MenuUI/Center/VBox/TrackRow")
 
 [node name="WorldEnv" type="WorldEnvironment" parent="."]
 environment = SubResource("env")
@@ -43,8 +48,8 @@ current = true
 
 [node name="Track" type="Node3D" parent="."]
 script = ExtResource("track_script")
-starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_chicane_layout")])
-active_starter_layout_index = 0
+starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
+active_starter_layout_index = 1
 
 [node name="MenuUI" type="CanvasLayer" parent="."]
 layer = 2
@@ -67,7 +72,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="VBox" type="VBoxContainer" parent="MenuUI/Center"]
-theme_override_constants/separation = 28
+theme_override_constants/separation = 24
 
 [node name="TitleLabel" type="Label" parent="MenuUI/Center/VBox"]
 theme_override_font_sizes/font_size = 96
@@ -79,6 +84,7 @@ text = "overlap"
 
 [node name="StartPanel" type="PanelContainer" parent="MenuUI/Center/VBox"]
 custom_minimum_size = Vector2(320, 0)
+mouse_filter = 2
 theme_override_styles/panel = SubResource("start_panel_style")
 
 [node name="Margin" type="MarginContainer" parent="MenuUI/Center/VBox/StartPanel"]
@@ -93,8 +99,37 @@ theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
 horizontal_alignment = 1
 text = "Start"
 
+[node name="TrackRow" type="HBoxContainer" parent="MenuUI/Center/VBox"]
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="TrackButton1" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
+custom_minimum_size = Vector2(54, 54)
+theme_override_font_sizes/font_size = 24
+text = "1"
+
+[node name="TrackButton2" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
+custom_minimum_size = Vector2(54, 54)
+theme_override_font_sizes/font_size = 24
+text = "2"
+
+[node name="TrackButton3" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
+custom_minimum_size = Vector2(54, 54)
+theme_override_font_sizes/font_size = 24
+text = "3"
+
+[node name="TrackButton4" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
+custom_minimum_size = Vector2(54, 54)
+theme_override_font_sizes/font_size = 24
+text = "4"
+
+[node name="TrackButton5" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
+custom_minimum_size = Vector2(54, 54)
+theme_override_font_sizes/font_size = 24
+text = "5"
+
 [node name="HintLabel" type="Label" parent="MenuUI/Center/VBox"]
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.82, 0.88, 0.94, 0.85)
 horizontal_alignment = 1
-text = "press any key or click"
+text = "press any key or click to start"

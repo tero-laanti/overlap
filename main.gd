@@ -94,6 +94,9 @@ func _ready() -> void:
 
 	if not _track:
 		push_warning("MainSceneController could not find the track.")
+	else:
+		_track.set_starter_layout_index(GameSession.selected_track_index)
+
 	if not _car:
 		push_warning("MainSceneController could not find the car.")
 	else:
