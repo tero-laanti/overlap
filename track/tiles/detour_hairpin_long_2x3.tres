@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1")
 display_name = "Detour Hairpin Long 2x3"
+entry_direction = 6
+exit_direction = 2
 footprint = Vector2i(2, 3)
 entry_cell = Vector2i(0, 2)
 exit_cell = Vector2i(1, 2)

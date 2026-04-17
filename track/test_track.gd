@@ -122,9 +122,35 @@ func _build_fallback_oval_centerline() -> void:
 
 ## Returns the inward-pointing perpendicular at the given centerline index.
 func _perp_at(index: int) -> Vector3:
-	var n := _points.size()
-	var dir := (_points[(index + 1) % n] - _points[(index - 1 + n) % n]).normalized()
-	return Vector3(-dir.z, 0.0, dir.x)
+	return get_centerline_perpendicular(_points, index, true)
+
+
+## Shared ribbon/road helper. Closed loops use wrapped neighbors so the
+## resulting perpendicular keeps pointing inward around the full track;
+## open polylines fall back to start/end tangents.
+static func get_centerline_perpendicular(
+	points: Array[Vector3],
+	index: int,
+	wrap_points: bool = false
+) -> Vector3:
+	if points.size() < 2:
+		return Vector3(0.0, 0.0, 1.0)
+
+	var direction: Vector3
+	if wrap_points and points.size() >= 3:
+		var point_count: int = points.size()
+		direction = points[(index + 1) % point_count] - points[(index - 1 + point_count) % point_count]
+	elif index <= 0:
+		direction = points[1] - points[0]
+	elif index >= points.size() - 1:
+		direction = points[points.size() - 1] - points[points.size() - 2]
+	else:
+		direction = points[index + 1] - points[index - 1]
+
+	if direction.length_squared() < 0.0001:
+		return Vector3(0.0, 0.0, 1.0)
+	direction = direction.normalized()
+	return Vector3(-direction.z, 0.0, direction.x)
 
 
 func _add_ground() -> void:
@@ -591,6 +617,7 @@ func set_active_layout(new_layout: TrackLayoutResource) -> void:
 	var safe_index: int = clampi(active_starter_layout_index, 0, starter_layouts.size() - 1)
 	_starter_layouts[safe_index] = new_layout
 	_refresh_layout_observers()
+	_is_rebuild_queued = false
 	_rebuild_generated_track()
 
 
@@ -606,6 +633,7 @@ func _refresh_layout_observers() -> void:
 		if layout == null or _observed_layouts.has(layout):
 			continue
 
+		layout.refresh_tile_observers()
 		_observed_layouts.append(layout)
 		if not layout.changed.is_connected(_on_layout_resource_changed):
 			layout.changed.connect(_on_layout_resource_changed)

@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1")
 display_name = "Detour Bump Long 2x2"
+entry_direction = 6
+exit_direction = 2
 footprint = Vector2i(2, 2)
 entry_cell = Vector2i(0, 1)
 exit_cell = Vector2i(1, 1)

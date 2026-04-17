@@ -39,12 +39,14 @@ var _menu_camera: Camera3D = null
 var _track_buttons: Array[Button] = []
 var _orbit_focus: Vector3 = Vector3.ZERO
 var _orbit_angle: float = 0.0
+var _buttons_collected: bool = false
 
 
 func _ready() -> void:
 	_track = get_node_or_null(track_path) as TestTrack
 	_menu_camera = get_node_or_null(camera_path) as Camera3D
 	_collect_track_buttons()
+	_warn_about_track_option_drift()
 	_apply_selection(GameSession.selected_track_index)
 
 
@@ -91,10 +93,14 @@ func _start_game() -> void:
 
 
 func _collect_track_buttons() -> void:
+	if _buttons_collected:
+		return
+
 	var track_row: Node = get_node_or_null(track_row_path)
 	if track_row == null:
 		return
 
+	_track_buttons.clear()
 	for child in track_row.get_children():
 		var button: Button = child as Button
 		if button == null:
@@ -102,6 +108,24 @@ func _collect_track_buttons() -> void:
 		var button_index: int = _track_buttons.size()
 		_track_buttons.append(button)
 		button.pressed.connect(_apply_selection.bind(button_index))
+	_buttons_collected = true
+
+
+func _warn_about_track_option_drift() -> void:
+	if _track != null and not _track_buttons.is_empty() and _track.starter_layouts.size() != _track_buttons.size():
+		push_warning(
+			"MainMenu has %d track buttons but Track exposes %d starter layouts." % [
+				_track_buttons.size(),
+				_track.starter_layouts.size(),
+			]
+		)
+	if not _track_buttons.is_empty() and _track_buttons.size() != TRACK_SELECT_ACTIONS.size():
+		push_warning(
+			"MainMenu has %d track buttons but %d menu_track actions." % [
+				_track_buttons.size(),
+				TRACK_SELECT_ACTIONS.size(),
+			]
+		)
 
 
 ## The layouts array on the menu's Track and on main.tscn's Track should stay
@@ -109,7 +133,9 @@ func _collect_track_buttons() -> void:
 ## writing an out-of-range index into GameSession.
 func _apply_selection(track_index: int) -> void:
 	var available_count: int = 0
-	if _track != null:
+	if _track != null and not _track_buttons.is_empty():
+		available_count = mini(_track.starter_layouts.size(), _track_buttons.size())
+	elif _track != null:
 		available_count = _track.starter_layouts.size()
 	elif not _track_buttons.is_empty():
 		available_count = _track_buttons.size()

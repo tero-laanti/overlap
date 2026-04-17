@@ -153,7 +153,7 @@ func _footprint_contains_any_position(
 		return false
 	var occupied_cells: Array[Vector2i] = layout_tile.get_occupied_cells()
 	for position in occupied_world_positions:
-		var cell: Vector2i = Vector2i(roundi(position.x / tile_size), roundi(position.z / tile_size))
+		var cell: Vector2i = Vector2i(floori(position.x / tile_size), floori(position.z / tile_size))
 		if occupied_cells.has(cell):
 			return true
 	return false
@@ -225,6 +225,7 @@ func _build_mutated_layout(
 			mutated_tiles.append(_copy_layout_tile(original_tile))
 
 	mutated_layout.tiles = mutated_tiles
+	mutated_layout.refresh_tile_observers()
 	return mutated_layout
 
 

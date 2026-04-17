@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://ui/round_end_screen.tscn" id="round_end_screen_scene"]
 [ext_resource type="Script" uid="uid://bfdvsf2tpvbew" path="res://ui/run_hud.gd" id="run_hud_script"]
 [ext_resource type="Script" uid="uid://djy20g03plne1" path="res://race/run_state.gd" id="run_state_script"]
+[ext_resource type="Script" uid="uid://cxj3quh0vjq5d" path="res://race/mutation_preview_controller.gd" id="mutation_preview_controller_script"]
 [ext_resource type="Resource" uid="uid://b08ipsbn6kfqk" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
 [ext_resource type="Resource" uid="uid://d1m1yrhibrbyo" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
 [ext_resource type="Resource" uid="uid://cu7ebht5rmoj5" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
@@ -60,7 +61,6 @@ target_path = NodePath("../Car")
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
 starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
-active_starter_layout_index = 1
 
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
 
@@ -170,6 +170,9 @@ lap_tracker_path = NodePath("../LapTracker")
 
 [node name="HazardPlacementController" type="Node" parent="." unique_id=1632819470]
 script = ExtResource("hazard_placement_controller_script")
+
+[node name="MutationPreviewController" type="Node" parent="."]
+script = ExtResource("mutation_preview_controller_script")
 
 [node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=1238794343]
 script = ExtResource("game_over_screen_script")

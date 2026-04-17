@@ -7,41 +7,21 @@ const TrackLayoutTileResource := preload("res://track/track_layout_tile.gd")
 
 const CONNECTION_EPSILON := 0.05
 
-var _display_name: String = ""
-var _tile_size: float = 36.0
-var _lap_start_progress: float = 0.0
-var _tiles: Array[TrackLayoutTileResource] = []
-
-@export var display_name: String:
-	get:
-		return _display_name
-	set(value):
-		_display_name = value
-		emit_changed()
-@export_range(16.0, 64.0, 1.0) var tile_size: float:
-	get:
-		return _tile_size
-	set(value):
-		_tile_size = value
-		emit_changed()
-@export_range(0.0, 1.0, 0.01) var lap_start_progress: float:
-	get:
-		return _lap_start_progress
-	set(value):
-		_lap_start_progress = value
-		emit_changed()
-@export var tiles: Array[TrackLayoutTileResource]:
-	get:
-		return _tiles
-	set(value):
-		_tiles = value
-		_refresh_tile_observers()
-		emit_changed()
+@export var display_name: String = ""
+@export_range(16.0, 64.0, 1.0) var tile_size: float = 36.0
+@export_range(0.0, 1.0, 0.01) var lap_start_progress: float = 0.0
+@export var tiles: Array[TrackLayoutTileResource] = []
 
 var _observed_tiles: Array[TrackLayoutTileResource] = []
 
 
 func _init() -> void:
+	_refresh_tile_observers()
+
+
+## TestTrack calls this after loading or swapping layouts so nested tile
+## resources still bubble `changed` up without relying on setter exports.
+func refresh_tile_observers() -> void:
 	_refresh_tile_observers()
 
 
