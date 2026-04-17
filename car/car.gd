@@ -24,6 +24,9 @@ const ACTIVE_INPUT_DRAG_FACTOR := 0.35
 const DRIFT_EXIT_THRESHOLD_FACTOR := 0.75
 const DRIFT_ENTRY_STEERING_THRESHOLD := 0.2
 const OVERSPEED_BRAKE_RATIO := 0.65
+## Maximum front-wheel steering angle for purely visual feedback.
+const MAX_VISUAL_STEER_ANGLE := deg_to_rad(30.0)
+const WHEEL_STEER_SMOOTH_RATE := 15.0
 
 var steering_input: float = 0.0
 var throttle_input: float = 0.0
@@ -35,6 +38,10 @@ var _grip_modifier_time_remaining: float = 0.0
 var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
 var _pending_reset_transform: Transform3D = Transform3D.IDENTITY
 var _has_pending_reset: bool = false
+var _visual_steer_angle: float = 0.0
+
+@onready var _wheel_front_left: Node3D = get_node_or_null(^"Body/wheel-front-left")
+@onready var _wheel_front_right: Node3D = get_node_or_null(^"Body/wheel-front-right")
 
 signal drift_started
 signal drift_ended
@@ -46,6 +53,16 @@ func _ready() -> void:
 	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
 	_ensure_drift_feedback()
 	_ensure_car_audio()
+
+
+func _process(delta: float) -> void:
+	if _wheel_front_left == null or _wheel_front_right == null:
+		return
+	var target_angle: float = steering_input * MAX_VISUAL_STEER_ANGLE
+	var weight: float = clampf(delta * WHEEL_STEER_SMOOTH_RATE, 0.0, 1.0)
+	_visual_steer_angle = lerpf(_visual_steer_angle, target_angle, weight)
+	_wheel_front_left.rotation.y = _visual_steer_angle
+	_wheel_front_right.rotation.y = _visual_steer_angle
 
 
 func reset_to_transform(spawn_transform: Transform3D) -> void:
@@ -64,6 +81,11 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 
 	steering_input = 0.0
 	throttle_input = 0.0
+	_visual_steer_angle = 0.0
+	if _wheel_front_left != null:
+		_wheel_front_left.rotation.y = 0.0
+	if _wheel_front_right != null:
+		_wheel_front_right.rotation.y = 0.0
 
 
 func set_controls_enabled(is_enabled: bool) -> void:
