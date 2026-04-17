@@ -2,16 +2,15 @@ class_name MutationPreviewController
 extends Node
 
 ## Owns the round-end track-mutation telegraph: the "Track Evolved"
-## overlay, the highlight/ghost ribbons on the new and old racing lines,
-## and the top-down camera framing of the spliced section. Main configures
-## the controller once, then calls show_preview / hide_preview around the
-## pit-stop flow. Input (continue/place_boost_pad to dismiss) stays in
-## main so the preview does not fight the placement and hazard flows.
+## overlay, a ghost ribbon over the pre-mutation racing line, and the
+## top-down camera framing of the spliced section. The new layout shows
+## through normally underneath the ghost. Main configures the controller
+## once, then calls show_preview / hide_preview around the pit-stop flow.
+## Input (continue/place_boost_pad to dismiss) stays in main so the
+## preview does not fight the placement and hazard flows.
 
 const MUTATION_PREVIEW_CAMERA_HEIGHT := 95.0
 const MUTATION_PREVIEW_CAMERA_OFFSET := 14.0
-const MUTATION_HIGHLIGHT_Y_OFFSET := 0.04
-const MUTATION_HIGHLIGHT_COLOR := Color(1.0, 0.55, 0.88, 0.42)
 const MUTATION_GHOST_Y_OFFSET := 0.025
 const MUTATION_GHOST_COLOR := Color(0.9, 0.96, 1.0, 0.22)
 
@@ -20,7 +19,6 @@ var _camera: GameCamera = null
 var _overlay: CanvasLayer = null
 var _overlay_panel: PanelContainer = null
 var _overlay_body: Label = null
-var _highlight_mesh: MeshInstance3D = null
 var _ghost_mesh: MeshInstance3D = null
 var _is_active: bool = false
 
@@ -34,16 +32,16 @@ func is_active() -> bool:
 	return _is_active
 
 
-## Drops the camera onto the spliced section, spawns the highlight and
-## ghost ribbons under the track, and reveals the "Track Evolved" panel.
-## Callers are expected to hide their round-end screen first.
+## Drops the camera onto the spliced section, spawns the ghost ribbon
+## for the pre-mutation racing line, and reveals the "Track Evolved"
+## panel. Callers are expected to hide their round-end screen first.
 func show_preview(result: TrackMutationResult) -> void:
 	if result == null:
 		return
 
 	_ensure_overlay()
 	_position_camera(result.world_center)
-	_spawn_highlight(result.centerline, result.original_centerline)
+	_spawn_ghost(result.original_centerline)
 
 	if _overlay_body:
 		var detour_label: String = result.display_name if not result.display_name.is_empty() else "new detour"
@@ -61,13 +59,13 @@ func hide_preview() -> void:
 	if not _is_active:
 		if _overlay and _overlay.visible:
 			_overlay.visible = false
-		_clear_highlight()
+		_clear_ghost()
 		return
 
 	_is_active = false
 	if _overlay:
 		_overlay.visible = false
-	_clear_highlight()
+	_clear_ghost()
 
 
 func _position_camera(world_center: Vector3) -> void:
@@ -82,11 +80,8 @@ func _position_camera(world_center: Vector3) -> void:
 	_camera.look_at(world_center, Vector3.UP)
 
 
-func _spawn_highlight(
-	centerline_points: Array[Vector3],
-	original_centerline_points: Array[Vector3]
-) -> void:
-	_clear_highlight()
+func _spawn_ghost(original_centerline_points: Array[Vector3]) -> void:
+	_clear_ghost()
 	if _track == null:
 		return
 
@@ -97,19 +92,9 @@ func _spawn_highlight(
 		"MutationGhost",
 		0
 	)
-	_highlight_mesh = _spawn_ribbon(
-		centerline_points,
-		MUTATION_HIGHLIGHT_COLOR,
-		MUTATION_HIGHLIGHT_Y_OFFSET,
-		"MutationHighlight",
-		1
-	)
 
 
-func _clear_highlight() -> void:
-	if _highlight_mesh != null and is_instance_valid(_highlight_mesh):
-		_highlight_mesh.queue_free()
-	_highlight_mesh = null
+func _clear_ghost() -> void:
 	if _ghost_mesh != null and is_instance_valid(_ghost_mesh):
 		_ghost_mesh.queue_free()
 	_ghost_mesh = null

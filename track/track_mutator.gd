@@ -56,7 +56,6 @@ func mutate_layout(
 			continue
 
 		var original_tile: TrackLayoutTile = source_layout.tiles[selected_index]
-		var mutated_detour_tile: TrackLayoutTile = mutated_layout.tiles[selected_index]
 		result.layout = mutated_layout
 		result.changed = true
 		result.display_name = selected_detour.display_name
@@ -65,7 +64,6 @@ func mutate_layout(
 			original_tile,
 			selected_detour
 		)
-		result.centerline = mutated_detour_tile.get_world_points(mutated_layout.tile_size)
 		result.original_centerline = original_tile.get_world_points(source_layout.tile_size)
 		return result
 
