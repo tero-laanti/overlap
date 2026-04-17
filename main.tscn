@@ -61,6 +61,7 @@ target_path = NodePath("../Car")
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
 starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
+active_starter_layout_index = 1
 
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
 
