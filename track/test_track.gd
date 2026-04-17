@@ -564,6 +564,7 @@ func set_starter_layout_index(index: int) -> void:
 		return
 	_active_starter_layout_index = safe_index
 	if is_inside_tree():
+		_is_rebuild_queued = false
 		_rebuild_generated_track()
 
 

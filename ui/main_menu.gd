@@ -7,6 +7,26 @@ const ORBIT_RADIANS_PER_SECOND := 0.08
 const SELECTED_BUTTON_COLOR := Color(1.0, 0.92, 0.65, 1.0)
 const SELECTED_BUTTON_BG := Color(0.18, 0.22, 0.32, 1.0)
 const SELECTED_BUTTON_BORDER := Color(1.0, 0.92, 0.65, 0.9)
+## Input actions that select the matching track index.
+const TRACK_SELECT_ACTIONS: Array[StringName] = [
+	&"menu_track_1",
+	&"menu_track_2",
+	&"menu_track_3",
+	&"menu_track_4",
+	&"menu_track_5",
+]
+## Key events whose standalone press shouldn't start the game (Shift tap, Caps
+## Lock, etc.). Gameplay-adjacent UI, so a targeted keycode filter is simpler
+## than adding a per-modifier InputMap action.
+const START_TRIGGER_IGNORED_KEYCODES: Array[int] = [
+	KEY_SHIFT,
+	KEY_CTRL,
+	KEY_META,
+	KEY_ALT,
+	KEY_CAPSLOCK,
+	KEY_NUMLOCK,
+	KEY_SCROLLLOCK,
+]
 
 @export var track_path: NodePath
 @export var camera_path: NodePath
@@ -37,12 +57,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo():
 		return
 
-	if event is InputEventKey and event.pressed:
-		var track_index: int = _track_index_for_key(event.keycode)
-		if track_index >= 0:
-			get_viewport().set_input_as_handled()
-			_apply_selection(track_index)
-			return
+	var track_index: int = _track_index_for_event(event)
+	if track_index >= 0:
+		get_viewport().set_input_as_handled()
+		_apply_selection(track_index)
+		return
 
 	if not _is_start_trigger(event):
 		return
@@ -50,25 +69,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	_start_game()
 
 
-func _track_index_for_key(keycode: int) -> int:
-	match keycode:
-		KEY_1, KEY_KP_1:
-			return 0
-		KEY_2, KEY_KP_2:
-			return 1
-		KEY_3, KEY_KP_3:
-			return 2
-		KEY_4, KEY_KP_4:
-			return 3
-		KEY_5, KEY_KP_5:
-			return 4
-		_:
-			return -1
+func _track_index_for_event(event: InputEvent) -> int:
+	for action_index in range(TRACK_SELECT_ACTIONS.size()):
+		if event.is_action_pressed(TRACK_SELECT_ACTIONS[action_index]):
+			return action_index
+	return -1
 
 
 func _is_start_trigger(event: InputEvent) -> bool:
 	if event is InputEventKey and event.pressed:
-		return true
+		return not START_TRIGGER_IGNORED_KEYCODES.has(event.keycode)
 	if event is InputEventMouseButton and event.pressed:
 		return true
 	if event is InputEventJoypadButton and event.pressed:
@@ -89,16 +99,14 @@ func _collect_track_buttons() -> void:
 		var button: Button = child as Button
 		if button == null:
 			continue
+		var button_index: int = _track_buttons.size()
 		_track_buttons.append(button)
-		var button_index: int = _track_buttons.size() - 1
-		if not button.pressed.is_connected(_on_track_button_pressed):
-			button.pressed.connect(_on_track_button_pressed.bind(button_index))
+		button.pressed.connect(_apply_selection.bind(button_index))
 
 
-func _on_track_button_pressed(track_index: int) -> void:
-	_apply_selection(track_index)
-
-
+## The layouts array on the menu's Track and on main.tscn's Track should stay
+## in sync; clamping here keeps button rows authored with extra entries from
+## writing an out-of-range index into GameSession.
 func _apply_selection(track_index: int) -> void:
 	var available_count: int = 0
 	if _track != null:
