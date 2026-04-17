@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://race/coin_gate.gd" id="1"]
 
 [sub_resource type="BoxShape3D" id="1"]
-size = Vector3(2.4, 2.2, 1.8)
+size = Vector3(0.5, 2.2, 1.8)
 
 [sub_resource type="BoxMesh" id="2"]
 size = Vector3(3.0, 0.18, 0.24)

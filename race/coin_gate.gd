@@ -5,7 +5,6 @@ const RUN_STATE_GROUP := &"run_state"
 const LAP_TRACKER_GROUP := &"lap_tracker"
 
 @export var reward_value: int = 8
-@export var center_tolerance: float = 0.7
 @export var base_color: Color = Color(0.46, 0.28, 0.08, 1.0)
 @export var accent_color: Color = Color(1.0, 0.84, 0.26, 1.0)
 @export var preview_valid_color: Color = Color(0.96, 0.82, 0.34, 1.0)
@@ -68,10 +67,6 @@ func _on_body_entered(body: Node) -> void:
 
 	var body_id: int = body.get_instance_id()
 	if _triggered_body_ids.has(body_id):
-		return
-
-	var local_position: Vector3 = to_local((body as Car).global_position)
-	if absf(local_position.x) > center_tolerance:
 		return
 
 	_triggered_body_ids[body_id] = true
