@@ -80,15 +80,18 @@ func set_preview_focused(is_focused: bool) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if _preview_mode or not (body is Car):
+	var car: Car = CarBodyResolver.resolve(body)
+	if _preview_mode or car == null:
 		return
 	if _run_state and not _run_state.is_round_active:
 		return
-	_active_cars[body.get_instance_id()] = body as Car
+	_active_cars[car.get_instance_id()] = car
 
 
 func _on_body_exited(body: Node) -> void:
-	_active_cars.erase(body.get_instance_id())
+	var car: Car = CarBodyResolver.resolve(body)
+	if car != null:
+		_active_cars.erase(car.get_instance_id())
 
 
 func _configure_materials() -> void:

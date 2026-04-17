@@ -69,22 +69,25 @@ func set_preview_valid(is_valid: bool) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if _preview_mode or not (body is Car):
+	var car: Car = CarBodyResolver.resolve(body)
+	if _preview_mode or car == null:
 		return
 	if _run_state and not _run_state.is_round_active:
 		return
 	_prune_triggered_bodies()
 
-	var body_id: int = body.get_instance_id()
-	if _triggered_body_ids.has(body_id):
+	var car_id: int = car.get_instance_id()
+	if _triggered_body_ids.has(car_id):
 		return
 
-	_triggered_body_ids[body_id] = true
-	(body as Car).apply_forward_boost(boost_speed)
+	_triggered_body_ids[car_id] = true
+	car.apply_forward_boost(boost_speed)
 
 
 func _on_body_exited(body: Node) -> void:
-	_triggered_body_ids.erase(body.get_instance_id())
+	var car: Car = CarBodyResolver.resolve(body)
+	if car != null:
+		_triggered_body_ids.erase(car.get_instance_id())
 
 
 func _prune_triggered_bodies() -> void:

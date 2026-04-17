@@ -49,12 +49,13 @@ func set_preview_focused(is_focused: bool) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if _preview_mode or not (body is Car):
+	var car: Car = CarBodyResolver.resolve(body)
+	if _preview_mode or car == null:
 		return
 	if _run_state and not _run_state.is_round_active:
 		return
 
-	(body as Car).clear_temporary_handling_modifiers()
+	car.clear_temporary_handling_modifiers()
 
 
 func _configure_materials() -> void:

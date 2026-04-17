@@ -29,9 +29,11 @@ func _process(delta: float) -> void:
 	var car_forward := _get_target_forward()
 
 	# Dynamic height based on speed
-	var speed := 0.0
-	if target is RigidBody3D:
-		speed = target.linear_velocity.slide(Vector3.UP).length()
+	var speed: float = 0.0
+	if target is Car:
+		speed = (target as Car).linear_velocity.slide(Vector3.UP).length()
+	elif target is RigidBody3D:
+		speed = (target as RigidBody3D).linear_velocity.slide(Vector3.UP).length()
 	var speed_pct := clampf(speed / zoom_speed_ref, 0.0, 1.0)
 	var current_height := lerpf(min_height, max_height, speed_pct)
 

@@ -17,8 +17,12 @@ _how_ to work in the repo.
 
 - `main.gd` — Round flow orchestration, pit stop sequencing, and track placement
   state.
-- `car/car.gd` — Car physics controller. Drift state machine, throttle/brake,
-  steering. All physics in `_integrate_forces`.
+- `car/car.gd` — Public car gameplay API and owner node. Drift state machine,
+  input, modifiers, visual pose, and proxy synchronization.
+- `car/car_physics_proxy.gd` — Hidden rolling rigidbody proxy. Relays
+  `_integrate_forces` and collision events back to `Car`.
+- `car/car_body_resolver.gd` — Utility that resolves the owning `Car` from a
+  colliding body such as the proxy rigidbody.
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle
   parameters.
 - `car/default_stats.tres` — Default car stats instance.
@@ -99,7 +103,7 @@ _how_ to work in the repo.
 
 | Layer | Name             | Used by                                                             |
 | ----- | ---------------- | ------------------------------------------------------------------- |
-| 1     | `car`            | Car `RigidBody3D`                                                   |
+| 1     | `car`            | Car physics proxy `RigidBody3D`                                     |
 | 2     | `track_wall`     | Track wall `StaticBody3D`s and placed wall barriers                 |
 | 3     | `track_surface`  | Ground collider under every track plus jump ramps                   |
 | 4     | `collectible`    | Coins and future pickups                                            |
@@ -117,9 +121,10 @@ _how_ to work in the repo.
 - **Scenes are self-contained**: Each scene should work without knowledge of its
   parent. Compose entities from focused child nodes rather than monolithic
   scripts.
-- **Physics in `_integrate_forces`**: The car uses `_integrate_forces` for all
-  physics work. Do not fight the physics engine from `_process` or
-  `_physics_process` — work with the state object Godot gives you.
+- **Physics in `_integrate_forces`**: The hidden car proxy uses
+  `_integrate_forces` for all physics work, relayed through `Car`. Do not fight
+  the physics engine from `_process` or `_physics_process` — work with the
+  state object Godot gives you.
 - **No giant autoloads**: Avoid a universal `GameManager` singleton. If global
   state is needed, keep autoloads small and single-purpose.
 

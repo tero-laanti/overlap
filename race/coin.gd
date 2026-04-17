@@ -56,7 +56,9 @@ func _process(delta: float) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if _is_collected or not (body is Car):
+	if _is_collected:
+		return
+	if CarBodyResolver.resolve(body) == null:
 		return
 	if _run_state and not _run_state.is_round_active:
 		return
