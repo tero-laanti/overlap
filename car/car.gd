@@ -240,6 +240,10 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 		_teleport_proxy_to_root_transform(spawn_transform)
 		_physics_proxy.sleeping = false
 
+	# Without this, physics interpolation would render the car swooping from
+	# its previous transform to `spawn_transform` over one physics tick.
+	reset_physics_interpolation()
+
 	if _visual_pose != null:
 		_visual_pose.reset_pose()
 

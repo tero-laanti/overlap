@@ -17,6 +17,11 @@ var _smooth_look_target := Vector3.ZERO
 
 
 func _ready() -> void:
+	# This camera does its own exponential smoothing in `_process`. Opt out of
+	# engine-level physics interpolation so it doesn't double-interpolate (and
+	# so writing `global_position` from `_process` doesn't trip the
+	# "interpolated node modified outside physics process" warning).
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	target = get_node_or_null(target_path)
 	if target:
 		snap_to_target()

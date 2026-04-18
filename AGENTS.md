@@ -115,6 +115,55 @@ _how_ to work in the repo.
   When adding a new collidable type, claim the next free layer, update both, and
   set `collision_mask` to only the layers that object needs.
 
+### Physics interpolation
+
+`common/physics_interpolation=true` is set in `project.godot`. Without it, the
+visual position snaps to the latest physics tick each render frame, which beats
+against variable display refresh (notably ProMotion) and produces small
+forward-jitter blips during steady-state motion.
+
+Rules to keep it well-behaved:
+
+- **Move transforms from `_physics_process` / `_integrate_forces`, not
+  `_process`.** Setting an interpolated node's transform outside the physics
+  tick desynchronizes the previous/current pair and causes jitter. Godot will
+  warn in the editor when it detects this. Indirect movers (Tween,
+  AnimationPlayer driving a transform, NavigationAgent3D) must also be set to
+  run on the physics tick — including when they move a parent of an
+  interpolated node.
+- **Reset interpolation after teleports.** Any non-continuous transform change
+  (respawn, snap to a checkpoint, scene re-entry) must be followed by
+  `reset_physics_interpolation()` on the moved node. Otherwise the visual
+  streaks from old to new across one tick. See `Car.reset_to_transform()` for
+  the pattern. The call propagates to children, so calling it on a parent (e.g.
+  `Car`) covers the proxy and visual root in one go. Order matters: set the
+  new transform, then call `reset_physics_interpolation()`, then (only if you
+  also want a tick of motion baked in immediately) set the second transform.
+- **Self-smoothing follow nodes opt OUT.** Nodes that compute their own
+  `_process`-rate smoothing (e.g. `GameCamera`) must set
+  `physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF` in
+  `_ready`. Otherwise you get double-interpolation and the
+  "interpolated node modified outside physics process" warning. Same applies to
+  any future HUD-attached or look-at helper that updates from `_process`.
+- **Reading transforms from `_process` returns the interpolated value.** That
+  is what we want for visuals (camera, particle parents, HUD anchors). Do not
+  use those reads for gameplay decisions — gameplay logic stays in
+  `_integrate_forces` where `state.transform` is the raw tick state.
+- **Physics queries are unaffected.** `Area3D` overlaps, raycasts, and
+  collision callbacks fire on the physics tick from raw transforms — coin
+  pickups, hazard triggers, and ground probes need no change.
+- **`local_coords = false` particles** track the visually-interpolated parent
+  transform smoothly. Drift smoke and any future world-space particle setups do
+  not need extra handling.
+- **Debug tip.** When investigating suspected interpolation bugs (missing
+  `reset_physics_interpolation()` calls, late `_process` writes, and so on),
+  temporarily drop `common/physics_ticks_per_second` to `10` in
+  `project.godot`. Streaks and pops become obvious; restore to `120` once
+  fixed.
+- **3D collision-shape debug draw is not interpolated.** When `Debug > Visible
+  Collision Shapes` is on, expect the wireframes to lag slightly behind the
+  visual mesh — that is a known engine quirk, not a bug in our code.
+
 ### Direction conventions
 
 Godot baseline on every `Node3D`:

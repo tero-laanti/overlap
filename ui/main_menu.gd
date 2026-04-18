@@ -48,6 +48,12 @@ var _buttons_collected: bool = false
 func _ready() -> void:
 	_track = get_node_or_null(track_path) as TestTrack
 	_menu_camera = get_node_or_null(camera_path) as Camera3D
+	if _menu_camera != null:
+		# Orbit pose is written from `_process`. Opt out of physics
+		# interpolation so the engine does not double-interpolate it and so
+		# the write does not trigger the "interpolated node modified outside
+		# physics process" warning.
+		_menu_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_mute_button = get_node_or_null(mute_button_path) as Button
 	_collect_track_buttons()
 	_warn_about_track_option_drift()
