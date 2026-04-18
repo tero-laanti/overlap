@@ -543,7 +543,9 @@ func _on_hazard_placement_resolved() -> void:
 
 func _update_placement_input(delta: float) -> void:
 	var progress_input: float = Input.get_action_strength("throttle") - Input.get_action_strength("brake")
-	var lateral_input: float = Input.get_action_strength("steer_left") - Input.get_action_strength("steer_right")
+	# +lateral_offset is the right-hand side of travel direction (see
+	# `TestTrack.get_track_transform`), so steer_right must drive +input.
+	var lateral_input: float = Input.get_action_strength("steer_right") - Input.get_action_strength("steer_left")
 	var max_lateral_offset: float = _track.get_max_lateral_offset(boost_pad_track_clearance)
 
 	_placement_progress = wrapf(_placement_progress + progress_input * placement_progress_speed * delta, 0.0, 1.0)
