@@ -454,10 +454,14 @@ func _apply_drive_input(throttle_strength: float, steer_strength: float) -> void
 	elif throttle_strength < 0.0:
 		Input.action_press("brake", absf(throttle_strength))
 
+	# Match Car's steering_input convention: + = steer_left (turns car left
+	# via positive yaw around UP). _steer_toward returns positive when the
+	# target is to the car's left, so routing +steer_strength to steer_left
+	# makes autopilot steer *toward* the target rather than away from it.
 	if steer_strength > 0.0:
-		Input.action_press("steer_right", steer_strength)
+		Input.action_press("steer_left", steer_strength)
 	elif steer_strength < 0.0:
-		Input.action_press("steer_left", absf(steer_strength))
+		Input.action_press("steer_right", absf(steer_strength))
 
 
 func _clear_drive_input() -> void:
