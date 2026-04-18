@@ -28,6 +28,8 @@ const HEADING_PASSIVE_ALIGN_STEER_THRESHOLD := 0.2
 const HEADING_DRIFT_ALIGN_STEER_THRESHOLD := 0.35
 const HEADING_DRIFT_ALIGN_DOT_THRESHOLD := 0.35
 const HEADING_RECOVERY_MIN_SPEED_FACTOR := 0.35
+# Dot of `_heading_forward` against planar motion direction. -0.2 means motion
+# opposes heading by more than ~101°, i.e. the car is clearly reversing.
 const HEADING_REVERSE_ALIGN_DOT_THRESHOLD := -0.2
 const LANDING_HEADING_RECOVERY_RATE := 10.0
 const REVERSE_HEADING_RECOVERY_RATE := 3.5
@@ -700,6 +702,9 @@ func _sample_inputs() -> void:
 		throttle_input = 0.0
 		return
 
+	# Signs: steering_input +right / -left; throttle_input +throttle / -brake.
+	# Reverse is driven by holding brake past zero forward_speed, so a negative
+	# throttle_input can mean "braking" or "reversing" depending on motion.
 	steering_input = Input.get_axis("steer_right", "steer_left")
 	throttle_input = Input.get_axis("brake", "throttle")
 

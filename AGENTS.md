@@ -115,6 +115,44 @@ _how_ to work in the repo.
   When adding a new collidable type, claim the next free layer, update both, and
   set `collision_mask` to only the layers that object needs.
 
+### Direction conventions
+
+Godot baseline on every `Node3D`:
+
+- `-basis.z` → **forward**
+- `+basis.x` → **right**
+- `+basis.y` → **up**
+
+Car heading:
+
+- `Car._heading_forward` is the gameplay truth. Yaw-only `Vector3` in world
+  space, flattened onto world UP.
+- `-car.global_basis.z` is the same value projected onto the yaw-only world-UP
+  frame and re-synced each tick by `_sync_root_from_proxy_origin()`. Safe to
+  read from outside the car.
+- Inside `_integrate_proxy_forces`, prefer the named accessors
+  (`get_drive_forward_vector(up)`, `get_heading_forward()`,
+  `get_support_up_axis()`, `basis_from_forward_and_up(fwd, up)`) over hand-rolled
+  `basis` math. They encode the "forward is `-z`, projected onto the support
+  plane" convention in one place.
+- Visual lean (pitch/roll) is written onto `VisualRoot` by `CarVisualPose`, not
+  onto `Car` itself. That keeps `car.global_basis` a flat heading frame that
+  does not wobble with terrain.
+
+Sign conventions for the values you will see in car code, tests, and telemetry:
+
+| Value                  | +                       | -                          | Source                                         |
+| ---------------------- | ----------------------- | -------------------------- | ---------------------------------------------- |
+| `throttle_input`       | throttle                | brake / reverse            | `Input.get_axis("brake", "throttle")`          |
+| `steering_input`       | steer right             | steer left                 | `Input.get_axis("steer_right", "steer_left")`  |
+| `forward_speed`        | moving along heading    | moving opposite heading    | `planar_velocity.dot(forward)`                 |
+| `lateral_speed`        | sliding right           | sliding left               | `planar_velocity.dot(right)`                   |
+| `alignment`            | heading ≈ motion (fwd)  | motion opposes heading     | `_heading_forward.dot(motion_forward)`         |
+
+`alignment` is a dot of two unit vectors, so `+1` is pure forward, `0` is
+perpendicular, `-1` is pure reverse. `HEADING_REVERSE_ALIGN_DOT_THRESHOLD =
+-0.2` is the "clearly reversing" band used to gate reverse-heading recovery.
+
 ## Architecture
 
 - **Resources for data**: Car stats, track definitions, and other tunable data

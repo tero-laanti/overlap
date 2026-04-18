@@ -337,6 +337,9 @@ func _drive_for_drift(scene: MainSceneController, duration: float) -> Dictionary
 func _drive_jump(scene: MainSceneController, duration: float) -> Dictionary:
 	var car: Car = _get_car(scene)
 	var ramp: JumpRamp = scene.get_node(^"Track/JumpRamp") as JumpRamp
+	# -ramp.global_basis.z is the ramp's forward (travel direction onto the
+	# jump). +ramp.global_basis.z is the opposite: it walks *behind* the ramp,
+	# which is where we spawn the car so it drives forward into the ramp.
 	var travel_direction: Vector3 = -ramp.global_basis.z
 	travel_direction.y = 0.0
 	travel_direction = travel_direction.normalized()
