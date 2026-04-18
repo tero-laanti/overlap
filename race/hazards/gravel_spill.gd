@@ -85,20 +85,20 @@ func _on_body_entered(body: Node) -> void:
 	if _run_state and not _run_state.is_round_active:
 		return
 
-	var body_id: int = car.get_instance_id()
+	var body_id: int = body.get_instance_id()
 	_active_cars[body_id] = car
 	car.set_speed_cap(speed_factor)
 	car.apply_grip_penalty(grip_multiplier, grip_refresh_duration)
 
 
 func _on_body_exited(body: Node) -> void:
-	var car: Car = CarBodyResolver.resolve(body)
-	if car == null:
+	var body_id: int = body.get_instance_id()
+	if not _active_cars.has(body_id):
 		return
-	var body_id: int = car.get_instance_id()
-	if _active_cars.has(body_id):
-		_active_cars[body_id].clear_speed_cap()
-		_active_cars.erase(body_id)
+	var stored_car: Car = _active_cars[body_id]
+	if is_instance_valid(stored_car):
+		stored_car.clear_speed_cap()
+	_active_cars.erase(body_id)
 
 
 func _release_all_cars() -> void:

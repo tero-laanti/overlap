@@ -63,7 +63,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_prune_triggered_bodies()
 
-	var body_id: int = car.get_instance_id()
+	var body_id: int = body.get_instance_id()
 	if _triggered_body_ids.has(body_id):
 		return
 
@@ -72,9 +72,7 @@ func _on_body_entered(body: Node) -> void:
 
 
 func _on_body_exited(body: Node) -> void:
-	var car: Car = CarBodyResolver.resolve(body)
-	if car != null:
-		_triggered_body_ids.erase(car.get_instance_id())
+	_triggered_body_ids.erase(body.get_instance_id())
 
 
 func _prune_triggered_bodies() -> void:

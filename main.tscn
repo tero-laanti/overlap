@@ -82,10 +82,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
 script = ExtResource("car_script")
 stats = ExtResource("car_stats")
 
-[node name="Collision" type="CollisionShape3D" parent="Car" unique_id=2075442314]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
-shape = SubResource("car_shape")
-
 [node name="PhysicsProxy" type="RigidBody3D" parent="Car"]
 top_level = true
 collision_layer = 1
@@ -107,18 +103,6 @@ enabled = true
 collision_mask = 4
 
 [node name="VisualRoot" type="Node3D" parent="Car"]
-
-[node name="WheelFrontLeft" type="Marker3D" parent="Car" unique_id=212383081]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, -0.05, -1.32)
-
-[node name="WheelFrontRight" type="Marker3D" parent="Car" unique_id=1871983277]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, -0.05, -1.32)
-
-[node name="WheelRearLeft" type="Marker3D" parent="Car" unique_id=2043585818]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, -0.05, 1.32)
-
-[node name="WheelRearRight" type="Marker3D" parent="Car" unique_id=1106278217]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, -0.05, 1.32)
 
 [node name="Body" parent="Car/VisualRoot" unique_id=2086963516 instance=ExtResource("car_body_scene")]
 transform = Transform3D(-2, 0, 0, 0, 2, 0, 0, 0, -2, 0, -0.25, 0)
