@@ -319,6 +319,111 @@ _how_ to work in the repo.
   issues, or explicitly document any remaining disagreement in the handoff with
   the reason it was left unresolved.
 
+## Change Playbook
+
+A pragmatic checklist distilled from recurring lessons. Walk it top-to-bottom
+before marking a non-trivial change done. When in doubt, prefer understanding
+the root cause over a surface patch.
+
+### Before writing code
+
+- Read the target file end-to-end. Read one sibling that exercises the same
+  pattern (e.g., `car/drift_feedback.gd` and `car/car_audio.gd` are the
+  reference shape for runtime-bound sibling nodes that attach to `Car`).
+- If fixing a bug, reproduce it in `scripts/validate_*.gd` first and confirm
+  the test fails against the unfixed code. A green fix without a previously
+  red test is a guess, not a fix.
+- Enumerate the reset/teardown paths any new state has to survive. For car
+  state that means `reset_to_transform`, `set_frozen(true)`,
+  `set_controls_enabled(false)`, and `_exit_tree` on whichever node owns it.
+  Missing even one of these is how stale state turns into next-round bugs.
+- Decide the scope and stick to it. One system per commit. Do not mix a
+  feel tweak with a refactor — the review signal gets muddy and the diff
+  becomes hard to revert.
+
+### While writing code
+
+- Type everything. `var`, parameter, return, collection — `Array[int]`,
+  `Dictionary[int, Car]`. Variants and untyped dictionaries are a red flag.
+- Name every threshold, duration, rate, and tuning value as a
+  `CONSTANT_CASE` at the top of the file, with a one-line comment if the
+  value is non-obvious. Literals inside branch expressions age badly.
+- Prefer `@export var foo: T = default` on `Resource` subclasses; avoid
+  the backing-variable + getter/setter form. See "Web Builds" for the
+  import-cache failure mode this pattern causes.
+- Signals down the tree, direct calls up. Never `get_parent()` for cross-
+  node communication. A sibling pattern (like `CarVisualPose` ←→ `Car`)
+  is a `bind_car(self)` handshake plus public getters on the parent, not
+  private-underscore access from outside.
+- When a helper is about to be called from another script, drop its `_`
+  prefix and treat it as public API. Don't grant cross-script access to
+  `_foo` state without a getter — it silently broadens the contract and
+  no future refactor will know who depends on it.
+- Avoid the "precompute once per frame into a cached flag" habit unless
+  profiling says to. A clear call site beats a clever optimization, and
+  an idle early-out (see `CarVisualPose._update_visual_pose`) should
+  require strict equality with the smoothed target, not a loose threshold
+  that could freeze mid-animation.
+
+### Adding a new Area3D-based hazard or modifier
+
+Required before any PR:
+
+- Scaffold against `race/hazards/slow_zone.gd` or `race/hazards/gravel_spill.gd`.
+  They are the canonical pattern — duplicating their shape avoids
+  re-discovering every pitfall.
+- Key per-body state by `body.get_instance_id()` (not `car.get_instance_id()`).
+  Commit a8571df moved every hazard to this pattern; exit cleanup breaks if
+  you regress it because the proxy's `car_owner` may already be null by the
+  time `body_exited` fires.
+- `_on_body_entered` must skip on `_preview_mode`, on
+  `_run_state and not _run_state.is_round_active`, and on `car == null`.
+- `_on_body_exited` must erase from `_active_cars` / `_triggered_body_ids`
+  even when `is_instance_valid(stored_car)` is false. Stale entries are
+  how modifiers leak across rounds.
+- Register the hazard in `race/hazard_type.gd` (enum, scene path, display
+  name, description, node name, category, draft weight) in the same
+  commit that adds the script. Missing registry entries break the draft
+  phase silently.
+- Claim the right collision layer per the table in "Physics". If the
+  hazard is solid, layer 2 (`track_wall`); if a passing modifier, layer 5
+  (`track_modifier`).
+
+### Validator patterns
+
+- New bug → new test. Add it to `scripts/validate_car_controller.gd` (or
+  a sibling validator) so the regression guard lives next to the fix.
+- Tests may reach into underscored state (`car._visual_pose._visual_pitch_angle`,
+  `slow_zone._active_cars`) — that is acceptable inside a validator script
+  because it lets the test check the actual invariant without expanding
+  the public API surface. Do NOT mirror that access from gameplay code.
+- Print one status line per test on success, even for passing cases —
+  the CI log is often the only artifact a future agent has.
+- When asserting a post-transient state (e.g., pitch returns to neutral
+  after landing), also assert that the transient actually happened
+  (non-zero peak) so the test cannot be passed by a guard that silently
+  freezes the state it was meant to check.
+
+### Before committing
+
+1. `bash scripts/headless_check.sh` — confirms the project boots headless.
+2. `godot --headless --path . --script res://scripts/validate_car_controller.gd`
+   — required after any car, hazard, or track-surface change. Exit 0 is
+   mandatory; inspect the metrics line for each test, not just the exit code.
+3. If the change alters `track_mutator.gd`, a detour tile, or the layout
+   data model, also run
+   `godot --headless --path . --script res://scripts/validate_track_mutator.gd`.
+4. Run the scene and exercise the feature if it's a feel change. Automated
+   tests catch correctness, not feel.
+5. Run a standard and an adversarial review agent on the diff. Resolve
+   every Medium-or-higher finding or document the explicit disagreement
+   in the commit message.
+6. If any `Resource` script was refactored, clear the import cache
+   (`rm -rf .godot`) before any web-build pipeline runs. See "Web Builds".
+7. Update this file, `CLAUDE.md`, `DESIGN.md`, or any table in the same
+   commit when they no longer match the code. Drift between doc and code
+   is how agents end up patching the wrong invariant.
+
 ## Documentation and Planning
 
 - Keep early design documentation lightweight and easy to revise.
