@@ -26,6 +26,7 @@ func _run_validation() -> void:
 	await _validate_flat_and_figure_eight()
 	await _validate_drift_and_jump()
 	await _validate_surface_speeds()
+	await _validate_reverse_throttle_release_no_flip()
 	await _validate_collision_owner_resolution()
 
 	_clear_drive_input()
@@ -100,6 +101,34 @@ func _validate_surface_speeds() -> void:
 	if car.global_position.y < -1.0:
 		_fail("Surface-speed test left the car below the track.")
 	await _free_scene(surface_scene)
+
+
+func _validate_reverse_throttle_release_no_flip() -> void:
+	var scene: MainSceneController = await _spawn_main_scene(RECTANGLE_LAYOUT_INDEX)
+	var car: Car = _get_car(scene)
+	var initial_heading: Vector3 = _flat_forward(car)
+
+	_apply_drive_input(-1.0, 0.0)
+	await _await_physics_frames(int(float(Engine.physics_ticks_per_second) * 1.5))
+
+	var planar_velocity: Vector3 = car.linear_velocity.slide(Vector3.UP)
+	var reversing_speed: float = planar_velocity.length()
+	var reverse_alignment: float = planar_velocity.normalized().dot(initial_heading) if reversing_speed > 0.001 else 0.0
+	print("reverse setup: speed=%.2f alignment=%.2f" % [reversing_speed, reverse_alignment])
+	if reversing_speed <= 2.0 or reverse_alignment >= -0.5:
+		_fail("Reverse-flip test could not build sustained backward motion.")
+
+	_clear_drive_input()
+	# Observe past `REVERSE_INTENT_RETENTION_DURATION` so a fix that just
+	# delays the flip by 0.5s cannot pass the test.
+	await _await_physics_frames(int(float(Engine.physics_ticks_per_second) * 1.5))
+	var released_heading: Vector3 = _flat_forward(car)
+	var heading_delta_deg: float = rad_to_deg(initial_heading.angle_to(released_heading))
+	print("reverse release heading delta: %.2f°" % heading_delta_deg)
+	if heading_delta_deg >= 25.0:
+		_fail("Heading flipped after releasing reverse throttle mid-reverse.")
+
+	await _free_scene(scene)
 
 
 func _validate_collision_owner_resolution() -> void:

@@ -34,6 +34,7 @@ const REVERSE_HEADING_RECOVERY_RATE := 3.5
 const PASSIVE_HEADING_RECOVERY_RATE := 2.5
 const DRIFT_HEADING_RECOVERY_RATE := 1.2
 const REVERSE_LANDING_HEADING_SUPPRESS_DURATION := 0.12
+const REVERSE_INTENT_RETENTION_DURATION := 0.5
 const DEFAULT_PROXY_CENTER_HEIGHT := 0.4
 const DEFAULT_PROXY_RADIUS := 0.65
 
@@ -78,6 +79,7 @@ var _is_frozen: bool = false
 var _heading_forward: Vector3 = Vector3.FORWARD
 var _heading_turn_speed: float = 0.0
 var _heading_correction_suppression_remaining: float = 0.0
+var _reverse_intent_remaining: float = 0.0
 var _ground_contact_grace_remaining: float = 0.0
 var _ground_contact_grace_active: bool = false
 var _had_full_ground_support_last_frame: bool = false
@@ -225,6 +227,7 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	ground_normal = Vector3.UP
 	_heading_turn_speed = 0.0
 	_heading_correction_suppression_remaining = 0.0
+	_reverse_intent_remaining = 0.0
 	_ground_contact_grace_remaining = 0.0
 	_ground_contact_grace_active = false
 	_had_full_ground_support_last_frame = false
@@ -244,6 +247,7 @@ func set_controls_enabled(is_enabled: bool) -> void:
 	if not controls_enabled:
 		steering_input = 0.0
 		throttle_input = 0.0
+		_reverse_intent_remaining = 0.0
 
 
 func set_frozen(should_freeze: bool) -> void:
@@ -252,6 +256,7 @@ func set_frozen(should_freeze: bool) -> void:
 		linear_velocity = Vector3.ZERO
 		angular_velocity = Vector3.ZERO
 		_heading_turn_speed = 0.0
+		_reverse_intent_remaining = 0.0
 		_ground_contact_grace_remaining = 0.0
 		_ground_contact_grace_active = false
 		_had_full_ground_support_last_frame = false
@@ -474,10 +479,31 @@ func _reconcile_heading_with_velocity(
 
 	var motion_forward: Vector3 = _get_planar_vector_on_axis(planar_velocity, up_axis)
 	var alignment: float = clampf(_heading_forward.dot(motion_forward), -1.0, 1.0)
+
+	# Gate the reverse-recovery preserve on a sustained-intent timer rather
+	# than instantaneous throttle. Releasing the brake mid-reverse flips the
+	# throttle check false in one tick, which without this timer lets the
+	# aggressive REVERSE_HEADING_RECOVERY_RATE branch snap the heading 180°
+	# to match the still-backward motion. The timer refreshes while the
+	# player is actively reversing, holds (no decay) while motion is still
+	# backward after release so drag alone does not have to outrun the
+	# clock, and only decays once the car has escaped the reverse-aligned
+	# motion band. That means REVERSE_HEADING_RECOVERY_RATE only fires for
+	# unintended spins (external collisions), never for a player-driven
+	# reverse release.
+	var reversing_now: bool = (
+		alignment <= HEADING_REVERSE_ALIGN_DOT_THRESHOLD
+		and throttle_input <= -THROTTLE_DEAD_ZONE
+	)
+	if reversing_now:
+		_reverse_intent_remaining = REVERSE_INTENT_RETENTION_DURATION
+	elif alignment > HEADING_REVERSE_ALIGN_DOT_THRESHOLD:
+		_reverse_intent_remaining = maxf(_reverse_intent_remaining - delta, 0.0)
+
 	var correction_rate: float = 0.0
 	var preserve_reverse_recovery: bool = (
 		alignment <= HEADING_REVERSE_ALIGN_DOT_THRESHOLD
-		and throttle_input <= -THROTTLE_DEAD_ZONE
+		and _reverse_intent_remaining > 0.0
 	)
 	var suppress_landing_correction: bool = (
 		just_landed
