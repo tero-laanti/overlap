@@ -4,6 +4,8 @@ extends SceneTree
 const MAIN_SCENE: PackedScene = preload("res://main.tscn")
 const COIN_SCENE: PackedScene = preload("res://race/coin.tscn")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
+const SLOW_ZONE_SCENE: PackedScene = preload("res://race/hazards/slow_zone.tscn")
+const GRAVEL_SPILL_SCENE: PackedScene = preload("res://race/hazards/gravel_spill.tscn")
 
 const RECTANGLE_LAYOUT_INDEX := 0
 const FIGURE_EIGHT_LAYOUT_INDEX := 5
@@ -28,6 +30,8 @@ func _run_validation() -> void:
 	await _validate_surface_speeds()
 	await _validate_reverse_throttle_release_no_flip()
 	await _validate_collision_owner_resolution()
+	await _validate_hazard_exit_cleanup_after_owner_cleared()
+	await _validate_reset_to_transform_grounded_state()
 
 	_clear_drive_input()
 	await _await_idle_and_physics()
@@ -157,6 +161,84 @@ func _validate_collision_owner_resolution() -> void:
 	if car.linear_velocity.length() <= 0.5:
 		_fail("Boost pad did not affect the car when entered by the proxy body.")
 	boost_pad.queue_free()
+	await _free_scene(scene)
+
+
+func _validate_hazard_exit_cleanup_after_owner_cleared() -> void:
+	var scene: MainSceneController = await _spawn_main_scene(RECTANGLE_LAYOUT_INDEX)
+	var car: Car = _get_car(scene)
+	var proxy: CarPhysicsProxy = car.get_physics_proxy()
+
+	var slow_zone: SlowZone = SLOW_ZONE_SCENE.instantiate() as SlowZone
+	scene.add_child(slow_zone)
+	await _await_physics_frames(1)
+
+	slow_zone.set_preview_mode(true)
+	slow_zone._on_body_entered(proxy)
+	if not slow_zone._active_cars.is_empty():
+		_fail("SlowZone should ignore entry while in preview mode.")
+	if not is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("SlowZone should not apply a speed cap while in preview mode.")
+	slow_zone.set_preview_mode(false)
+
+	slow_zone._on_body_entered(proxy)
+	if slow_zone._active_cars.is_empty():
+		_fail("SlowZone did not register the car when entered.")
+	if is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("SlowZone did not apply a speed cap on entry.")
+
+	proxy.bind_car(null)
+	if CarBodyResolver.resolve(proxy) != null:
+		_fail("CarBodyResolver should return null when proxy.car_owner is cleared.")
+	slow_zone._on_body_exited(proxy)
+	if not slow_zone._active_cars.is_empty():
+		_fail("SlowZone did not clear _active_cars after exit once car_owner was nulled.")
+	if not is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("SlowZone did not restore the speed cap after exit once car_owner was nulled.")
+	print("slow-zone orphaned-exit cleanup: ok")
+	proxy.bind_car(car)
+	slow_zone.queue_free()
+	await _await_idle_and_physics()
+
+	var gravel: GravelSpill = GRAVEL_SPILL_SCENE.instantiate() as GravelSpill
+	scene.add_child(gravel)
+	await _await_physics_frames(1)
+	gravel._on_body_entered(proxy)
+	if gravel._active_cars.is_empty():
+		_fail("GravelSpill did not register the car when entered.")
+	if is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("GravelSpill did not apply a speed cap on entry.")
+
+	proxy.bind_car(null)
+	gravel._on_body_exited(proxy)
+	if not gravel._active_cars.is_empty():
+		_fail("GravelSpill did not clear _active_cars after exit once car_owner was nulled.")
+	if not is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("GravelSpill did not restore the speed cap after exit once car_owner was nulled.")
+	print("gravel-spill orphaned-exit cleanup: ok")
+	proxy.bind_car(car)
+	gravel.queue_free()
+	await _free_scene(scene)
+
+
+func _validate_reset_to_transform_grounded_state() -> void:
+	var scene: MainSceneController = await _spawn_main_scene(RECTANGLE_LAYOUT_INDEX)
+	var car: Car = _get_car(scene)
+	var track: TestTrack = _get_track(scene)
+
+	car.reset_to_transform(track.get_start_transform(CAR_SPAWN_Y_OFFSET))
+	# One physics tick applies the pending reset and runs `_update_ground_probe`
+	# against the teleported proxy. A second tick is defensive slack.
+	await _await_physics_frames(2)
+
+	print("reset grounded: is_grounded=%s normal=%s" % [car.is_grounded, car.ground_normal])
+	if not car.is_grounded:
+		_fail("Car is not grounded on the physics tick after reset_to_transform.")
+	if car.ground_normal.length_squared() < 0.9:
+		_fail("Car ground_normal is not unit-length after reset_to_transform.")
+	if car.ground_normal.dot(Vector3.UP) < 0.9:
+		_fail("Car ground_normal is not near world UP after reset_to_transform on flat track.")
+
 	await _free_scene(scene)
 
 
