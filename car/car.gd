@@ -6,6 +6,7 @@ extends Node3D
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
 const DRIFT_FEEDBACK_NODE := "DriftFeedback"
 const CAR_AUDIO_NODE := "CarAudio"
+const VISUAL_POSE_NODE := "CarVisualPose"
 const BRAKE_SPEED_THRESHOLD := 0.5
 const THROTTLE_DEAD_ZONE := 0.1
 const DRIFT_ENTRY_STEERING_THRESHOLD := 0.28
@@ -35,15 +36,6 @@ const DRIFT_HEADING_RECOVERY_RATE := 1.2
 const REVERSE_LANDING_HEADING_SUPPRESS_DURATION := 0.12
 const DEFAULT_PROXY_CENTER_HEIGHT := 0.4
 const DEFAULT_PROXY_RADIUS := 0.65
-const MAX_VISUAL_STEER_ANGLE := deg_to_rad(30.0)
-const WHEEL_STEER_SMOOTH_RATE := 15.0
-const VISUAL_ALIGN_SMOOTH_RATE := 10.0
-const VISUAL_POSE_SMOOTH_RATE := 8.0
-const VISUAL_DRIFT_ROLL_MULTIPLIER := 1.2
-const VISUAL_PITCH_ACCEL_WEIGHT := 0.01
-const VISUAL_PITCH_VERTICAL_WEIGHT := 0.02
-const MAX_VISUAL_ROLL_ANGLE := deg_to_rad(10.0)
-const MAX_VISUAL_PITCH_ANGLE := deg_to_rad(6.0)
 
 signal drift_started
 signal drift_ended
@@ -90,20 +82,10 @@ var _ground_contact_grace_remaining: float = 0.0
 var _ground_contact_grace_active: bool = false
 var _had_full_ground_support_last_frame: bool = false
 var _last_ground_normal: Vector3 = Vector3.UP
-var _visual_surface_up: Vector3 = Vector3.UP
-var _visual_forward_speed: float = 0.0
-var _visual_steer_angle: float = 0.0
-var _visual_roll_angle: float = 0.0
-var _visual_pitch_angle: float = 0.0
-var _visual_root_base_origin: Vector3 = Vector3.ZERO
-var _visual_root_base_rotation: Basis = Basis.IDENTITY
-var _visual_root_base_scale: Vector3 = Vector3.ONE
+var _visual_pose: CarVisualPose = null
 
 @onready var _physics_proxy: CarPhysicsProxy = get_node_or_null(^"PhysicsProxy") as CarPhysicsProxy
 @onready var _ground_probe: RayCast3D = get_node_or_null(^"GroundProbe") as RayCast3D
-@onready var _visual_root: Node3D = get_node_or_null(^"VisualRoot") as Node3D
-@onready var _wheel_front_left: Node3D = get_node_or_null(^"VisualRoot/Body/wheel-front-left") as Node3D
-@onready var _wheel_front_right: Node3D = get_node_or_null(^"VisualRoot/Body/wheel-front-right") as Node3D
 @onready var _proxy_collision: CollisionShape3D = get_node_or_null(^"PhysicsProxy/ProxyCollision") as CollisionShape3D
 
 
@@ -113,13 +95,11 @@ func _ready() -> void:
 
 	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
 	_capture_heading_from_basis(global_basis)
-	_visual_surface_up = Vector3.UP
-	_cache_visual_rest_pose()
 	_configure_collision_shapes_from_stats()
 	_configure_ground_probe()
 	_bind_proxy()
 	_teleport_proxy_to_root_transform(global_transform)
-	_ensure_visual_root_pose()
+	_ensure_visual_pose()
 	_ensure_drift_feedback()
 	_ensure_car_audio()
 
@@ -127,8 +107,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _has_pending_reset:
 		_sync_root_from_proxy()
-	_update_visual_pose(delta)
-	_update_wheel_steering(delta)
+	if _visual_pose != null:
+		_visual_pose.tick(delta)
 
 
 func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
@@ -153,8 +133,8 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 	var drift_threshold_multiplier: float = surface_profile.drift_threshold_multiplier if surface_profile else 1.0
 	var linear_drag_multiplier: float = surface_profile.linear_drag_multiplier if surface_profile else 1.0
 
-	var drive_up: Vector3 = _get_support_up_axis()
-	var forward: Vector3 = _get_drive_forward_vector(drive_up)
+	var drive_up: Vector3 = get_support_up_axis()
+	var forward: Vector3 = get_drive_forward_vector(drive_up)
 	var right: Vector3 = _get_right_from_forward(forward, drive_up)
 	var planar_velocity: Vector3 = state.linear_velocity.slide(drive_up)
 	var forward_speed: float = planar_velocity.dot(forward)
@@ -170,12 +150,12 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 	var linear_drag: float = stats.linear_drag * linear_drag_multiplier
 	var turn_speed: float = stats.turn_speed * turn_speed_multiplier
 	var total_force: Vector3 = Vector3.ZERO
-	var has_full_ground_support: bool = _has_full_ground_support()
-	var just_landed: bool = has_full_ground_support and not _had_full_ground_support_last_frame
+	var has_ground_support: bool = has_full_ground_support()
+	var just_landed: bool = has_ground_support and not _had_full_ground_support_last_frame
 
-	_update_drift_state(forward_speed, lateral_speed, drift_threshold, has_full_ground_support)
+	_update_drift_state(forward_speed, lateral_speed, drift_threshold, has_ground_support)
 
-	if has_full_ground_support:
+	if has_ground_support:
 		if throttle_input > THROTTLE_DEAD_ZONE and forward_speed < max_speed:
 			var uphill_drive_bonus: float = 1.0 + (maxf(forward.y, 0.0) * stats.uphill_acceleration_bonus)
 			total_force += forward * acceleration_force * throttle_input * uphill_drive_bonus
@@ -185,13 +165,13 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 			elif forward_speed > -reverse_max_speed:
 				total_force += forward * reverse_acceleration_force * throttle_input
 
-	if has_full_ground_support and forward_speed > max_speed:
+	if has_ground_support and forward_speed > max_speed:
 		total_force += -forward * stats.brake_force * OVERSPEED_BRAKE_RATIO
-	if has_full_ground_support and _speed_cap_factor < DEFAULT_SPEED_CAP_FACTOR and forward_speed > max_speed:
+	if has_ground_support and _speed_cap_factor < DEFAULT_SPEED_CAP_FACTOR and forward_speed > max_speed:
 		total_force += -forward * stats.brake_force * SPEED_CAP_RESISTANCE
 
 	var current_grip: float = drift_grip if is_drifting else grip
-	if has_full_ground_support:
+	if has_ground_support:
 		total_force += -right * lateral_speed * current_grip
 		if state.linear_velocity.dot(drive_up) <= GROUND_STICK_VERTICAL_LIMIT:
 			total_force += -drive_up * stats.ground_stick_force
@@ -209,13 +189,13 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 	state.apply_central_force(total_force)
 
 	_reconcile_heading_with_velocity(planar_velocity, drive_up, state.step, just_landed)
-	forward = _get_drive_forward_vector(drive_up)
+	forward = get_drive_forward_vector(drive_up)
 	right = _get_right_from_forward(forward, drive_up)
 	planar_velocity = state.linear_velocity.slide(drive_up)
 	forward_speed = planar_velocity.dot(forward)
-	has_full_ground_support = _has_full_ground_support()
-	var target_yaw_speed: float = _get_target_yaw_speed(forward_speed, turn_speed, has_full_ground_support)
-	var steering_response: float = stats.steering_response if has_full_ground_support else stats.air_steering_response
+	has_ground_support = has_full_ground_support()
+	var target_yaw_speed: float = _get_target_yaw_speed(forward_speed, turn_speed, has_ground_support)
+	var steering_response: float = stats.steering_response if has_ground_support else stats.air_steering_response
 	_heading_turn_speed = move_toward(_heading_turn_speed, target_yaw_speed, steering_response * state.step)
 	_advance_heading(_heading_turn_speed * state.step)
 
@@ -223,7 +203,7 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.angular_velocity = state.angular_velocity.move_toward(Vector3.ZERO, stats.proxy_angular_damp * state.step)
 
 	_tick_grip_modifier(state.step)
-	_had_full_ground_support_last_frame = has_full_ground_support
+	_had_full_ground_support_last_frame = has_ground_support
 	# Heading just advanced above; re-sync the root so external readers of
 	# `global_basis` see the current heading within this tick.
 	_sync_root_from_proxy_origin(state.transform.origin)
@@ -250,22 +230,13 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	_had_full_ground_support_last_frame = false
 	_last_ground_normal = Vector3.UP
 	_capture_heading_from_basis(spawn_transform.basis)
-	_visual_surface_up = Vector3.UP
-	_visual_steer_angle = 0.0
-	_visual_roll_angle = 0.0
-	_visual_pitch_angle = 0.0
-	_visual_forward_speed = 0.0
 
 	if _physics_proxy != null:
 		_teleport_proxy_to_root_transform(spawn_transform)
 		_physics_proxy.sleeping = false
 
-	if _wheel_front_left != null:
-		_wheel_front_left.rotation.y = 0.0
-	if _wheel_front_right != null:
-		_wheel_front_right.rotation.y = 0.0
-
-	_ensure_visual_root_pose()
+	if _visual_pose != null:
+		_visual_pose.reset_pose()
 
 
 func set_controls_enabled(is_enabled: bool) -> void:
@@ -295,8 +266,8 @@ func apply_forward_boost(boost_speed: float) -> void:
 	if boost_speed <= 0.0:
 		return
 
-	var up_axis: Vector3 = _get_support_up_axis()
-	var forward: Vector3 = _get_drive_forward_vector(up_axis)
+	var up_axis: Vector3 = get_support_up_axis()
+	var forward: Vector3 = get_drive_forward_vector(up_axis)
 	var current_velocity: Vector3 = linear_velocity
 	var planar_velocity: Vector3 = current_velocity.slide(up_axis)
 	var vertical_velocity: Vector3 = current_velocity - planar_velocity
@@ -352,13 +323,41 @@ func clear_temporary_handling_modifiers() -> void:
 func apply_planar_velocity_delta(delta_velocity: Vector3) -> void:
 	if _is_frozen or _physics_proxy == null:
 		return
-	var planar_delta: Vector3 = delta_velocity.slide(_get_support_up_axis())
+	var planar_delta: Vector3 = delta_velocity.slide(get_support_up_axis())
 	_physics_proxy.apply_central_impulse(planar_delta * _physics_proxy.mass)
 	_physics_proxy.sleeping = false
 
 
 func get_physics_proxy() -> CarPhysicsProxy:
 	return _physics_proxy
+
+
+func has_full_ground_support() -> bool:
+	return is_grounded and not _ground_contact_grace_active
+
+
+func get_support_up_axis() -> Vector3:
+	return ground_normal if has_full_ground_support() else Vector3.UP
+
+
+func get_drive_forward_vector(up_axis: Vector3) -> Vector3:
+	return _get_planar_vector_on_axis(_heading_forward, up_axis)
+
+
+func get_heading_forward() -> Vector3:
+	return _heading_forward
+
+
+func basis_from_forward_and_up(forward: Vector3, up_axis: Vector3) -> Basis:
+	var safe_up: Vector3 = up_axis.normalized() if up_axis.length_squared() >= 0.001 else Vector3.UP
+	var safe_forward: Vector3 = _get_planar_vector_on_axis(forward, safe_up)
+	var right: Vector3 = _get_right_from_forward(safe_forward, safe_up)
+	var corrected_forward: Vector3 = safe_up.cross(right)
+	if corrected_forward.length_squared() < 0.001:
+		corrected_forward = Vector3.FORWARD
+	else:
+		corrected_forward = corrected_forward.normalized()
+	return Basis(right, safe_up, -corrected_forward).orthonormalized()
 
 
 func _relay_proxy_body_entered(body: Node) -> void:
@@ -371,62 +370,6 @@ func _relay_proxy_body_exited(body: Node) -> void:
 
 func _relay_proxy_body_shape_entered(body_rid: RID, body: Node, body_shape_index: int, local_shape_index: int) -> void:
 	body_shape_entered.emit(body_rid, body, body_shape_index, local_shape_index)
-
-
-func _update_visual_pose(delta: float) -> void:
-	if _visual_root == null:
-		return
-
-	var align_weight: float = clampf(delta * VISUAL_ALIGN_SMOOTH_RATE, 0.0, 1.0)
-	if _has_full_ground_support():
-		var current_visual_up: Vector3 = _visual_surface_up.normalized() if _visual_surface_up.length_squared() >= 0.001 else Vector3.UP
-		var target_ground_up: Vector3 = ground_normal.normalized() if ground_normal.length_squared() >= 0.001 else Vector3.UP
-		_visual_surface_up = current_visual_up.slerp(target_ground_up, align_weight)
-	elif _visual_surface_up.length_squared() < 0.001:
-		_visual_surface_up = Vector3.UP
-	_visual_surface_up = _visual_surface_up.normalized()
-
-	var drive_up: Vector3 = _get_support_up_axis()
-	var forward: Vector3 = _get_drive_forward_vector(drive_up)
-	var planar_velocity: Vector3 = linear_velocity.slide(drive_up)
-	var forward_speed: float = planar_velocity.dot(forward)
-	var speed_ratio: float = clampf(absf(forward_speed) / maxf(stats.max_speed if stats else 1.0, 0.001), 0.0, 1.0)
-	var forward_acceleration: float = (forward_speed - _visual_forward_speed) / maxf(delta, 0.001)
-	_visual_forward_speed = forward_speed
-	var roll_multiplier: float = VISUAL_DRIFT_ROLL_MULTIPLIER if is_drifting else 1.0
-	var target_roll: float = -steering_input * MAX_VISUAL_ROLL_ANGLE * speed_ratio * roll_multiplier
-	var target_pitch: float = clampf(
-		(-forward_acceleration * VISUAL_PITCH_ACCEL_WEIGHT) - (linear_velocity.y * VISUAL_PITCH_VERTICAL_WEIGHT),
-		-MAX_VISUAL_PITCH_ANGLE,
-		MAX_VISUAL_PITCH_ANGLE
-	)
-	var pose_weight: float = clampf(delta * VISUAL_POSE_SMOOTH_RATE, 0.0, 1.0)
-	_visual_roll_angle = lerpf(_visual_roll_angle, target_roll, pose_weight)
-	_visual_pitch_angle = lerpf(_visual_pitch_angle, target_pitch, pose_weight)
-
-	var aligned_basis: Basis = _basis_from_forward_and_up(_heading_forward, _visual_surface_up)
-	var visual_basis: Basis = aligned_basis
-	visual_basis = visual_basis.rotated(visual_basis.x, _visual_pitch_angle)
-	visual_basis = visual_basis.rotated(visual_basis.z, _visual_roll_angle)
-	var target_local_rotation: Basis = global_basis.inverse() * visual_basis
-	var target_visual_rotation: Basis = target_local_rotation * _visual_root_base_rotation
-	var current_rotation: Basis = _visual_root.transform.basis.orthonormalized()
-	var target_quaternion: Quaternion = target_visual_rotation.get_rotation_quaternion()
-	var current_quaternion: Quaternion = current_rotation.get_rotation_quaternion()
-	var visual_transform: Transform3D = _visual_root.transform
-	visual_transform.basis = Basis(current_quaternion.slerp(target_quaternion, pose_weight)).scaled(_visual_root_base_scale)
-	visual_transform.origin = visual_transform.origin.lerp(_visual_root_base_origin, pose_weight)
-	_visual_root.transform = visual_transform
-
-
-func _update_wheel_steering(delta: float) -> void:
-	if _wheel_front_left == null or _wheel_front_right == null:
-		return
-	var target_angle: float = steering_input * MAX_VISUAL_STEER_ANGLE
-	var weight: float = clampf(delta * WHEEL_STEER_SMOOTH_RATE, 0.0, 1.0)
-	_visual_steer_angle = lerpf(_visual_steer_angle, target_angle, weight)
-	_wheel_front_left.rotation.y = _visual_steer_angle
-	_wheel_front_right.rotation.y = _visual_steer_angle
 
 
 func _update_ground_probe(current_velocity: Vector3, delta: float) -> void:
@@ -467,21 +410,21 @@ func _update_drift_state(
 	forward_speed: float,
 	lateral_speed: float,
 	drift_threshold: float,
-	has_full_ground_support: bool
+	has_ground_support: bool
 ) -> void:
 	var lateral_speed_abs: float = absf(lateral_speed)
 	var drift_intent_speed: float = maxf(forward_speed - stats.drift_min_speed, 0.0)
 	var drift_metric: float = lateral_speed_abs + (absf(steering_input) * drift_intent_speed * DRIFT_INTENT_SPEED_FACTOR)
 	var drift_exit_threshold: float = drift_threshold * DRIFT_EXIT_THRESHOLD_FACTOR
 	var can_enter_drift: bool = (
-		has_full_ground_support
+		has_ground_support
 		and forward_speed > stats.drift_min_speed
 		and throttle_input > THROTTLE_DEAD_ZONE
 		and absf(steering_input) >= DRIFT_ENTRY_STEERING_THRESHOLD
 		and drift_metric >= drift_threshold
 	)
 	var can_hold_drift: bool = (
-		has_full_ground_support
+		has_ground_support
 		and forward_speed > maxf(stats.drift_min_speed * DRIFT_EXIT_THRESHOLD_FACTOR, BRAKE_SPEED_THRESHOLD)
 		and absf(steering_input) >= DRIFT_EXIT_STEERING_THRESHOLD
 		and drift_metric >= drift_exit_threshold
@@ -501,8 +444,8 @@ func _set_drifting(should_drift: bool) -> void:
 		drift_ended.emit()
 
 
-func _get_target_yaw_speed(forward_speed: float, turn_speed: float, has_full_ground_support: bool) -> float:
-	if has_full_ground_support and absf(forward_speed) <= BRAKE_SPEED_THRESHOLD:
+func _get_target_yaw_speed(forward_speed: float, turn_speed: float, has_ground_support: bool) -> float:
+	if has_ground_support and absf(forward_speed) <= BRAKE_SPEED_THRESHOLD:
 		return 0.0
 
 	var speed_for_full_turn: float = stats.speed_for_full_turn if stats else 1.0
@@ -515,7 +458,7 @@ func _get_target_yaw_speed(forward_speed: float, turn_speed: float, has_full_gro
 
 	var steer_scale: float = lerpf(LOW_SPEED_TURN_SCALE, 1.0, speed_factor)
 	var drift_turn_multiplier: float = stats.drift_turn_multiplier if (stats and is_drifting) else 1.0
-	var air_multiplier: float = 1.0 if has_full_ground_support else (stats.air_steer_factor if stats else 1.0)
+	var air_multiplier: float = 1.0 if has_ground_support else (stats.air_steer_factor if stats else 1.0)
 	return steering_input * turn_speed * steer_scale * direction * drift_turn_multiplier * air_multiplier
 
 
@@ -593,29 +536,6 @@ func _apply_ground_contact_grace(current_velocity: Vector3, delta: float) -> voi
 	_ground_contact_grace_active = true
 
 
-func _has_full_ground_support() -> bool:
-	return is_grounded and not _ground_contact_grace_active
-
-
-func _ensure_visual_root_pose() -> void:
-	if _visual_root == null:
-		return
-
-	var visual_transform: Transform3D = _visual_root.transform
-	visual_transform.origin = _visual_root_base_origin
-	visual_transform.basis = _visual_root_base_rotation.scaled(_visual_root_base_scale)
-	_visual_root.transform = visual_transform
-
-
-func _cache_visual_rest_pose() -> void:
-	if _visual_root == null:
-		return
-
-	_visual_root_base_origin = _visual_root.transform.origin
-	_visual_root_base_scale = _visual_root.transform.basis.get_scale()
-	_visual_root_base_rotation = _visual_root.transform.basis.orthonormalized()
-
-
 func _configure_collision_shapes_from_stats() -> void:
 	if _proxy_collision == null:
 		return
@@ -661,17 +581,32 @@ func _get_surface_profile(world_position: Vector3) -> SurfaceProfile:
 	return null
 
 
+func _ensure_visual_pose() -> void:
+	var visual_pose: CarVisualPose = get_node_or_null(VISUAL_POSE_NODE) as CarVisualPose
+	if visual_pose:
+		_visual_pose = visual_pose
+		_visual_pose.bind_car(self)
+		return
+
+	var new_visual_pose: CarVisualPose = CarVisualPose.new()
+	new_visual_pose.name = VISUAL_POSE_NODE
+	add_child(new_visual_pose)
+	new_visual_pose.bind_car(self)
+	_visual_pose = new_visual_pose
+
+
 func _ensure_drift_feedback() -> void:
+	var visual_root: Node3D = _visual_pose.get_visual_root() if _visual_pose != null else null
 	var drift_feedback: DriftFeedback = get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
-	if drift_feedback == null and _visual_root != null:
-		drift_feedback = _visual_root.get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
+	if drift_feedback == null and visual_root != null:
+		drift_feedback = visual_root.get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
 	if drift_feedback:
 		drift_feedback.bind_car(self)
 		return
 
 	var new_drift_feedback: DriftFeedback = DriftFeedback.new()
 	new_drift_feedback.name = DRIFT_FEEDBACK_NODE
-	var drift_feedback_parent: Node = _visual_root if _visual_root != null else self
+	var drift_feedback_parent: Node = visual_root if visual_root != null else self
 	drift_feedback_parent.add_child(new_drift_feedback)
 	new_drift_feedback.bind_car(self)
 
@@ -686,10 +621,6 @@ func _ensure_car_audio() -> void:
 	new_car_audio.name = CAR_AUDIO_NODE
 	add_child(new_car_audio)
 	new_car_audio.bind_car(self)
-
-
-func _get_support_up_axis() -> Vector3:
-	return ground_normal if _has_full_ground_support() else Vector3.UP
 
 
 func _get_ground_probe_ray_length() -> float:
@@ -708,10 +639,6 @@ func _get_grounded_hit_distance_limit(normal_dot_up: float) -> float:
 	return start_offset + (_get_proxy_radius() / safe_normal_dot) + extra_clearance
 
 
-func _get_drive_forward_vector(up_axis: Vector3) -> Vector3:
-	return _get_planar_vector_on_axis(_heading_forward, up_axis)
-
-
 func _get_planar_vector_on_axis(vector: Vector3, up_axis: Vector3) -> Vector3:
 	var planar_vector: Vector3 = vector.slide(up_axis)
 	if planar_vector.length_squared() < 0.001:
@@ -724,18 +651,6 @@ func _get_right_from_forward(forward: Vector3, up_axis: Vector3) -> Vector3:
 	if right.length_squared() < 0.001:
 		return Vector3.RIGHT
 	return right.normalized()
-
-
-func _basis_from_forward_and_up(forward: Vector3, up_axis: Vector3) -> Basis:
-	var safe_up: Vector3 = up_axis.normalized() if up_axis.length_squared() >= 0.001 else Vector3.UP
-	var safe_forward: Vector3 = _get_planar_vector_on_axis(forward, safe_up)
-	var right: Vector3 = _get_right_from_forward(safe_forward, safe_up)
-	var corrected_forward: Vector3 = safe_up.cross(right)
-	if corrected_forward.length_squared() < 0.001:
-		corrected_forward = Vector3.FORWARD
-	else:
-		corrected_forward = corrected_forward.normalized()
-	return Basis(right, safe_up, -corrected_forward).orthonormalized()
 
 
 func _capture_heading_from_basis(source_basis: Basis) -> void:
@@ -799,13 +714,13 @@ func _sync_root_from_proxy() -> void:
 
 
 ## Root invariant: Car's basis is yaw-only around world UP. Visual lean
-## (pitch/roll) lives on `_visual_root` and is derived by rotating relative to
-## this root basis, so any external consumer of `global_basis` sees a flat
-## heading frame that does not wobble with terrain.
+## (pitch/roll) is written onto the `VisualRoot` node by `CarVisualPose`,
+## derived relative to this root basis, so any external consumer of
+## `global_basis` sees a flat heading frame that does not wobble with terrain.
 func _sync_root_from_proxy_origin(proxy_origin: Vector3) -> void:
 	var root_transform: Transform3D = global_transform
 	root_transform.origin = proxy_origin - Vector3.UP * _get_proxy_center_height()
-	root_transform.basis = _basis_from_forward_and_up(_heading_forward, Vector3.UP)
+	root_transform.basis = basis_from_forward_and_up(_heading_forward, Vector3.UP)
 	global_transform = root_transform
 
 

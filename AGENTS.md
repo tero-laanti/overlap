@@ -18,7 +18,7 @@ _how_ to work in the repo.
 - `main.gd` — Round flow orchestration, pit stop sequencing, and track placement
   state.
 - `car/car.gd` — Public car gameplay API and owner node. Drift state machine,
-  input, modifiers, visual pose, and proxy synchronization.
+  input, modifiers, heading reconciliation, and proxy synchronization.
 - `car/car_physics_proxy.gd` — Hidden rolling rigidbody proxy. Relays
   `_integrate_forces` and collision events back to `Car`.
 - `car/car_body_resolver.gd` — Utility that resolves the owning `Car` from a
@@ -26,6 +26,8 @@ _how_ to work in the repo.
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle
   parameters.
 - `car/default_stats.tres` — Default car stats instance.
+- `car/car_visual_pose.gd` — Visual pose and wheel steering. Runtime-bound
+  sibling node that smooths body lean and wheel yaw against car state.
 - `car/drift_feedback.gd` — Drift smoke particles. Signal-driven by car drift
   state, created at runtime.
 - `camera/game_camera.gd` — Dynamic follow camera with speed-based zoom.
