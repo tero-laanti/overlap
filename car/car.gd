@@ -702,8 +702,10 @@ func _sample_inputs() -> void:
 		throttle_input = 0.0
 		return
 
-	# Signs: steering_input +right / -left; throttle_input +throttle / -brake.
-	# Reverse is driven by holding brake past zero forward_speed, so a negative
+	# Signs: steering_input +left / -right (pressing A → +1, D → -1, and
+	# +steering_input produces positive yaw around UP which rotates -Z forward
+	# toward -X = car's left). throttle_input +throttle / -brake. Reverse is
+	# driven by holding brake past zero forward_speed, so a negative
 	# throttle_input can mean "braking" or "reversing" depending on motion.
 	steering_input = Input.get_axis("steer_right", "steer_left")
 	throttle_input = Input.get_axis("brake", "throttle")

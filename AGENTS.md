@@ -144,7 +144,7 @@ Sign conventions for the values you will see in car code, tests, and telemetry:
 | Value                  | +                       | -                          | Source                                         |
 | ---------------------- | ----------------------- | -------------------------- | ---------------------------------------------- |
 | `throttle_input`       | throttle                | brake / reverse            | `Input.get_axis("brake", "throttle")`          |
-| `steering_input`       | steer right             | steer left                 | `Input.get_axis("steer_right", "steer_left")`  |
+| `steering_input`       | steer left              | steer right                | `Input.get_axis("steer_right", "steer_left")`  |
 | `forward_speed`        | moving along heading    | moving opposite heading    | `planar_velocity.dot(forward)`                 |
 | `lateral_speed`        | sliding right           | sliding left               | `planar_velocity.dot(right)`                   |
 | `alignment`            | heading ≈ motion (fwd)  | motion opposes heading     | `_heading_forward.dot(motion_forward)`         |
@@ -152,6 +152,15 @@ Sign conventions for the values you will see in car code, tests, and telemetry:
 `alignment` is a dot of two unit vectors, so `+1` is pure forward, `0` is
 perpendicular, `-1` is pure reverse. `HEADING_REVERSE_ALIGN_DOT_THRESHOLD =
 -0.2` is the "clearly reversing" band used to gate reverse-heading recovery.
+
+The `steering_input` sign is counter-intuitive because `Input.get_axis(neg,
+pos)` returns `strength(pos) - strength(neg)`, and the call passes
+`steer_right` as `neg` and `steer_left` as `pos`. So pressing A
+(`steer_left`) produces `+1`, which flows through `_get_target_yaw_speed`
+into a positive yaw rotation around world UP — i.e., the car turns **left**
+(right-handed rotation sense). The visual pose negates before applying roll
+so the body leans out of the turn correctly. Do not flip the axis wiring
+without re-checking every downstream use.
 
 ## Architecture
 
