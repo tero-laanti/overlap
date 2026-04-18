@@ -175,6 +175,7 @@ func _generate_positions(occupied_positions: Array[Vector3]) -> Array[Dictionary
 	# asks for it; the second half relaxes the constraint so straight-heavy
 	# tracks still yield a full set of candidates rather than failing the
 	# placement flow outright.
+	@warning_ignore("integer_division")
 	var strict_attempt_cap: int = MAX_PLACEMENT_ATTEMPTS / 2
 
 	var attempts: int = 0

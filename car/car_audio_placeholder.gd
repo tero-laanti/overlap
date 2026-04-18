@@ -60,5 +60,7 @@ func _make_wav(pcm: PackedByteArray, looping: bool) -> AudioStreamWAV:
 	if looping:
 		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		stream.loop_begin = 0
+		# `pcm` is a byte buffer of 16-bit samples; loop_end is in samples.
+		@warning_ignore("integer_division")
 		stream.loop_end = pcm.size() / 2
 	return stream
