@@ -71,6 +71,10 @@ func _validate_drift_and_jump() -> void:
 		_fail("Jump test never recovered to grounded state.")
 	if float(jump_metrics.get("air_heading_delta_deg", 0.0)) <= 2.0:
 		_fail("Jump air steering did not meaningfully change heading.")
+	if float(jump_metrics.get("peak_pitch_deg", 0.0)) <= 0.5:
+		_fail("Jump test did not generate a measurable visual pitch transient.")
+	if float(jump_metrics.get("post_landing_pitch_deg", INF)) >= 0.5:
+		_fail("Visual pitch did not return near neutral after landing.")
 	await _free_scene(jump_scene)
 
 
@@ -238,6 +242,7 @@ func _drive_jump(scene: MainSceneController, duration: float) -> Dictionary:
 	var was_airborne: bool = false
 	var air_heading_start: Vector3 = Vector3.ZERO
 	var air_heading_end: Vector3 = Vector3.ZERO
+	var peak_pitch_deg: float = 0.0
 
 	for _frame in range(frame_count):
 		var steer: float = 0.0
@@ -247,6 +252,8 @@ func _drive_jump(scene: MainSceneController, duration: float) -> Dictionary:
 			steer = 0.5
 		_apply_drive_input(1.0, steer)
 		await physics_frame
+		if car._visual_pose != null:
+			peak_pitch_deg = maxf(peak_pitch_deg, rad_to_deg(absf(car._visual_pose._visual_pitch_angle)))
 		if not car.is_grounded:
 			airborne_frames += 1
 			if not was_airborne:
@@ -257,11 +264,19 @@ func _drive_jump(scene: MainSceneController, duration: float) -> Dictionary:
 			landed = true
 			break
 
+	var post_landing_pitch_deg: float = 0.0
+	if landed and car._visual_pose != null:
+		_apply_drive_input(0.0, 0.0)
+		await _await_physics_frames(int(float(Engine.physics_ticks_per_second) * 1.2))
+		post_landing_pitch_deg = rad_to_deg(absf(car._visual_pose._visual_pitch_angle))
+
 	_clear_drive_input()
 	return {
 		"airborne_frames": airborne_frames,
 		"landed": landed,
 		"air_heading_delta_deg": rad_to_deg(air_heading_start.angle_to(air_heading_end)) if was_airborne else 0.0,
+		"peak_pitch_deg": peak_pitch_deg,
+		"post_landing_pitch_deg": post_landing_pitch_deg,
 	}
 
 

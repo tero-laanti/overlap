@@ -10,6 +10,9 @@ const MAX_VISUAL_ROLL_ANGLE := deg_to_rad(10.0)
 const MAX_VISUAL_PITCH_ANGLE := deg_to_rad(6.0)
 const MAX_VISUAL_STEER_ANGLE := deg_to_rad(30.0)
 const WHEEL_STEER_SMOOTH_RATE := 15.0
+const VISUAL_IDLE_PLANAR_SPEED_EPSILON := 0.05
+const VISUAL_IDLE_STEERING_EPSILON := 0.1
+const VISUAL_IDLE_ANGLE_EPSILON := 0.002
 
 const VISUAL_ROOT_PATH := ^"VisualRoot"
 const WHEEL_FRONT_LEFT_PATH := ^"VisualRoot/Body/wheel-front-left"
@@ -102,6 +105,22 @@ func _update_visual_pose(delta: float) -> void:
 		-MAX_VISUAL_PITCH_ANGLE,
 		MAX_VISUAL_PITCH_ANGLE
 	)
+
+	# The Basis/Quaternion work below is the per-tick hot path. When the car
+	# is grounded, parked, neutral-input, and already at its smoothed target
+	# angles, skip it. The guard requires target-vs-current angle equality,
+	# so mid-animation (e.g. pitch settling after a landing) still runs the
+	# full smoothing pass. Grounding is part of the guard so an airborne
+	# drop with near-zero planar velocity does not short-circuit.
+	if (
+		car.is_grounded
+		and planar_velocity.length() < VISUAL_IDLE_PLANAR_SPEED_EPSILON
+		and absf(car.steering_input) < VISUAL_IDLE_STEERING_EPSILON
+		and absf(target_roll - _visual_roll_angle) < VISUAL_IDLE_ANGLE_EPSILON
+		and absf(target_pitch - _visual_pitch_angle) < VISUAL_IDLE_ANGLE_EPSILON
+	):
+		return
+
 	var pose_weight: float = clampf(delta * VISUAL_POSE_SMOOTH_RATE, 0.0, 1.0)
 	_visual_roll_angle = lerpf(_visual_roll_angle, target_roll, pose_weight)
 	_visual_pitch_angle = lerpf(_visual_pitch_angle, target_pitch, pose_weight)
