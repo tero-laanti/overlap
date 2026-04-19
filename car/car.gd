@@ -2,25 +2,31 @@ class_name Car
 extends Node3D
 
 # Arcade sphere-vehicle movement ported from
-# https://github.com/KenneyNL/Starter-Kit-Racing (scripts/vehicle.gd).
-# The hidden RigidBody3D "PhysicsProxy" is the rolling sphere; `Car` follows it
-# each physics tick and carries the yaw heading that other systems read via
-# `global_basis`. Hazard/boost/grip modifiers are stubbed so the rest of the
-# game keeps running; feel-first, interactions come later.
+# https://github.com/KenneyNL/Starter-Kit-Racing (scripts/vehicle.gd) and then
+# tuned for punchier arcade feel: stronger drive torque, snappier steering,
+# partial air control, and a simple lateral-slip drift detector so
+# `drift_started` / `drift_ended` still mean something.
+#
+# Structure: the hidden `PhysicsProxy` `RigidBody3D` is the rolling sphere.
+# `Car` follows its world position each physics tick and carries the yaw
+# heading the rest of the game reads via `global_basis`.
 
-const DRIVE_TORQUE_MULTIPLIER := 200.0
-const STEERING_LERP_RATE := 4.0
-const STEERING_MULTIPLIER := 4.0
+const DRIVE_TORQUE_MULTIPLIER := 320.0
+const STEERING_LERP_RATE := 8.0
+const STEERING_MULTIPLIER := 5.5
 const STEERING_GRIP_MIN := 0.2
-const ACCELERATION_LERP_RATE := 6.0
-const BRAKE_LERP_RATE := 8.0
-const REVERSE_LERP_RATE := 2.0
-const REVERSE_FRACTION := 0.5
-const INPUT_DIRECTION_DEAD_ZONE := 0.1
+const ACCELERATION_LERP_RATE := 9.0
+const BRAKE_LERP_RATE := 14.0
+const REVERSE_LERP_RATE := 3.5
+const REVERSE_FRACTION := 0.35
+const AIR_STEER_FACTOR := 0.4
 const GROUND_ALIGN_LERP := 0.2
 const GROUND_NORMAL_MATCH_THRESHOLD := 0.5
 const SPHERE_CENTER_HEIGHT := 0.5
-const VISUAL_DROP_BELOW_SPHERE := 0.65
+# Lateral slip speed (m/s) needed to enter / leave the drift state.
+const DRIFT_ENTER_LATERAL_SPEED := 4.0
+const DRIFT_EXIT_LATERAL_SPEED := 2.0
+const DRIFT_MIN_FORWARD_SPEED := 3.0
 
 signal drift_started
 signal drift_ended
@@ -30,9 +36,8 @@ signal body_shape_entered(body_rid: RID, body: Node, body_shape_index: int, loca
 
 @export var stats: CarStats
 
-# Public state other scripts read. Kept for API compatibility with the previous
-# controller; drift is always false because the Kenney model has no explicit
-# drift state.
+# Public state that other scripts read. Kept for API compatibility with the
+# previous controller.
 var steering_input: float = 0.0
 var throttle_input: float = 0.0
 var is_drifting: bool = false
@@ -76,6 +81,11 @@ func _ready() -> void:
 		if _ground_probe != null:
 			_ground_probe.add_exception(_sphere)
 	_teleport_sphere_to(global_transform)
+	# The sphere was just teleported; without this the first frame interpolates
+	# from its pre-ready world origin.
+	if _sphere != null:
+		_sphere.reset_physics_interpolation()
+	reset_physics_interpolation()
 
 
 func _physics_process(delta: float) -> void:
@@ -85,10 +95,10 @@ func _physics_process(delta: float) -> void:
 	_update_ground_probe()
 	_sample_inputs()
 
-	var direction: float = signf(_linear_speed)
-	if direction == 0.0:
-		direction = signf(_input.y) if absf(_input.y) > INPUT_DIRECTION_DEAD_ZONE else 1.0
-
+	# Always turn the car in the direction pressed. Kenney's original flips
+	# sign while reversing (real-car steering); for arcade predictability we
+	# keep "press right = rotate right" regardless of motion direction.
+	var direction: float = 1.0
 	var steering_grip: float = clampf(absf(_linear_speed), STEERING_GRIP_MIN, 1.0)
 	var target_angular: float = -_input.x * steering_grip * STEERING_MULTIPLIER * direction
 	_angular_speed = lerpf(_angular_speed, target_angular, delta * STEERING_LERP_RATE)
@@ -111,10 +121,11 @@ func _physics_process(delta: float) -> void:
 
 	global_position = _sphere.global_position - Vector3(0.0, SPHERE_CENTER_HEIGHT, 0.0)
 	_align_visual_to_ground()
+	_update_drift_state()
 
 
 func _sample_inputs() -> void:
-	if not controls_enabled or _is_frozen or not is_grounded:
+	if not controls_enabled or _is_frozen:
 		_input = Vector2.ZERO
 		steering_input = 0.0
 		throttle_input = 0.0
@@ -122,11 +133,19 @@ func _sample_inputs() -> void:
 
 	# +x when steering right, +y when throttling forward. `get_axis(neg, pos)`
 	# returns `strength(pos) - strength(neg)`.
-	_input.x = Input.get_axis("steer_left", "steer_right")
-	_input.y = Input.get_axis("brake", "throttle")
-	# Keep the legacy signs that AGENTS.md documents for any external reader.
-	steering_input = -_input.x
-	throttle_input = _input.y
+	var raw_steer: float = Input.get_axis("steer_left", "steer_right")
+	var raw_throttle: float = Input.get_axis("brake", "throttle")
+	if is_grounded:
+		_input.x = raw_steer
+		_input.y = raw_throttle
+	else:
+		# Partial steering in the air so the player can line up landings; no
+		# throttle — the engine needs traction.
+		_input.x = raw_steer * AIR_STEER_FACTOR
+		_input.y = 0.0
+	# Legacy public convention: `+left -right` (see AGENTS.md direction table).
+	steering_input = -raw_steer
+	throttle_input = raw_throttle
 
 
 func _update_ground_probe() -> void:
@@ -142,6 +161,41 @@ func _update_ground_probe() -> void:
 		ground_normal = _ground_probe.get_collision_normal()
 	else:
 		ground_normal = Vector3.UP
+
+
+func _update_drift_state() -> void:
+	if not is_grounded or _sphere == null:
+		if is_drifting:
+			is_drifting = false
+			drift_ended.emit()
+		return
+
+	var v: Vector3 = _sphere.linear_velocity
+	var forward: Vector3 = -global_basis.z
+	var right: Vector3 = global_basis.x
+	forward.y = 0.0
+	right.y = 0.0
+	if forward.length_squared() < 0.0001:
+		return
+	forward = forward.normalized()
+	right = right.normalized()
+	var forward_speed: float = v.dot(forward)
+	var lateral_speed: float = absf(v.dot(right))
+
+	var should_drift: bool = is_drifting
+	if is_drifting:
+		if lateral_speed < DRIFT_EXIT_LATERAL_SPEED or forward_speed < DRIFT_MIN_FORWARD_SPEED:
+			should_drift = false
+	elif lateral_speed > DRIFT_ENTER_LATERAL_SPEED and forward_speed > DRIFT_MIN_FORWARD_SPEED:
+		should_drift = true
+
+	if should_drift == is_drifting:
+		return
+	is_drifting = should_drift
+	if is_drifting:
+		drift_started.emit()
+	else:
+		drift_ended.emit()
 
 
 func _align_visual_to_ground() -> void:
@@ -173,9 +227,8 @@ func _teleport_sphere_to(root_transform: Transform3D) -> void:
 
 
 # -- Public API preserved so hazards, boost pads, HUD, pit stop, etc. keep
-# compiling. Kenney's movement model has no grip/speed-cap concept yet, so the
-# modifier hooks are no-ops for now and interactions will be reintroduced after
-# the feel lands.
+# compiling. Grip / speed-cap modifier hooks are still no-ops; bringing those
+# back will need a matching hook in the new physics model.
 
 func reset_to_transform(spawn_transform: Transform3D) -> void:
 	_linear_speed = 0.0
@@ -185,13 +238,14 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	throttle_input = 0.0
 	is_grounded = false
 	ground_normal = Vector3.UP
+	if is_drifting:
+		is_drifting = false
+		drift_ended.emit()
 	global_transform = spawn_transform
 	_teleport_sphere_to(spawn_transform)
 	if _sphere != null:
 		_sphere.sleeping = false
 		_sphere.reset_physics_interpolation()
-	# Without this, physics interpolation would render the car swooping from
-	# its previous transform to `spawn_transform` over one physics tick.
 	reset_physics_interpolation()
 
 
