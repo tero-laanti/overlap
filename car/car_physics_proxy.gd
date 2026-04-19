@@ -25,11 +25,6 @@ func _exit_tree() -> void:
 	car_owner = null
 
 
-func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
-	if is_instance_valid(car_owner):
-		car_owner._integrate_proxy_forces(state)
-
-
 func _on_body_entered(body: Node) -> void:
 	if is_instance_valid(car_owner):
 		car_owner._relay_proxy_body_entered(body)
