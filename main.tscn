@@ -64,7 +64,7 @@ active_starter_layout_index = 5
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
 
 [node name="JumpRamp" parent="Track" unique_id=2133577482 instance=ExtResource("jump_ramp_scene")]
-transform = Transform3D(-0.74994946, 0, -0.66149515, 0, 1, 0, 0.66149515, 0, -0.74994946, 0.12306261, 5.003726, 0.5533562)
+transform = Transform3D(0.7499494, 0, 0.6614952, 0, 1, 0, -0.6614952, 0, 0.7499494, 0.12306261, 5.003726, 0.5533562)
 collision_layer = 4
 collision_mask = 0
 
