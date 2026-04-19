@@ -81,6 +81,7 @@ var _placement_lateral_offset: float = 0.0
 var _is_placement_active: bool = false
 var _track_mutator: TrackMutator = TrackMutator.new()
 var _round_lap_times: Array[float] = []
+var _pause_menu: PauseMenu = null
 
 @onready var _hazard_controller: HazardPlacementController = $HazardPlacementController
 @onready var _mutation_preview: MutationPreviewController = $MutationPreviewController
@@ -123,6 +124,7 @@ func _ready() -> void:
 	_mutation_preview.configure(_track, _camera)
 	_rebuild_track_coins()
 	_ensure_placement_overlay()
+	_ensure_pause_menu()
 
 	if not _hazard_controller.placement_begun.is_connected(_on_hazard_placement_begun):
 		_hazard_controller.placement_begun.connect(_on_hazard_placement_begun)
@@ -650,6 +652,16 @@ func _ensure_placement_overlay() -> void:
 	_placement_label.add_theme_constant_override("line_spacing", 6)
 	_placement_label.add_theme_constant_override("outline_size", 0)
 	panel_margin.add_child(_placement_label)
+
+
+func _ensure_pause_menu() -> void:
+	if _pause_menu != null:
+		return
+	_pause_menu = PauseMenu.new()
+	_pause_menu.name = "PauseMenu"
+	add_child(_pause_menu)
+	if _car != null:
+		_pause_menu.bind_car(_car)
 
 
 func _update_placement_overlay() -> void:
