@@ -141,6 +141,42 @@ func _perp_at(index: int) -> Vector3:
 	return get_centerline_perpendicular(_points, index, true)
 
 
+## Inward-pointing miter vector for wall extrusion. Equivalent to `_perp_at`
+## scaled by `1 / cos(theta/2)` so offsetting along it keeps the wall's face
+## at constant perpendicular distance from the centerline through a bend,
+## instead of pinching inward by `cos(theta/2)` at every corner. Capped at
+## ~3.3× for near-U-turn bends to avoid runaway vertex placement.
+func _miter_at(index: int) -> Vector3:
+	var n: int = _points.size()
+	if n < 2:
+		return _perp_at(index)
+
+	var prev_index: int = (index - 1 + n) % n
+	var next_index: int = (index + 1) % n
+
+	var dir_in: Vector3 = _points[index] - _points[prev_index]
+	dir_in.y = 0.0
+	if dir_in.length_squared() < 0.0001:
+		return _perp_at(index)
+	dir_in = dir_in.normalized()
+
+	var dir_out: Vector3 = _points[next_index] - _points[index]
+	dir_out.y = 0.0
+	if dir_out.length_squared() < 0.0001:
+		return _perp_at(index)
+	dir_out = dir_out.normalized()
+
+	var dir_sum: Vector3 = dir_in + dir_out
+	if dir_sum.length_squared() < 0.0001:
+		return _perp_at(index)
+	var bisector: Vector3 = dir_sum.normalized()
+
+	var cos_half: float = bisector.dot(dir_in)
+	cos_half = maxf(cos_half, 0.3)
+
+	return Vector3(-bisector.z, 0.0, bisector.x) / cos_half
+
+
 ## Shared ribbon/road helper. Closed loops use wrapped neighbors so the
 ## resulting perpendicular keeps pointing inward around the full track;
 ## open polylines fall back to start/end tangents.
@@ -199,7 +235,7 @@ func _add_grass_infield() -> void:
 	var polygon_xz := PackedVector2Array()
 	polygon_xz.resize(_points.size())
 	for i in range(_points.size()):
-		var p: Vector3 = _points[i] + _perp_at(i) * inner_edge_offset
+		var p: Vector3 = _points[i] + _miter_at(i) * inner_edge_offset
 		polygon_xz[i] = Vector2(p.x, p.z)
 
 	var tri_indices: PackedInt32Array = Geometry2D.triangulate_polygon(polygon_xz)
@@ -424,8 +460,8 @@ func _add_strip_mesh(
 		var j := (i + 1) % n
 		var p0 := _points[i]
 		var p1 := _points[j]
-		var n0 := _perp_at(i)
-		var n1 := _perp_at(j)
+		var n0 := _miter_at(i)
+		var n1 := _miter_at(j)
 
 		var a := p0 + n0 * side_a_offset + y
 		var b := p0 + n0 * side_b_offset + y
@@ -648,61 +684,95 @@ func _get_closest_segment(point: Vector2, probe_y: float = 0.0) -> ClosestSegmen
 	return nearest
 
 
+## Build inner and outer walls as single continuous trimesh ribbons instead
+## of one box per centerline segment. Per-segment boxes with a `+0.5m` overlap
+## introduce ~10-15cm pointy teeth at every corner seam because adjacent
+## rotated boxes poke past each other; a ribbon hugs the centerline polyline
+## exactly and has no seams.
 func _add_walls() -> void:
-	var boundary := track_width / 2.0 + sand_width
-	var n := _points.size()
+	var boundary: float = track_width / 2.0 + sand_width
+	_add_wall_ribbon("WallOuter", -boundary)
+	_add_wall_ribbon("WallInner", boundary)
+
+
+## `perp_offset` is the signed distance from the centerline to the wall's
+## own centerline along the miter vector. Inner wall uses `+boundary`, outer
+## uses `-boundary`. The ribbon is a closed-loop prism of the polyline,
+## extruded by `wall_thickness` across the miter direction and `wall_height`
+## upward. Top/inner/outer faces are emitted; the bottom is skipped because
+## it sits on or below the ground slab.
+func _add_wall_ribbon(wall_name: String, perp_offset: float) -> void:
+	if _points.size() < 3:
+		return
+
+	var half_thickness: float = wall_thickness * 0.5
+	var thickness_sign: float = signf(perp_offset)
+	var inner_offset: float = perp_offset - thickness_sign * half_thickness
+	var outer_offset: float = perp_offset + thickness_sign * half_thickness
+	var up: Vector3 = Vector3.UP * wall_height
+	var n: int = _points.size()
+
+	var miter_vectors: Array[Vector3] = []
+	miter_vectors.resize(n)
+	for i in range(n):
+		miter_vectors[i] = _miter_at(i)
+
+	var st: SurfaceTool = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_smooth_group(-1)
 
 	for i in range(n):
-		var j := (i + 1) % n
-		var p0 := _points[i]
-		var p1 := _points[j]
-		var n0 := _perp_at(i)
-		var n1 := _perp_at(j)
+		var j: int = (i + 1) % n
+		var p0: Vector3 = _points[i]
+		var p1: Vector3 = _points[j]
+		var perp0: Vector3 = miter_vectors[i]
+		var perp1: Vector3 = miter_vectors[j]
 
-		var out0 := p0 - n0 * boundary
-		var out1 := p1 - n1 * boundary
-		_add_wall("WallOuter_%d" % i, out0, out1)
+		var b0_in: Vector3 = p0 + perp0 * inner_offset
+		var b0_out: Vector3 = p0 + perp0 * outer_offset
+		var b1_in: Vector3 = p1 + perp1 * inner_offset
+		var b1_out: Vector3 = p1 + perp1 * outer_offset
+		var t0_in: Vector3 = b0_in + up
+		var t0_out: Vector3 = b0_out + up
+		var t1_in: Vector3 = b1_in + up
+		var t1_out: Vector3 = b1_out + up
 
-		var in0 := p0 + n0 * boundary
-		var in1 := p1 + n1 * boundary
-		_add_wall("WallInner_%d" % i, in0, in1)
+		_emit_wall_quad(st, b0_in, b1_in, t1_in, t0_in)
+		_emit_wall_quad(st, b1_out, b0_out, t0_out, t1_out)
+		_emit_wall_quad(st, t0_in, t1_in, t1_out, t0_out)
 
+	st.generate_normals()
+	var mesh: ArrayMesh = st.commit()
+	var shape: ConcavePolygonShape3D = mesh.create_trimesh_shape()
+	if shape == null:
+		return
 
-func _add_wall(wall_name: String, from: Vector3, to: Vector3) -> void:
-	var center := (from + to) / 2.0
-	var dir := (to - from)
-	# Build the wall as a vertical post following the XZ tangent. Ramps stay
-	# modest (single-digit-degree slopes), so leaving it vertical is simpler
-	# than tilting the box and avoids gaps between adjacent wall segments.
-	var horizontal_dir := Vector3(dir.x, 0.0, dir.z)
-	var seg_length := horizontal_dir.length() + 0.5
-	var angle := 0.0
-	if horizontal_dir.length_squared() > 0.0001:
-		horizontal_dir = horizontal_dir.normalized()
-		angle = atan2(horizontal_dir.x, horizontal_dir.z)
-
-	var body := StaticBody3D.new()
+	var body: StaticBody3D = StaticBody3D.new()
 	body.name = wall_name
-	body.position = Vector3(center.x, center.y + wall_height / 2.0, center.z)
-	body.rotation.y = angle
 	body.collision_layer = WALL_COLLISION_LAYER
 	body.collision_mask = 0
 	_add_generated_child(body)
 
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(wall_thickness, wall_height, seg_length)
-	var col := CollisionShape3D.new()
+	var col: CollisionShape3D = CollisionShape3D.new()
 	col.shape = shape
 	body.add_child(col)
 
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(wall_thickness, wall_height, seg_length)
-	var mi := MeshInstance3D.new()
+	var mi: MeshInstance3D = MeshInstance3D.new()
+	mi.name = wall_name + "Mesh"
 	mi.mesh = mesh
-	var mat := StandardMaterial3D.new()
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
 	mat.albedo_color = BARRIER_COLOR
 	mi.material_override = mat
 	body.add_child(mi)
+
+
+func _emit_wall_quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
+	st.add_vertex(a)
+	st.add_vertex(b)
+	st.add_vertex(c)
+	st.add_vertex(a)
+	st.add_vertex(c)
+	st.add_vertex(d)
 
 
 func _rebuild_generated_track() -> void:
@@ -741,8 +811,8 @@ func _add_track_surface_collider(strip_half_width: float) -> void:
 		var j := (i + 1) % n
 		var p0 := _points[i]
 		var p1 := _points[j]
-		var n0 := _perp_at(i)
-		var n1 := _perp_at(j)
+		var n0 := _miter_at(i)
+		var n1 := _miter_at(j)
 
 		var a := p0 + n0 * strip_half_width
 		var b := p0 - n0 * strip_half_width

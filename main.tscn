@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://2egkjeuemcpk" path="res://track/track_layout.gd" id="4_dg77c"]
 [ext_resource type="Script" uid="uid://nxpfj861gbdq" path="res://camera/game_camera.gd" id="camera_script"]
 [ext_resource type="PackedScene" uid="uid://dgbttdgp7ob8w" path="res://car/assets/kenney_car_kit/sedan-sports.glb" id="car_body_scene"]
+[ext_resource type="Script" uid="uid://cde15joafaah5" path="res://car/car_physics_proxy.gd" id="car_proxy_script"]
 [ext_resource type="Script" uid="uid://b16rihml1wthi" path="res://car/car.gd" id="car_script"]
-[ext_resource type="Script" path="res://car/car_physics_proxy.gd" id="car_proxy_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
 [ext_resource type="Script" uid="uid://q5onljnu7ugv" path="res://ui/game_over_screen.gd" id="game_over_screen_script"]
 [ext_resource type="Script" uid="uid://o61f78xqx288" path="res://race/hazard_placement_controller.gd" id="hazard_placement_controller_script"]
@@ -31,8 +31,8 @@ ambient_light_color = Color(0.55, 0.55, 0.6, 1)
 ambient_light_energy = 0.8
 tonemap_mode = 2
 
-[sub_resource type="SphereShape3D" id="car_shape"]
-radius = 0.65
+[sub_resource type="BoxShape3D" id="car_shape"]
+size = Vector3(2, 0.5, 4)
 
 [node name="Main" type="Node3D" unique_id=983565611]
 script = ExtResource("main_script")
@@ -82,9 +82,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.25, 0)
 script = ExtResource("car_script")
 stats = ExtResource("car_stats")
 
-[node name="PhysicsProxy" type="RigidBody3D" parent="Car"]
+[node name="PhysicsProxy" type="RigidBody3D" parent="Car" unique_id=569687387]
 top_level = true
-collision_layer = 1
 collision_mask = 6
 mass = 1.5
 can_sleep = false
@@ -93,16 +92,15 @@ contact_monitor = true
 max_contacts_reported = 8
 script = ExtResource("car_proxy_script")
 
-[node name="ProxyCollision" type="CollisionShape3D" parent="Car/PhysicsProxy"]
+[node name="ProxyCollision" type="CollisionShape3D" parent="Car/PhysicsProxy" unique_id=950674189]
 shape = SubResource("car_shape")
 
-[node name="GroundProbe" type="RayCast3D" parent="Car"]
+[node name="GroundProbe" type="RayCast3D" parent="Car" unique_id=536377036]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 target_position = Vector3(0, -1.1, 0)
-enabled = true
 collision_mask = 4
 
-[node name="VisualRoot" type="Node3D" parent="Car"]
+[node name="VisualRoot" type="Node3D" parent="Car" unique_id=58385498]
 
 [node name="Body" parent="Car/VisualRoot" unique_id=2086963516 instance=ExtResource("car_body_scene")]
 transform = Transform3D(-2, 0, 0, 0, 2, 0, 0, 0, -2, 0, -0.25, 0)

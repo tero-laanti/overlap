@@ -86,6 +86,11 @@ var _ground_contact_grace_remaining: float = 0.0
 var _ground_contact_grace_active: bool = false
 var _had_full_ground_support_last_frame: bool = false
 var _last_ground_normal: Vector3 = Vector3.UP
+# 0.0 = sliding (use `drift_grip`), 1.0 = fully gripped (use `grip`). Snaps to
+# 0.0 on drift entry and ramps back to 1.0 over `stats.drift_grip_recovery_duration`
+# on exit so lateral velocity is redirected gradually instead of in a one-tick
+# snap that reads as a spin-out.
+var _drift_grip_blend: float = 0.1
 var _visual_pose: CarVisualPose = null
 
 @onready var _physics_proxy: CarPhysicsProxy = get_node_or_null(^"PhysicsProxy") as CarPhysicsProxy
@@ -174,7 +179,7 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 	if has_ground_support and _speed_cap_factor < DEFAULT_SPEED_CAP_FACTOR and forward_speed > max_speed:
 		total_force += -forward * stats.brake_force * SPEED_CAP_RESISTANCE
 
-	var current_grip: float = drift_grip if is_drifting else grip
+	var current_grip: float = _advance_drift_grip_blend(grip, drift_grip, state.step)
 	if has_ground_support:
 		total_force += -right * lateral_speed * current_grip
 		if state.linear_velocity.dot(drive_up) <= GROUND_STICK_VERTICAL_LIMIT:
@@ -234,6 +239,7 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	_ground_contact_grace_active = false
 	_had_full_ground_support_last_frame = false
 	_last_ground_normal = Vector3.UP
+	_drift_grip_blend = 1.0
 	_capture_heading_from_basis(spawn_transform.basis)
 
 	if _physics_proxy != null:
@@ -266,6 +272,7 @@ func set_frozen(should_freeze: bool) -> void:
 		_ground_contact_grace_remaining = 0.0
 		_ground_contact_grace_active = false
 		_had_full_ground_support_last_frame = false
+		_drift_grip_blend = 1.0
 		_set_drifting(false)
 	if _physics_proxy != null:
 		_physics_proxy.freeze = should_freeze
@@ -453,6 +460,15 @@ func _set_drifting(should_drift: bool) -> void:
 		drift_started.emit()
 	else:
 		drift_ended.emit()
+
+
+func _advance_drift_grip_blend(grip: float, drift_grip: float, step: float) -> float:
+	if is_drifting:
+		_drift_grip_blend = 0.0
+	else:
+		var duration: float = maxf(stats.drift_grip_recovery_duration if stats else 0.0, 0.0001)
+		_drift_grip_blend = minf(_drift_grip_blend + step / duration, 1.0)
+	return lerpf(drift_grip, grip, _drift_grip_blend)
 
 
 func _get_target_yaw_speed(forward_speed: float, turn_speed: float, has_ground_support: bool) -> float:
