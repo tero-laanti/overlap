@@ -297,7 +297,7 @@ func _make_margin(amount: int) -> MarginContainer:
 	return margin
 
 
-func _make_label(text: String, font_size: int, color: Color, align: int) -> Label:
+func _make_label(text: String, font_size: int, color: Color, align: HorizontalAlignment) -> Label:
 	var label: Label = Label.new()
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
