@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://car/assets/kenney_car_kit/race.glb" id="car_body_scene"]
+[ext_resource type="Script" path="res://car/physics_car.gd" id="car_script"]
+[ext_resource type="Script" uid="uid://cde15joafaah5" path="res://car/car_physics_proxy.gd" id="car_proxy_script"]
+[ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
+
+[sub_resource type="BoxShape3D" id="car_shape"]
+size = Vector3(2, 0.5, 4)
+
+[node name="Car" type="Node3D"]
+script = ExtResource("car_script")
+stats = ExtResource("car_stats")
+
+[node name="PhysicsProxy" type="RigidBody3D" parent="."]
+top_level = true
+collision_mask = 6
+mass = 1.5
+can_sleep = false
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 8
+script = ExtResource("car_proxy_script")
+
+[node name="ProxyCollision" type="CollisionShape3D" parent="PhysicsProxy"]
+shape = SubResource("car_shape")
+
+[node name="GroundProbe" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+target_position = Vector3(0, -1.1, 0)
+collision_mask = 4
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Body" parent="VisualRoot" instance=ExtResource("car_body_scene")]
+transform = Transform3D(-2, 0, 0, 0, 2, 0, 0, 0, -2, 0, -0.25, 0)

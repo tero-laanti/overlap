@@ -1,7 +1,13 @@
-class_name CarControllerValidator
+class_name PhysicsCarValidator
 extends SceneTree
 
+## Validates the legacy integrator-based controller (`PhysicsCar`). Forces
+## `main.tscn` to spawn with a `physics_car.tscn` in place of the default
+## (`sphere_car.tscn`) so drift / heading / surface-speed expectations match
+## the integrator model.
+
 const MAIN_SCENE: PackedScene = preload("res://main.tscn")
+const PHYSICS_CAR_SCENE: PackedScene = preload("res://car/physics_car.tscn")
 const COIN_SCENE: PackedScene = preload("res://race/coin.tscn")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const SLOW_ZONE_SCENE: PackedScene = preload("res://race/hazards/slow_zone.tscn")
@@ -66,21 +72,9 @@ func _validate_drift_and_jump() -> void:
 	if int(drift_metrics.get("drift_started_count", 0)) <= 0:
 		_fail("Drift test never entered drift.")
 	await _free_scene(drift_scene)
-
-	var jump_scene: MainSceneController = await _spawn_main_scene(FIGURE_EIGHT_LAYOUT_INDEX)
-	var jump_metrics: Dictionary = await _drive_jump(jump_scene, JUMP_TEST_SECONDS)
-	print("jump metrics: %s" % jump_metrics)
-	if int(jump_metrics.get("airborne_frames", 0)) <= 4:
-		_fail("Jump test never produced a meaningful airborne phase.")
-	if not bool(jump_metrics.get("landed", false)):
-		_fail("Jump test never recovered to grounded state.")
-	if float(jump_metrics.get("air_heading_delta_deg", 0.0)) <= 2.0:
-		_fail("Jump air steering did not meaningfully change heading.")
-	if float(jump_metrics.get("peak_pitch_deg", 0.0)) <= 0.5:
-		_fail("Jump test did not generate a measurable visual pitch transient.")
-	if float(jump_metrics.get("post_landing_pitch_deg", INF)) >= 0.5:
-		_fail("Visual pitch did not return near neutral after landing.")
-	await _free_scene(jump_scene)
+	# Jump-ramp sub-test was tied to `Track/JumpRamp`, a node removed from
+	# `main.tscn` in bfc2d63. The `_drive_jump` helper below is kept for a
+	# future reintroduction of a ramp track piece.
 
 
 func _validate_surface_speeds() -> void:
@@ -244,6 +238,7 @@ func _validate_reset_to_transform_grounded_state() -> void:
 
 func _spawn_main_scene(track_index: int) -> MainSceneController:
 	var scene: MainSceneController = MAIN_SCENE.instantiate() as MainSceneController
+	_swap_in_physics_car(scene)
 	root.add_child(scene)
 	await _await_physics_frames(2)
 
@@ -258,6 +253,28 @@ func _spawn_main_scene(track_index: int) -> MainSceneController:
 	car.reset_to_transform(track.get_start_transform(CAR_SPAWN_Y_OFFSET))
 	await _await_physics_frames(2)
 	return scene
+
+
+## Replaces the default Car child (loaded from `vehicle_scene` — currently
+## `sphere_car.tscn`) with a freshly-instanced `physics_car.tscn` so this
+## validator exercises the integrator-based model. Runs while the Main scene
+## is still detached from the tree, so `_ready` fires only once for the
+## resulting Car.
+func _swap_in_physics_car(main_scene: Node) -> void:
+	var old_car: Node3D = main_scene.get_node_or_null(^"Car") as Node3D
+	if old_car == null:
+		push_error("validate_physics_car: Main scene has no Car child to swap")
+		return
+	var spawn_transform: Transform3D = old_car.transform
+	var sibling_index: int = old_car.get_index()
+	main_scene.remove_child(old_car)
+	old_car.queue_free()
+
+	var new_car: Node3D = PHYSICS_CAR_SCENE.instantiate() as Node3D
+	new_car.name = "Car"
+	new_car.transform = spawn_transform
+	main_scene.add_child(new_car)
+	main_scene.move_child(new_car, sibling_index)
 
 
 func _free_scene(scene: Node) -> void:

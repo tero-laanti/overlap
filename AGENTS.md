@@ -17,10 +17,20 @@ _how_ to work in the repo.
 
 - `main.gd` — Round flow orchestration, pit stop sequencing, and track placement
   state.
-- `car/car.gd` — Public car gameplay API and owner node. Drift state machine,
-  input, modifiers, heading reconciliation, and proxy synchronization.
-- `car/car_physics_proxy.gd` — Hidden rolling rigidbody proxy. Relays
-  `_integrate_forces` and collision events back to `Car`.
+- `car/car.gd` — Abstract `Car` base class. Declares the public vehicle API
+  (signals, properties, shared defaults) that hazards, HUD, lap tracker,
+  camera, and pit stop consume. Concrete controllers subclass this.
+- `car/sphere_car.gd` / `car/sphere_car.tscn` — `SphereCar extends Car`. The
+  Kenney sphere-vehicle arcade controller: `RigidBody3D` sphere drives via
+  `_physics_process` torque, `Car` follows its world position each tick.
+- `car/physics_car.gd` / `car/physics_car.tscn` — `PhysicsCar extends Car`.
+  The integrator-based legacy controller: `_integrate_forces` applies per-tick
+  forces, explicit heading state, `CarStats` governs every knob, ground grace
+  periods, surface-aware modifiers. The variant wired into `main.tscn` is
+  selected by swapping the `vehicle_scene` `ExtResource` path.
+- `car/car_physics_proxy.gd` — Hidden rigidbody proxy shared by both
+  controllers. Relays `_integrate_forces` and collision events back to the
+  bound `Car` subclass.
 - `car/car_body_resolver.gd` — Utility that resolves the owning `Car` from a
   colliding body such as the proxy rigidbody.
 - `car/car_stats.gd` — `CarStats` resource class. All tunable vehicle
@@ -54,7 +64,10 @@ _how_ to work in the repo.
 - `track/track_mutator.gd` — Round-end track evolution. Replaces one straight
   tile with a detour module so laps lengthen over the course of a run.
 - `ui/run_hud.gd` — Prototype race HUD for lap/timer/economy state.
-- `main.tscn` — Main scene. Car, track, camera, lighting, environment.
+- `main.tscn` — Main scene. Track, camera, lighting, environment, plus an
+  instanced `Car` whose scene is selected by the `vehicle_scene`
+  `ExtResource` (defaults to `sphere_car.tscn`; swap to `physics_car.tscn` to
+  test the legacy controller).
 
 ## Working Rules
 
@@ -487,8 +500,15 @@ Required before any PR:
 
 ### Validator patterns
 
-- New bug → new test. Add it to `scripts/validate_car_controller.gd` (or
-  a sibling validator) so the regression guard lives next to the fix.
+- Two per-controller validators live under `scripts/`:
+  - `validate_physics_car.gd` — exercises `PhysicsCar` (integrator-based).
+	Swaps `main.tscn`'s default Car child for a `physics_car.tscn` instance
+    before adding Main to the tree.
+  - `validate_sphere_car.gd` — smoke test for `SphereCar` (Kenney sphere
+    arcade). Intentionally narrow: boots, responds to throttle, travels far.
+- New bug → new test. Add it to the validator that matches the affected
+  controller (or both, if the bug is base-class). Reach into underscored
+  state only inside validator scripts.
 - Tests may reach into underscored state (`car._visual_pose._visual_pitch_angle`,
   `slow_zone._active_cars`) — that is acceptable inside a validator script
   because it lets the test check the actual invariant without expanding
@@ -502,10 +522,14 @@ Required before any PR:
 
 ### Before committing
 
-1. `bash scripts/headless_check.sh` — confirms the project boots headless.
-2. `godot --headless --path . --script res://scripts/validate_car_controller.gd`
-   — required after any car, hazard, or track-surface change. Exit 0 is
-   mandatory; inspect the metrics line for each test, not just the exit code.
+1. `bash scripts/headless_check.sh` — boots the project headless and runs
+   both per-controller validators (`validate_sphere_car.gd`,
+   `validate_physics_car.gd`). Exit 0 is mandatory; inspect the metrics line
+   for each test, not just the exit code.
+2. For a narrower targeted run:
+   `godot --headless --path . --script res://scripts/validate_physics_car.gd`
+   or `validate_sphere_car.gd` — pick whichever controller your change
+   touches. Required after any car, hazard, or track-surface change.
 3. If the change alters `track_mutator.gd`, a detour tile, or the layout
    data model, also run
    `godot --headless --path . --script res://scripts/validate_track_mutator.gd`.
