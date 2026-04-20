@@ -44,6 +44,8 @@ func _run_validation() -> void:
 	car.reset_to_transform(track.get_start_transform(CAR_SPAWN_Y_OFFSET))
 	await _await_physics_frames(2)
 
+	_check_reset_restores_visual_root(car as SphereCar, track)
+
 	var start_position: Vector3 = car.global_position
 	Input.action_press("throttle", 1.0)
 	await _await_physics_frames(int(TEST_DURATION_SEC * float(Engine.physics_ticks_per_second)))
@@ -58,6 +60,24 @@ func _run_validation() -> void:
 		_fail("Sphere car never built meaningful speed (final %.2f m/s)" % top_speed)
 
 	_finish(scene)
+
+
+## `_align_visual_to_ground` accumulates tilt on VisualRoot over a run.
+## `reset_to_transform` must restore the rest transform so respawns look
+## upright immediately rather than drifting back to level over ~10 ticks.
+func _check_reset_restores_visual_root(car: SphereCar, track: TestTrack) -> void:
+	var visual_root: Node3D = car.get_node_or_null(^"VisualRoot") as Node3D
+	if visual_root == null:
+		_fail("SphereCar has no VisualRoot child.")
+		return
+	var rest_basis: Basis = visual_root.transform.basis
+	# Forge a tilted visual transform as if the car had been driving on a slope.
+	visual_root.transform.basis = rest_basis.rotated(Vector3.FORWARD, deg_to_rad(25.0))
+	car.reset_to_transform(track.get_start_transform(CAR_SPAWN_Y_OFFSET))
+	var roll_after_reset: float = rad_to_deg(visual_root.transform.basis.get_euler().z)
+	print("sphere car visual-root roll after reset: %.2f°" % roll_after_reset)
+	if absf(roll_after_reset) > 0.5:
+		_fail("SphereCar.reset_to_transform did not restore VisualRoot (roll %.2f°)." % roll_after_reset)
 
 
 func _finish(scene: Node) -> void:

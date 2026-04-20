@@ -26,10 +26,13 @@ const DRIFT_MIN_FORWARD_SPEED := 3.0
 var _input: Vector2 = Vector2.ZERO  # x = +right steering, y = +forward throttle
 var _linear_speed: float = 0.0
 var _angular_speed: float = 0.0
+var _visual_root_rest_transform: Transform3D = Transform3D.IDENTITY
 
 
 func _ready() -> void:
 	super._ready()
+	if _visual_root != null:
+		_visual_root_rest_transform = _visual_root.transform
 	_teleport_sphere_to(global_transform)
 	if _physics_proxy != null:
 		_physics_proxy.reset_physics_interpolation()
@@ -183,6 +186,11 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 		is_drifting = false
 		drift_ended.emit()
 	global_transform = spawn_transform
+	# `_align_visual_to_ground` accumulates tilt on VisualRoot over a run.
+	# Without this restore the body re-interpolates back to upright over
+	# ~10 physics ticks after every respawn, reading as a drunken lean.
+	if _visual_root != null:
+		_visual_root.transform = _visual_root_rest_transform
 	_teleport_sphere_to(spawn_transform)
 	if _physics_proxy != null:
 		_physics_proxy.sleeping = false
