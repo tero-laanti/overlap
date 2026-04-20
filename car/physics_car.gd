@@ -226,6 +226,10 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	if _physics_proxy != null:
 		_teleport_proxy_to_root_transform(spawn_transform)
 		_physics_proxy.sleeping = false
+		# Proxy is `top_level = true`, so Car's reset_physics_interpolation
+		# below does not cascade to it. Without this call the proxy's visual
+		# position streaks from its pre-teleport tick state for one frame.
+		_physics_proxy.reset_physics_interpolation()
 
 	# Without this, physics interpolation would render the car swooping from
 	# its previous transform to `spawn_transform` over one physics tick.
