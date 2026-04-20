@@ -262,7 +262,7 @@ func _add_tuner_row(grid: GridContainer, field: Array) -> void:
 
 
 func _sync_tuner_values() -> void:
-	if _car == null or _car.stats == null:
+	if not is_instance_valid(_car) or _car.stats == null:
 		return
 	for prop_name in _tuner_spinboxes:
 		var spin: SpinBox = _tuner_spinboxes[prop_name]
@@ -279,11 +279,12 @@ func _sync_tuner_values() -> void:
 func _update_tuner_notice() -> void:
 	if _tuner_notice_label == null:
 		return
-	_tuner_notice_label.visible = _car != null and not (_car is PhysicsCar)
+	var has_valid_car: bool = is_instance_valid(_car)
+	_tuner_notice_label.visible = has_valid_car and not (_car is PhysicsCar)
 
 
 func _on_tuner_changed(new_value: float, prop_name: String) -> void:
-	if _car == null or _car.stats == null:
+	if not is_instance_valid(_car) or _car.stats == null:
 		return
 	_car.stats.set(prop_name, new_value)
 

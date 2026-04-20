@@ -88,9 +88,9 @@ func set_tracking_enabled(is_enabled: bool) -> void:
 
 
 func _resolve_references() -> bool:
-	if not is_instance_valid(_car):
+	if not is_instance_valid(_car) or not _car.is_inside_tree():
 		_car = get_node_or_null(car_path) as Car
-	if not is_instance_valid(_track):
+	if not is_instance_valid(_track) or not _track.is_inside_tree():
 		_track = get_node_or_null(track_path) as TestTrack
 	return _car != null and _track != null
 

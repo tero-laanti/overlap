@@ -68,6 +68,8 @@ var _run_state: RunState = null
 var _round_end_screen: RoundEndScreen = null
 var _camera: GameCamera = null
 var _car_spawn_transform: Transform3D = Transform3D.IDENTITY
+var _default_vehicle_scene: PackedScene = null
+var _default_vehicle_scene_path: String = ""
 var _current_positive_offers: Array[int] = []
 var _pending_positive_queue: Array[int] = []
 var _positive_root: Node3D = null
@@ -99,6 +101,7 @@ func _ready() -> void:
 	_run_state = get_node_or_null(run_state_path) as RunState
 	_round_end_screen = get_node_or_null(round_end_screen_path) as RoundEndScreen
 	_camera = get_node_or_null(camera_path) as GameCamera
+	_cache_default_vehicle_scene()
 
 	if not _track:
 		push_warning("MainSceneController could not find the track.")
@@ -190,33 +193,41 @@ func _respawn_car_if_fallen() -> void:
 		_car.reset_to_transform(_get_car_start_transform())
 
 
-## Swaps the live Car for the active layout's `preferred_vehicle` when that
-## scene differs from the current instance. Kept public so validators can
-## re-exercise the path after forcing a layout change without re-entering
-## `_ready`. Safe to call with a null/missing track or layout — it no-ops.
+## Swaps the live Car to match the active layout: `preferred_vehicle` when set,
+## otherwise the main-scene default cached from the original `Car` child. Kept
+## public so validators can re-exercise the path after forcing a layout change
+## without re-entering `_ready`.
 func apply_preferred_vehicle() -> void:
 	if _track == null or _car == null:
 		return
-	var active_layout: TrackLayout = _track.get_active_layout()
-	if active_layout == null or active_layout.preferred_vehicle == null:
+	var desired_vehicle_scene: PackedScene = _get_desired_vehicle_scene()
+	if desired_vehicle_scene == null:
 		return
-	if _car.scene_file_path == active_layout.preferred_vehicle.resource_path:
+	var desired_vehicle_path: String = desired_vehicle_scene.resource_path
+	if desired_vehicle_path.is_empty():
+		desired_vehicle_path = _default_vehicle_scene_path
+	if not desired_vehicle_path.is_empty() and _car.scene_file_path == desired_vehicle_path:
 		return
 
 	var old_car: Car = _car
 	var parent: Node = old_car.get_parent()
 	if parent == null:
 		return
-	var spawn_transform: Transform3D = old_car.global_transform
-	var sibling_index: int = old_car.get_index()
-	var old_name: StringName = old_car.name
-	parent.remove_child(old_car)
-	old_car.queue_free()
-
-	var new_car: Car = active_layout.preferred_vehicle.instantiate() as Car
+	var new_car: Car = desired_vehicle_scene.instantiate() as Car
 	if new_car == null:
 		push_warning("MainSceneController preferred_vehicle did not instantiate a Car.")
 		return
+	var spawn_transform: Transform3D = old_car.global_transform
+	var sibling_index: int = old_car.get_index()
+	var old_name: StringName = old_car.name
+	var old_car_was_frozen: bool = old_car.is_frozen()
+	var old_controls_enabled: bool = old_car.controls_enabled
+	parent.remove_child(old_car)
+	# `queue_free()` on a just-detached car leaves a valid-but-out-of-tree node
+	# around until an idle frame flushes the queue. Lazy readers such as
+	# LapTracker can hit that stale reference window, so retire the old vehicle
+	# immediately once the replacement is ready.
+	old_car.free()
 	new_car.name = old_name
 	parent.add_child(new_car)
 	parent.move_child(new_car, sibling_index)
@@ -225,8 +236,35 @@ func apply_preferred_vehicle() -> void:
 	# `global_transform` was at instantiate time (identity), not to the real
 	# spawn pose.
 	new_car.reset_to_transform(spawn_transform)
+	new_car.set_frozen(old_car_was_frozen)
+	new_car.set_controls_enabled(old_controls_enabled)
 	_car = new_car
 
+	_rebind_eager_car_consumers()
+
+
+func _cache_default_vehicle_scene() -> void:
+	if _car == null:
+		return
+	if not _default_vehicle_scene_path.is_empty() and _default_vehicle_scene != null:
+		return
+	_default_vehicle_scene_path = _car.scene_file_path
+	if _default_vehicle_scene_path.is_empty():
+		push_warning("MainSceneController could not resolve the default vehicle scene path.")
+		return
+	_default_vehicle_scene = load(_default_vehicle_scene_path) as PackedScene
+	if _default_vehicle_scene == null:
+		push_warning("MainSceneController failed to load the default vehicle scene %s." % _default_vehicle_scene_path)
+
+
+func _get_desired_vehicle_scene() -> PackedScene:
+	var active_layout: TrackLayout = _track.get_active_layout() if _track != null else null
+	if active_layout != null and active_layout.preferred_vehicle != null:
+		return active_layout.preferred_vehicle
+	return _default_vehicle_scene
+
+
+func _rebind_eager_car_consumers() -> void:
 	# Eagerly-resolved consumers need fresh references; lazy ones (LapTracker,
 	# hazards resolving through body collisions) re-hydrate on their own tick.
 	if _camera != null:
@@ -234,6 +272,8 @@ func apply_preferred_vehicle() -> void:
 	var run_hud: RunHUD = get_node_or_null(^"RunHUD") as RunHUD
 	if run_hud != null:
 		run_hud.set_car(_car)
+	if _pause_menu != null:
+		_pause_menu.bind_car(_car)
 
 
 func _process(delta: float) -> void:

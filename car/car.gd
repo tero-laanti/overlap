@@ -93,6 +93,10 @@ func set_frozen(should_freeze: bool) -> void:
 		_physics_proxy.sleeping = false
 
 
+func is_frozen() -> bool:
+	return _is_frozen
+
+
 ## Arcade-style forward nudge along the car's current heading. Subclasses may
 ## override to preserve vertical velocity, respect a speed cap, etc.
 func apply_forward_boost(boost_speed: float) -> void:

@@ -37,7 +37,7 @@ func _run_validation() -> void:
 	await _validate_collision_owner_resolution()
 	await _validate_hazard_exit_cleanup_after_owner_cleared()
 	await _validate_reset_to_transform_grounded_state()
-	await _validate_figure_eight_auto_selects_physics_car()
+	await _validate_layout_vehicle_swap_contract()
 
 	_clear_drive_input()
 	await _await_idle_and_physics()
@@ -235,11 +235,11 @@ func _validate_reset_to_transform_grounded_state() -> void:
 	await _free_scene(scene)
 
 
-## Boots main.tscn with no pre-swap — `GameSession.selected_track_index`
-## points at the figure-eight and `TrackLayout.preferred_vehicle` should
-## swing Car over to `physics_car.tscn`. Guards the layout->vehicle contract
-## and the post-swap rebind path (camera target, RunHUD car ref).
-func _validate_figure_eight_auto_selects_physics_car() -> void:
+## Boots the unmodified main scene, confirms the figure-eight auto-swaps to
+## PhysicsCar, then flips back to a layout with no override and confirms
+## `apply_preferred_vehicle()` restores the cached default sphere car. Also
+## guards eager consumer rebinding (camera, RunHUD, PauseMenu).
+func _validate_layout_vehicle_swap_contract() -> void:
 	var game_session: Node = root.get_node_or_null(^"GameSession")
 	if game_session == null:
 		_fail("GameSession autoload not available; cannot exercise auto-swap.")
@@ -258,18 +258,35 @@ func _validate_figure_eight_auto_selects_physics_car() -> void:
 		_fail("Figure-eight did not auto-select PhysicsCar; got %s" % car.get_class())
 	if car.scene_file_path != "res://car/physics_car.tscn":
 		_fail("Swapped Car has unexpected scene_file_path: %s" % car.scene_file_path)
+	_assert_eager_car_rebinds(scene, car)
 
-	# Camera target must follow the new Car; RunHUD must too, or its speedometer
-	# reads off a freed node. Main rebinds both at the end of apply_preferred_vehicle.
+	track.set_starter_layout_index(RECTANGLE_LAYOUT_INDEX)
+	scene.apply_preferred_vehicle()
+	await _await_physics_frames(2)
+	car = _get_car(scene)
+	print("late-swap vehicle: %s on layout %s" % [car.get_script().resource_path.get_file(), track.get_active_layout().display_name])
+	if not (car is SphereCar):
+		_fail("Layout switch back to the rectangle did not restore SphereCar; got %s" % car.get_class())
+	if car.scene_file_path != "res://car/sphere_car.tscn":
+		_fail("Reverted Car has unexpected scene_file_path: %s" % car.scene_file_path)
+	_assert_eager_car_rebinds(scene, car)
+
+	game_session.set("selected_track_index", previous_index)
+	await _free_scene(scene)
+
+
+func _assert_eager_car_rebinds(scene: MainSceneController, car: Car) -> void:
+	# Validators can inspect underscored state so the swap contract stays narrow
+	# in gameplay code while still proving no UI node holds the freed Car.
 	var camera: GameCamera = scene.get_node_or_null(^"GameCamera") as GameCamera
 	if camera != null and camera.target != car:
 		_fail("GameCamera target was not rebound after vehicle swap.")
 	var run_hud: RunHUD = scene.get_node_or_null(^"RunHUD") as RunHUD
 	if run_hud != null and run_hud._car != car:
 		_fail("RunHUD _car reference was not rebound after vehicle swap.")
-
-	game_session.set("selected_track_index", previous_index)
-	await _free_scene(scene)
+	var pause_menu: PauseMenu = scene.get_node_or_null(^"PauseMenu") as PauseMenu
+	if pause_menu != null and pause_menu._car != car:
+		_fail("PauseMenu _car reference was not rebound after vehicle swap.")
 
 
 func _spawn_main_scene(track_index: int) -> MainSceneController:
@@ -304,7 +321,9 @@ func _swap_in_physics_car(main_scene: Node) -> void:
 	var spawn_transform: Transform3D = old_car.transform
 	var sibling_index: int = old_car.get_index()
 	main_scene.remove_child(old_car)
-	old_car.queue_free()
+	# Detached nodes never enter the SceneTree, so `queue_free()` would never
+	# flush and the validator would leak one orphaned car per scene spawn.
+	old_car.free()
 
 	var new_car: Node3D = PHYSICS_CAR_SCENE.instantiate() as Node3D
 	new_car.name = "Car"
