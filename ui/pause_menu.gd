@@ -62,6 +62,7 @@ var _dim: ColorRect = null
 var _main_center: CenterContainer = null
 var _debug_center: CenterContainer = null
 var _tuner_spinboxes: Dictionary[String, SpinBox] = {}
+var _tuner_notice_label: Label = null
 
 
 func _ready() -> void:
@@ -74,6 +75,7 @@ func _ready() -> void:
 func bind_car(car: Car) -> void:
 	_car = car
 	_sync_tuner_values()
+	_update_tuner_notice()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -189,6 +191,15 @@ func _build_debug_panel() -> PanelContainer:
 	margin.add_child(vbox)
 
 	vbox.add_child(_make_label("Car Tuning", TITLE_FONT_SIZE, TITLE_COLOR, HORIZONTAL_ALIGNMENT_CENTER))
+	_tuner_notice_label = _make_label(
+		"PhysicsCar-only. SphereCar ignores CarStats — swap vehicle_scene in main.tscn to tune.",
+		14,
+		Color(1.0, 0.78, 0.4, 1.0),
+		HORIZONTAL_ALIGNMENT_CENTER,
+	)
+	_tuner_notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tuner_notice_label.visible = false
+	vbox.add_child(_tuner_notice_label)
 	vbox.add_child(HSeparator.new())
 
 	var scroll: ScrollContainer = ScrollContainer.new()
@@ -263,6 +274,12 @@ func _sync_tuner_values() -> void:
 		spin.set_block_signals(true)
 		spin.value = float(current_value)
 		spin.set_block_signals(false)
+
+
+func _update_tuner_notice() -> void:
+	if _tuner_notice_label == null:
+		return
+	_tuner_notice_label.visible = _car != null and not (_car is PhysicsCar)
 
 
 func _on_tuner_changed(new_value: float, prop_name: String) -> void:

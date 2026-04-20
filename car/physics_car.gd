@@ -71,6 +71,12 @@ var _visual_pose: CarVisualPose = null
 
 func _ready() -> void:
 	super._ready()
+	# `_sync_root_from_proxy` writes `global_transform` from `_process`, which
+	# would double-interpolate against Godot's physics interpolation and cause
+	# jitter (see AGENTS.md "Self-smoothing follow nodes opt OUT"). The proxy
+	# is `top_level = true`, so we read its already-interpolated position each
+	# render frame and mirror it onto the Car root directly.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_surface_provider = get_tree().get_first_node_in_group(SURFACE_PROVIDER_GROUP)
 	_capture_heading_from_basis(global_basis)
 	_configure_collision_shapes_from_stats()

@@ -19,7 +19,6 @@ const EXTRA_ROUND_TIME := 120.0
 const SURFACE_TEST_SECONDS := 2.0
 const AUTOPILOT_TEST_SECONDS := 3.5
 const DRIFT_TEST_SECONDS := 2.5
-const JUMP_TEST_SECONDS := 4.0
 const CAR_SPAWN_Y_OFFSET := 0.37
 
 var _failures: PackedStringArray = []
@@ -73,8 +72,7 @@ func _validate_drift_and_jump() -> void:
 		_fail("Drift test never entered drift.")
 	await _free_scene(drift_scene)
 	# Jump-ramp sub-test was tied to `Track/JumpRamp`, a node removed from
-	# `main.tscn` in bfc2d63. The `_drive_jump` helper below is kept for a
-	# future reintroduction of a ramp track piece.
+	# `main.tscn` in bfc2d63. Reintroduce when a ramp track piece lands.
 
 
 func _validate_surface_speeds() -> void:
@@ -351,66 +349,6 @@ func _drive_for_drift(scene: MainSceneController, duration: float) -> Dictionary
 	}
 
 
-func _drive_jump(scene: MainSceneController, duration: float) -> Dictionary:
-	var car: Car = _get_car(scene)
-	var ramp: JumpRamp = scene.get_node(^"Track/JumpRamp") as JumpRamp
-	# -ramp.global_basis.z is the ramp's forward (travel direction onto the
-	# jump). +ramp.global_basis.z is the opposite: it walks *behind* the ramp,
-	# which is where we spawn the car so it drives forward into the ramp.
-	var travel_direction: Vector3 = -ramp.global_basis.z
-	travel_direction.y = 0.0
-	travel_direction = travel_direction.normalized()
-	var spawn_transform: Transform3D = Transform3D(
-		_basis_from_forward(travel_direction),
-		ramp.global_position + ramp.global_basis.z * (ramp.length * 1.6) + Vector3.UP * CAR_SPAWN_Y_OFFSET
-	)
-	car.reset_to_transform(spawn_transform)
-	await _await_physics_frames(2)
-
-	var frame_count: int = int(duration * float(Engine.physics_ticks_per_second))
-	var airborne_frames: int = 0
-	var landed: bool = false
-	var was_airborne: bool = false
-	var air_heading_start: Vector3 = Vector3.ZERO
-	var air_heading_end: Vector3 = Vector3.ZERO
-	var peak_pitch_deg: float = 0.0
-
-	for _frame in range(frame_count):
-		var steer: float = 0.0
-		if was_airborne:
-			steer = 1.0
-		elif frame_count > 0 and _frame > int(frame_count * 0.35):
-			steer = 0.5
-		_apply_drive_input(1.0, steer)
-		await physics_frame
-		if car._visual_pose != null:
-			peak_pitch_deg = maxf(peak_pitch_deg, rad_to_deg(absf(car._visual_pose._visual_pitch_angle)))
-		if not car.is_grounded:
-			airborne_frames += 1
-			if not was_airborne:
-				was_airborne = true
-				air_heading_start = _flat_forward(car)
-			air_heading_end = _flat_forward(car)
-		elif was_airborne:
-			landed = true
-			break
-
-	var post_landing_pitch_deg: float = 0.0
-	if landed and car._visual_pose != null:
-		_apply_drive_input(0.0, 0.0)
-		await _await_physics_frames(int(float(Engine.physics_ticks_per_second) * 1.2))
-		post_landing_pitch_deg = rad_to_deg(absf(car._visual_pose._visual_pitch_angle))
-
-	_clear_drive_input()
-	return {
-		"airborne_frames": airborne_frames,
-		"landed": landed,
-		"air_heading_delta_deg": rad_to_deg(air_heading_start.angle_to(air_heading_end)) if was_airborne else 0.0,
-		"peak_pitch_deg": peak_pitch_deg,
-		"post_landing_pitch_deg": post_landing_pitch_deg,
-	}
-
-
 func _measure_surface_speed(scene: MainSceneController, lateral_offset: float, duration: float) -> float:
 	var track: TestTrack = _get_track(scene)
 	var car: Car = _get_car(scene)
@@ -455,13 +393,6 @@ func _flat_forward(car: Car) -> Vector3:
 	if forward.length_squared() < 0.001:
 		return Vector3.FORWARD
 	return forward.normalized()
-
-
-func _basis_from_forward(forward: Vector3) -> Basis:
-	var safe_forward: Vector3 = forward.normalized() if forward.length_squared() >= 0.001 else Vector3.FORWARD
-	var right: Vector3 = safe_forward.cross(Vector3.UP).normalized()
-	var corrected_forward: Vector3 = Vector3.UP.cross(right).normalized()
-	return Basis(right, Vector3.UP, -corrected_forward)
 
 
 func _apply_drive_input(throttle_strength: float, steer_strength: float) -> void:

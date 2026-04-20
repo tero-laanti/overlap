@@ -185,44 +185,71 @@ Godot baseline on every `Node3D`:
 - `+basis.x` → **right**
 - `+basis.y` → **up**
 
-Car heading:
+Car heading — invariants shared by every concrete controller:
 
-- `Car._heading_forward` is the gameplay truth. Yaw-only `Vector3` in world
-  space, flattened onto world UP.
-- `-car.global_basis.z` is the same value projected onto the yaw-only world-UP
-  frame and re-synced each tick by `_sync_root_from_proxy_origin()`. Safe to
-  read from outside the car.
+- `-car.global_basis.z` is the yaw-only flat-heading forward vector, in world
+  space, safe to read from outside the car. Each controller guarantees this on
+  every physics tick by a different mechanism (see below).
+- Visual lean (pitch/roll) never lives on `car.global_basis`. PhysicsCar
+  writes lean onto `VisualRoot` via `CarVisualPose`; SphereCar applies
+  ground-align tilt directly to `VisualRoot.global_transform`. Either way,
+  `car.global_basis` is a flat heading frame that does not wobble with
+  terrain.
+
+**PhysicsCar** (integrator model):
+
+- `_heading_forward` (`PhysicsCar` private state) is the gameplay truth.
+  Yaw-only `Vector3` flattened onto world UP.
+- `-car.global_basis.z` is the same value, re-synced each tick by
+  `_sync_root_from_proxy_origin()`.
 - Inside `_integrate_proxy_forces`, prefer the named accessors
   (`get_drive_forward_vector(up)`, `get_heading_forward()`,
-  `get_support_up_axis()`, `basis_from_forward_and_up(fwd, up)`) over hand-rolled
-  `basis` math. They encode the "forward is `-z`, projected onto the support
-  plane" convention in one place.
-- Visual lean (pitch/roll) is written onto `VisualRoot` by `CarVisualPose`, not
-  onto `Car` itself. That keeps `car.global_basis` a flat heading frame that
-  does not wobble with terrain.
+  `get_support_up_axis()`, `basis_from_forward_and_up(fwd, up)`) over
+  hand-rolled `basis` math. They encode the "forward is `-z`, projected onto
+  the support plane" convention in one place.
 
-Sign conventions for the values you will see in car code, tests, and telemetry:
+**SphereCar** (Kenney arcade model):
+
+- The Car root basis IS the heading. There is no `_heading_forward` field;
+  yaw is accumulated directly on `global_basis` via `rotate_y()` in
+  `_physics_process`.
+- `-car.global_basis.z` is authoritative immediately after the yaw rotate.
+  `get_heading_forward()` falls through to the base-class default, which
+  returns the projected `-global_basis.z`.
+
+Sign conventions shared by both controllers (values exposed on `Car`):
 
 | Value                  | +                       | -                          | Source                                         |
 | ---------------------- | ----------------------- | -------------------------- | ---------------------------------------------- |
 | `throttle_input`       | throttle                | brake / reverse            | `Input.get_axis("brake", "throttle")`          |
 | `steering_input`       | steer left              | steer right                | `Input.get_axis("steer_right", "steer_left")`  |
+
+PhysicsCar-only (referenced inside `_integrate_proxy_forces`):
+
+| Value                  | +                       | -                          | Source                                         |
+| ---------------------- | ----------------------- | -------------------------- | ---------------------------------------------- |
 | `forward_speed`        | moving along heading    | moving opposite heading    | `planar_velocity.dot(forward)`                 |
 | `lateral_speed`        | sliding right           | sliding left               | `planar_velocity.dot(right)`                   |
 | `alignment`            | heading ≈ motion (fwd)  | motion opposes heading     | `_heading_forward.dot(motion_forward)`         |
 
 `alignment` is a dot of two unit vectors, so `+1` is pure forward, `0` is
 perpendicular, `-1` is pure reverse. `HEADING_REVERSE_ALIGN_DOT_THRESHOLD =
--0.2` is the "clearly reversing" band used to gate reverse-heading recovery.
+-0.2` is the "clearly reversing" band used to gate PhysicsCar's reverse-
+heading recovery. SphereCar has no equivalent — it does not reconcile
+heading against velocity.
 
 The `steering_input` sign is counter-intuitive because `Input.get_axis(neg,
 pos)` returns `strength(pos) - strength(neg)`, and the call passes
 `steer_right` as `neg` and `steer_left` as `pos`. So pressing A
-(`steer_left`) produces `+1`, which flows through `_get_target_yaw_speed`
-into a positive yaw rotation around world UP — i.e., the car turns **left**
-(right-handed rotation sense). The visual pose negates before applying roll
-so the body leans out of the turn correctly. Do not flip the axis wiring
-without re-checking every downstream use.
+(`steer_left`) produces `+1`, which in PhysicsCar flows through
+`_get_target_yaw_speed` into a positive yaw rotation around world UP —
+i.e., the car turns **left** (right-handed rotation sense). SphereCar uses
+the same public `steering_input` field for the legacy sign but drives yaw
+from an internal `_input.x = Input.get_axis("steer_left", "steer_right")`
+with the opposite sign, baked into `rotate_y(-_input.x * ...)`. The visual
+pose negates before applying roll so the body leans out of the turn
+correctly. Do not flip the axis wiring without re-checking every downstream
+use.
 
 ## Architecture
 
@@ -503,9 +530,9 @@ Required before any PR:
 - Two per-controller validators live under `scripts/`:
   - `validate_physics_car.gd` — exercises `PhysicsCar` (integrator-based).
 	Swaps `main.tscn`'s default Car child for a `physics_car.tscn` instance
-    before adding Main to the tree.
+	before adding Main to the tree.
   - `validate_sphere_car.gd` — smoke test for `SphereCar` (Kenney sphere
-    arcade). Intentionally narrow: boots, responds to throttle, travels far.
+	arcade). Intentionally narrow: boots, responds to throttle, travels far.
 - New bug → new test. Add it to the validator that matches the affected
   controller (or both, if the bug is base-class). Reach into underscored
   state only inside validator scripts.
