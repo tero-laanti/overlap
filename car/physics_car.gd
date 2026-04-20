@@ -103,7 +103,6 @@ func _process(delta: float) -> void:
 
 func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 	_apply_pending_reset(state)
-	_sync_root_from_proxy_origin(state.transform.origin)
 
 	if stats == null:
 		return
@@ -113,7 +112,10 @@ func _integrate_proxy_forces(state: PhysicsDirectBodyState3D) -> void:
 	_sample_inputs()
 	_update_ground_probe(state.linear_velocity, state.step)
 
-	var surface_profile: SurfaceProfile = _get_surface_profile(global_position)
+	# Read from `state.transform.origin` instead of `global_position` so we
+	# don't depend on a start-of-tick root sync. The tail-of-tick sync after
+	# `_advance_heading` is the one external readers see.
+	var surface_profile: SurfaceProfile = _get_surface_profile(state.transform.origin)
 	var acceleration_multiplier: float = surface_profile.acceleration_multiplier if surface_profile else 1.0
 	var max_speed_multiplier: float = surface_profile.max_speed_multiplier if surface_profile else 1.0
 	var drift_boost_multiplier: float = surface_profile.drift_boost_multiplier if surface_profile else 1.0
