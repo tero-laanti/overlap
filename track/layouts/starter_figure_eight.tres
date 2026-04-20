@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="TrackLayout" format=3 uid="uid://c0t8x2e2bhfig"]
+[gd_resource type="Resource" script_class="TrackLayout" load_steps=4 format=3 uid="uid://c0t8x2e2bhfig"]
 
 [ext_resource type="Script" path="res://track/track_layout.gd" id="1"]
 [ext_resource type="Script" path="res://track/track_layout_tile.gd" id="2_lwl3q"]
+[ext_resource type="PackedScene" path="res://car/physics_car.tscn" id="3_physics_car"]
 
 [resource]
 script = ExtResource("1")
@@ -11,3 +12,4 @@ procedural_shape = &"figure_eight"
 procedural_half_size = Vector2(72, 44)
 procedural_segment_count = 160
 procedural_bridge_height = 5.0
+preferred_vehicle = ExtResource("3_physics_car")

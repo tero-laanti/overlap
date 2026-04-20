@@ -26,8 +26,10 @@ _how_ to work in the repo.
 - `car/physics_car.gd` / `car/physics_car.tscn` — `PhysicsCar extends Car`.
   The integrator-based legacy controller: `_integrate_forces` applies per-tick
   forces, explicit heading state, `CarStats` governs every knob, ground grace
-  periods, surface-aware modifiers. The variant wired into `main.tscn` is
-  selected by swapping the `vehicle_scene` `ExtResource` path.
+  periods, surface-aware modifiers. The global default comes from `main.tscn`'s
+  `vehicle_scene` `ExtResource`; a `TrackLayout.preferred_vehicle` override
+  swaps in a different controller per layout (the figure-eight uses
+  `physics_car.tscn` so the bridge crossing runs on the heavier integrator).
 - `car/car_physics_proxy.gd` — Hidden rigidbody proxy shared by both
   controllers. Relays `_integrate_forces` and collision events back to the
   bound `Car` subclass.
@@ -58,7 +60,9 @@ _how_ to work in the repo.
 - `track/test_track.gd` — Tile-layout-driven track generation, surface queries,
   and placement transforms.
 - `track/track_layout.gd` — Authored starter layout resource built from placed
-  track tiles.
+  track tiles. Exposes an optional `preferred_vehicle: PackedScene` that
+  `Main.apply_preferred_vehicle` uses to swap the default `vehicle_scene`
+  when the layout wants a specific controller.
 - `track/track_tile_definition.gd` — Tile shape resource describing entry/exit
   sockets and local centerline points.
 - `track/track_mutator.gd` — Round-end track evolution. Replaces one straight
@@ -66,8 +70,11 @@ _how_ to work in the repo.
 - `ui/run_hud.gd` — Prototype race HUD for lap/timer/economy state.
 - `main.tscn` — Main scene. Track, camera, lighting, environment, plus an
   instanced `Car` whose scene is selected by the `vehicle_scene`
-  `ExtResource` (defaults to `sphere_car.tscn`; swap to `physics_car.tscn` to
-  test the legacy controller).
+  `ExtResource` (defaults to `sphere_car.tscn`; swap to `physics_car.tscn`
+  to test the legacy controller). An active `TrackLayout.preferred_vehicle`
+  override replaces this default at round start via
+  `Main.apply_preferred_vehicle` — re-read that method when touching spawn
+  sequencing.
 
 ## Working Rules
 

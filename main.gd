@@ -107,6 +107,11 @@ func _ready() -> void:
 		if game_session != null:
 			_track.set_starter_layout_index(int(game_session.get("selected_track_index")))
 
+	# Must run after the track's active layout is resolved (so we can read the
+	# layout's preferred vehicle) and before `_car_spawn_transform` is captured
+	# or any eager consumer is rebound (pause menu, coin rebuild).
+	apply_preferred_vehicle()
+
 	if not _car:
 		push_warning("MainSceneController could not find the car.")
 	else:
@@ -183,6 +188,52 @@ func _respawn_car_if_fallen() -> void:
 		return
 	if _car.global_position.y < fall_respawn_y:
 		_car.reset_to_transform(_get_car_start_transform())
+
+
+## Swaps the live Car for the active layout's `preferred_vehicle` when that
+## scene differs from the current instance. Kept public so validators can
+## re-exercise the path after forcing a layout change without re-entering
+## `_ready`. Safe to call with a null/missing track or layout — it no-ops.
+func apply_preferred_vehicle() -> void:
+	if _track == null or _car == null:
+		return
+	var active_layout: TrackLayout = _track.get_active_layout()
+	if active_layout == null or active_layout.preferred_vehicle == null:
+		return
+	if _car.scene_file_path == active_layout.preferred_vehicle.resource_path:
+		return
+
+	var old_car: Car = _car
+	var parent: Node = old_car.get_parent()
+	if parent == null:
+		return
+	var spawn_transform: Transform3D = old_car.global_transform
+	var sibling_index: int = old_car.get_index()
+	var old_name: StringName = old_car.name
+	parent.remove_child(old_car)
+	old_car.queue_free()
+
+	var new_car: Car = active_layout.preferred_vehicle.instantiate() as Car
+	if new_car == null:
+		push_warning("MainSceneController preferred_vehicle did not instantiate a Car.")
+		return
+	new_car.name = old_name
+	parent.add_child(new_car)
+	parent.move_child(new_car, sibling_index)
+	# `reset_to_transform` syncs the proxy and resets physics interpolation —
+	# needed because each controller's `_ready` teleports the proxy to whatever
+	# `global_transform` was at instantiate time (identity), not to the real
+	# spawn pose.
+	new_car.reset_to_transform(spawn_transform)
+	_car = new_car
+
+	# Eagerly-resolved consumers need fresh references; lazy ones (LapTracker,
+	# hazards resolving through body collisions) re-hydrate on their own tick.
+	if _camera != null:
+		_camera.target = _car
+	var run_hud: RunHUD = get_node_or_null(^"RunHUD") as RunHUD
+	if run_hud != null:
+		run_hud.set_car(_car)
 
 
 func _process(delta: float) -> void:

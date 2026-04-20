@@ -9,6 +9,10 @@ extends SceneTree
 ## a reasonable distance in a few physics seconds?
 
 const MAIN_SCENE: PackedScene = preload("res://main.tscn")
+## Any layout without a `preferred_vehicle` override. The auto-swap would hide
+## the plain `main.tscn` default if we let it point at the figure-eight
+## (which now force-selects PhysicsCar).
+const RECTANGLE_LAYOUT_INDEX := 0
 const TEST_DURATION_SEC := 3.0
 const MINIMUM_TRAVEL := 10.0
 const CAR_SPAWN_Y_OFFSET := 0.37
@@ -21,6 +25,9 @@ func _initialize() -> void:
 
 
 func _run_validation() -> void:
+	var game_session: Node = root.get_node_or_null(^"GameSession")
+	if game_session != null:
+		game_session.selected_track_index = RECTANGLE_LAYOUT_INDEX
 	var scene: Node3D = MAIN_SCENE.instantiate()
 	root.add_child(scene)
 	await _await_physics_frames(2)

@@ -37,6 +37,7 @@ func _run_validation() -> void:
 	await _validate_collision_owner_resolution()
 	await _validate_hazard_exit_cleanup_after_owner_cleared()
 	await _validate_reset_to_transform_grounded_state()
+	await _validate_figure_eight_auto_selects_physics_car()
 
 	_clear_drive_input()
 	await _await_idle_and_physics()
@@ -231,6 +232,43 @@ func _validate_reset_to_transform_grounded_state() -> void:
 	if car.ground_normal.dot(Vector3.UP) < 0.9:
 		_fail("Car ground_normal is not near world UP after reset_to_transform on flat track.")
 
+	await _free_scene(scene)
+
+
+## Boots main.tscn with no pre-swap — `GameSession.selected_track_index`
+## points at the figure-eight and `TrackLayout.preferred_vehicle` should
+## swing Car over to `physics_car.tscn`. Guards the layout->vehicle contract
+## and the post-swap rebind path (camera target, RunHUD car ref).
+func _validate_figure_eight_auto_selects_physics_car() -> void:
+	var game_session: Node = root.get_node_or_null(^"GameSession")
+	if game_session == null:
+		_fail("GameSession autoload not available; cannot exercise auto-swap.")
+		return
+	var previous_index: int = int(game_session.get("selected_track_index"))
+	game_session.set("selected_track_index", FIGURE_EIGHT_LAYOUT_INDEX)
+
+	var scene: MainSceneController = MAIN_SCENE.instantiate() as MainSceneController
+	root.add_child(scene)
+	await _await_physics_frames(2)
+
+	var car: Car = _get_car(scene)
+	var track: TestTrack = _get_track(scene)
+	print("auto-swap vehicle: %s on layout %s" % [car.get_script().resource_path.get_file(), track.get_active_layout().display_name])
+	if not (car is PhysicsCar):
+		_fail("Figure-eight did not auto-select PhysicsCar; got %s" % car.get_class())
+	if car.scene_file_path != "res://car/physics_car.tscn":
+		_fail("Swapped Car has unexpected scene_file_path: %s" % car.scene_file_path)
+
+	# Camera target must follow the new Car; RunHUD must too, or its speedometer
+	# reads off a freed node. Main rebinds both at the end of apply_preferred_vehicle.
+	var camera: GameCamera = scene.get_node_or_null(^"GameCamera") as GameCamera
+	if camera != null and camera.target != car:
+		_fail("GameCamera target was not rebound after vehicle swap.")
+	var run_hud: RunHUD = scene.get_node_or_null(^"RunHUD") as RunHUD
+	if run_hud != null and run_hud._car != car:
+		_fail("RunHUD _car reference was not rebound after vehicle swap.")
+
+	game_session.set("selected_track_index", previous_index)
 	await _free_scene(scene)
 
 

@@ -17,6 +17,12 @@ const FIGURE_EIGHT_MIN_SEGMENTS := 32
 @export_range(0.0, 1.0, 0.01) var lap_start_progress: float = 0.0
 @export var tiles: Array[TrackLayoutTileResource] = []
 
+## When non-null, `Main` swaps `main.tscn`'s default `vehicle_scene` for this
+## scene on round start. Lets a layout request a specific controller (e.g.
+## the figure-eight's bridge crossing benefits from PhysicsCar). Null means
+## keep the main.tscn default.
+@export var preferred_vehicle: PackedScene = null
+
 ## When non-empty, the centerline is generated procedurally and `tiles` is
 ## ignored. Self-intersecting shapes (figure_eight) also signal TestTrack to
 ## switch to the split-lobe ground renderer.

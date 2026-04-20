@@ -178,6 +178,12 @@ func _process(_delta: float) -> void:
 	_update_lap_progress()
 
 
+## Lets `Main` rebind the HUD when the vehicle scene is swapped at round
+## start. Without this, `_car` stays pinned to the freed pre-swap instance.
+func set_car(car: Car) -> void:
+	_car = car
+
+
 func _on_lap_changed(current_lap: int) -> void:
 	lap_label.text = "Lap %d" % current_lap
 
