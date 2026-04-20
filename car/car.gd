@@ -13,6 +13,8 @@ signal body_entered(body: Node)
 signal body_exited(body: Node)
 signal body_shape_entered(body_rid: RID, body: Node, body_shape_index: int, local_shape_index: int)
 
+const DRIFT_FEEDBACK_NODE := "DriftFeedback"
+
 @export var stats: CarStats
 
 var steering_input: float = 0.0
@@ -54,6 +56,7 @@ func _ready() -> void:
 		_physics_proxy.bind_car(self)
 		if _ground_probe != null:
 			_ground_probe.add_exception(_physics_proxy)
+	_ensure_drift_feedback()
 
 
 ## Invoked by `CarPhysicsProxy._integrate_forces` on the physics tick. Legacy
@@ -155,6 +158,34 @@ func get_drive_forward_vector(up_axis: Vector3) -> Vector3:
 
 func get_heading_forward() -> Vector3:
 	return get_drive_forward_vector(Vector3.UP)
+
+
+## Hoisted from the concrete controllers so every `Car` subclass gets drift
+## smoke for free. Parents under `VisualRoot` so the emitter inherits the
+## Car's yaw frame; per-vehicle offset tweaks (Y compensation for Car-root
+## offset, different rear-wheel positions) happen via
+## `_configure_drift_feedback`.
+func _ensure_drift_feedback() -> void:
+	if _visual_root == null:
+		return
+	var existing: DriftFeedback = _visual_root.get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
+	if existing != null:
+		_configure_drift_feedback(existing)
+		existing.bind_car(self)
+		return
+	var feedback: DriftFeedback = DriftFeedback.new()
+	feedback.name = DRIFT_FEEDBACK_NODE
+	_configure_drift_feedback(feedback)
+	_visual_root.add_child(feedback)
+	feedback.bind_car(self)
+
+
+## Override to adjust per-vehicle smoke emitter offsets. Default no-op keeps
+## `DriftFeedback`'s sedan-tuned @export defaults, which assume Car root at
+## world Y=0 (SphereCar). Called before `bind_car` so changes take effect
+## on the first particle spawn.
+func _configure_drift_feedback(_feedback: DriftFeedback) -> void:
+	pass
 
 
 # -- Signal relays called by `CarPhysicsProxy`.

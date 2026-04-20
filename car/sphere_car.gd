@@ -22,7 +22,6 @@ const SPHERE_CENTER_HEIGHT := 0.5
 const DRIFT_ENTER_LATERAL_SPEED := 4.0
 const DRIFT_EXIT_LATERAL_SPEED := 2.0
 const DRIFT_MIN_FORWARD_SPEED := 3.0
-const DRIFT_FEEDBACK_NODE := "DriftFeedback"
 
 var _input: Vector2 = Vector2.ZERO  # x = +right steering, y = +forward throttle
 var _linear_speed: float = 0.0
@@ -35,7 +34,6 @@ func _ready() -> void:
 	if _physics_proxy != null:
 		_physics_proxy.reset_physics_interpolation()
 	reset_physics_interpolation()
-	_ensure_drift_feedback()
 
 
 func _physics_process(delta: float) -> void:
@@ -203,16 +201,3 @@ func set_frozen(should_freeze: bool) -> void:
 	if should_freeze:
 		_linear_speed = 0.0
 		_angular_speed = 0.0
-
-
-func _ensure_drift_feedback() -> void:
-	if _visual_root == null:
-		return
-	var existing: DriftFeedback = _visual_root.get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
-	if existing != null:
-		existing.bind_car(self)
-		return
-	var feedback: DriftFeedback = DriftFeedback.new()
-	feedback.name = DRIFT_FEEDBACK_NODE
-	_visual_root.add_child(feedback)
-	feedback.bind_car(self)

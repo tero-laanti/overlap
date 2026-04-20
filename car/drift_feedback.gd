@@ -1,9 +1,13 @@
 class_name DriftFeedback
 extends Node3D
 
-## Rear emitter offsets line up with the Kenney sedan-sports rear wheels under Car/Body.
-const LEFT_REAR_SMOKE_OFFSET := Vector3(-0.85, -0.18, 1.35)
-const RIGHT_REAR_SMOKE_OFFSET := Vector3(0.85, -0.18, 1.35)
+## Rear emitter offsets in the parent's local frame. Defaults line up with
+## the Kenney sedan-sports rear wheels on a SphereCar root (Car world Y=0);
+## controllers whose Car root sits at a different world Y (PhysicsCar rests
+## at -0.15) override via `Car._configure_drift_feedback` before bind.
+@export var left_rear_offset: Vector3 = Vector3(-0.85, -0.18, 1.35)
+@export var right_rear_offset: Vector3 = Vector3(0.85, -0.18, 1.35)
+
 const SMOKE_AMOUNT := 18
 const SMOKE_LIFETIME := 0.45
 const SMOKE_SPREAD := 30.0
@@ -40,8 +44,8 @@ func bind_car(car_owner: Car) -> void:
 
 	if _emitters.is_empty():
 		_emitters = [
-			_create_smoke_emitter("LeftRearSmoke", LEFT_REAR_SMOKE_OFFSET),
-			_create_smoke_emitter("RightRearSmoke", RIGHT_REAR_SMOKE_OFFSET),
+			_create_smoke_emitter("LeftRearSmoke", left_rear_offset),
+			_create_smoke_emitter("RightRearSmoke", right_rear_offset),
 		]
 
 	if not car.drift_started.is_connected(_on_car_drift_started):

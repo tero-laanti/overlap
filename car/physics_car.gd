@@ -9,9 +9,15 @@ extends Car
 ## on `Car` base for signals, public state, and common helpers.
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
-const DRIFT_FEEDBACK_NODE := "DriftFeedback"
 const CAR_AUDIO_NODE := "CarAudio"
 const VISUAL_POSE_NODE := "CarVisualPose"
+## Car root rests at world Y=-0.15 (proxy_center_height=0.4 vs ProxyCollision
+## half-height 0.25), so the sedan-tuned smoke Y offset of -0.18 would emit
+## 33cm below ground and get occluded. Shift up by the Car-root offset so the
+## emitter world-Y matches SphereCar's.
+const DRIFT_SMOKE_Y_OFFSET := -0.03
+const DRIFT_SMOKE_LEFT_OFFSET := Vector3(-0.85, DRIFT_SMOKE_Y_OFFSET, 1.35)
+const DRIFT_SMOKE_RIGHT_OFFSET := Vector3(0.85, DRIFT_SMOKE_Y_OFFSET, 1.35)
 const BRAKE_SPEED_THRESHOLD := 0.5
 const THROTTLE_DEAD_ZONE := 0.1
 const DRIFT_ENTRY_STEERING_THRESHOLD := 0.28
@@ -85,7 +91,6 @@ func _ready() -> void:
 		_physics_proxy.freeze = _is_frozen
 	_teleport_proxy_to_root_transform(global_transform)
 	_ensure_visual_pose()
-	_ensure_drift_feedback()
 	_ensure_car_audio()
 
 
@@ -583,20 +588,9 @@ func _ensure_visual_pose() -> void:
 	_visual_pose = new_visual_pose
 
 
-func _ensure_drift_feedback() -> void:
-	var visual_root: Node3D = _visual_pose.get_visual_root() if _visual_pose != null else null
-	var drift_feedback: DriftFeedback = get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
-	if drift_feedback == null and visual_root != null:
-		drift_feedback = visual_root.get_node_or_null(DRIFT_FEEDBACK_NODE) as DriftFeedback
-	if drift_feedback:
-		drift_feedback.bind_car(self)
-		return
-
-	var new_drift_feedback: DriftFeedback = DriftFeedback.new()
-	new_drift_feedback.name = DRIFT_FEEDBACK_NODE
-	var drift_feedback_parent: Node = visual_root if visual_root != null else self
-	drift_feedback_parent.add_child(new_drift_feedback)
-	new_drift_feedback.bind_car(self)
+func _configure_drift_feedback(feedback: DriftFeedback) -> void:
+	feedback.left_rear_offset = DRIFT_SMOKE_LEFT_OFFSET
+	feedback.right_rear_offset = DRIFT_SMOKE_RIGHT_OFFSET
 
 
 func _ensure_car_audio() -> void:
