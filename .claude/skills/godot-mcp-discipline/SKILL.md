@@ -196,7 +196,7 @@ godot_stop_scene
 - **Hand-editing `.tscn` with Write/Edit because "it's just a property change."** The renumbering cost is one corrupted scene away. Use `godot_set_property_in_file`.
 - **Claiming validation the editor didn't perform.** If `editor_status` was down, say so. Headless validators are a substitute for correctness, not for feel.
 - **Auto-approving mutating tools.** `godot_run_scene` can hang the editor; `godot_remove_node` can delete work. Keep these behind the prompt.
-- **Running two editor instances on the same MCP port.** The second one silently fails to bind. Use `worktrees` for how to parallelize.
+- **Running two editor instances on the same MCP port.** The second one silently fails to bind. If you truly need two editors, change the bridge port in the second workspace before opening it.
 - **Skipping `godot_stop_scene`.** An orphaned running scene keeps the editor locked and the MCP unresponsive.
 - **Mixing `res://` and absolute paths.** The MCP doesn't resolve absolutes; the file tools don't resolve `res://`.
 
@@ -205,7 +205,6 @@ godot_stop_scene
 ## Cross-References
 
 - **debugging** — When MCP calls return unexpected state, follow the four-phase root-cause investigation before trying another command.
-- **worktrees** — Running two Godot editors needs one MCP port per editor. Use `worktrees` for the port-conflict workaround.
 - **AGENTS.md** — "I ran the scene and it worked" is only a valid handoff claim when you actually checked runtime output (`godot_get_output` or the equivalent MCP-backed output read).
 
 ---
