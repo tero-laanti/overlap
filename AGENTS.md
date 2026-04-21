@@ -13,6 +13,10 @@ Read `DESIGN.md` for game vision, design principles, and constraints. That
 document is the authority on _what_ we're building and _why_. This file covers
 _how_ to work in the repo.
 
+Use the matching skill under `.claude/skills/<name>/SKILL.md` when the task
+clearly fits it. `AGENTS.md` remains the top-level authority if there is any
+conflict.
+
 ## Key Files
 
 - `main.gd` — Round flow orchestration, pit stop sequencing, and track placement
