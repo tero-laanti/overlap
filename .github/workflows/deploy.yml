@@ -2,7 +2,7 @@ name: Deploy to itch.io
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*", "[0-9]*"]
   workflow_dispatch:
 
 env:
@@ -98,13 +98,17 @@ jobs:
       - name: Push to itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+          RAW_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
         run: |
           set -euo pipefail
           if [ -z "${ITCH_TARGET:-}" ]; then
             echo "ITCH_TARGET repo variable is not set (expected 'user/game')." >&2
             exit 1
           fi
+          # butler --userversion wants a plain semver; strip the optional
+          # leading "v" so both `v0.0.13` and `0.0.13` tags end up as
+          # "0.0.13" on itch.io.
+          VERSION="${RAW_VERSION#v}"
           ./butler push --userversion "$VERSION" builds/html.zip    "$ITCH_TARGET:html"
           ./butler push --userversion "$VERSION" builds/windows.zip "$ITCH_TARGET:windows"
           ./butler push --userversion "$VERSION" builds/linux.zip   "$ITCH_TARGET:linux"
