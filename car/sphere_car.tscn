@@ -1,6 +1,5 @@
-[gd_scene load_steps=5 format=3 uid="uid://dsy8l3jngnna"]
+[gd_scene load_steps=4 format=3 uid="uid://dsy8l3jngnna"]
 
-[ext_resource type="PackedScene" uid="uid://dgbttdgp7ob8w" path="res://car/assets/kenney_car_kit/sedan-sports.glb" id="car_body_scene"]
 [ext_resource type="Script" path="res://car/sphere_car.gd" id="car_script"]
 [ext_resource type="Script" uid="uid://cde15joafaah5" path="res://car/car_physics_proxy.gd" id="car_proxy_script"]
 [ext_resource type="Resource" path="res://car/default_stats.tres" id="car_stats"]
@@ -40,6 +39,3 @@ target_position = Vector3(0, -1.1, 0)
 collision_mask = 4
 
 [node name="VisualRoot" type="Node3D" parent="."]
-
-[node name="Body" parent="VisualRoot" instance=ExtResource("car_body_scene")]
-transform = Transform3D(-2, 0, 0, 0, 2, 0, 0, 0, -2, 0, -0.25, 0)

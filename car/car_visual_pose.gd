@@ -15,8 +15,12 @@ const VISUAL_IDLE_STEERING_EPSILON := 0.1
 const VISUAL_IDLE_ANGLE_EPSILON := 0.002
 
 const VISUAL_ROOT_PATH := ^"VisualRoot"
-const WHEEL_FRONT_LEFT_PATH := ^"VisualRoot/Body/wheel-front-left"
-const WHEEL_FRONT_RIGHT_PATH := ^"VisualRoot/Body/wheel-front-right"
+const BODY_NODE_NAME := &"Body"
+## Kenney sedans put `wheel-front-*` directly under the GLB scene root, but
+## kart GLBs nest them one level deeper (`kart-oopi/wheel-front-left`). A
+## recursive name lookup handles both without per-model path config.
+const WHEEL_FRONT_LEFT_NODE_NAME := &"wheel-front-left"
+const WHEEL_FRONT_RIGHT_NODE_NAME := &"wheel-front-right"
 
 var car: Car = null
 
@@ -45,11 +49,42 @@ func bind_car(car_owner: Car) -> void:
 	if car == null:
 		return
 	_visual_root = car.get_node_or_null(VISUAL_ROOT_PATH) as Node3D
-	_wheel_front_left = car.get_node_or_null(WHEEL_FRONT_LEFT_PATH) as Node3D
-	_wheel_front_right = car.get_node_or_null(WHEEL_FRONT_RIGHT_PATH) as Node3D
+	_resolve_wheel_nodes()
 	if not _rest_pose_cached:
 		_cache_visual_rest_pose()
 	_ensure_visual_root_pose()
+
+
+## Re-resolves the wheel references after the body has been swapped. Car
+## spawns its body dynamically from `CarOptions` on `_ready`, so the initial
+## `bind_car` call may run before the body exists.
+func refresh_body_references() -> void:
+	if car == null:
+		return
+	_resolve_wheel_nodes()
+
+
+func _resolve_wheel_nodes() -> void:
+	_wheel_front_left = null
+	_wheel_front_right = null
+	if _visual_root == null:
+		return
+	var body: Node = _visual_root.get_node_or_null(NodePath(BODY_NODE_NAME))
+	if body == null:
+		return
+	_wheel_front_left = _find_descendant_by_name(body, WHEEL_FRONT_LEFT_NODE_NAME) as Node3D
+	_wheel_front_right = _find_descendant_by_name(body, WHEEL_FRONT_RIGHT_NODE_NAME) as Node3D
+
+
+static func _find_descendant_by_name(root: Node, target_name: StringName) -> Node:
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		if node != root and node.name == target_name:
+			return node
+		for child in node.get_children():
+			stack.append(child)
+	return null
 
 
 func get_visual_root() -> Node3D:
@@ -73,6 +108,12 @@ func reset_pose() -> void:
 ## after `_sync_root_from_proxy` has written the current yaw-only frame.
 func tick(delta: float) -> void:
 	_update_visual_pose(delta)
+	_update_wheel_steering(delta)
+
+
+## Wheel-steering-only tick for controllers (like `SphereCar`) that drive
+## body pose themselves and only need the front-wheel yaw animated.
+func tick_wheels(delta: float) -> void:
 	_update_wheel_steering(delta)
 
 

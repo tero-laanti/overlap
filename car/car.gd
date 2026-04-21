@@ -14,6 +14,8 @@ signal body_exited(body: Node)
 signal body_shape_entered(body_rid: RID, body: Node, body_shape_index: int, local_shape_index: int)
 
 const DRIFT_FEEDBACK_NODE := "DriftFeedback"
+const BODY_NODE_NAME := &"Body"
+const VISUAL_POSE_NODE := "CarVisualPose"
 
 @export var stats: CarStats
 
@@ -43,6 +45,7 @@ var angular_velocity: Vector3:
 			_physics_proxy.angular_velocity = value
 
 var _is_frozen: bool = false
+var _visual_pose: CarVisualPose = null
 
 @onready var _physics_proxy: CarPhysicsProxy = get_node_or_null(^"PhysicsProxy") as CarPhysicsProxy
 @onready var _ground_probe: RayCast3D = get_node_or_null(^"GroundProbe") as RayCast3D
@@ -56,7 +59,76 @@ func _ready() -> void:
 		_physics_proxy.bind_car(self)
 		if _ground_probe != null:
 			_ground_probe.add_exception(_physics_proxy)
+	_spawn_selected_body()
+	_ensure_visual_pose()
 	_ensure_drift_feedback()
+
+
+## Virtual: concrete controllers return their proxy-specific ground offset so
+## the spawned body sits at the right Y for the sphere vs. box proxy without
+## each `CarOption` having to author per-controller transforms.
+func _get_body_base_y_offset() -> float:
+	return 0.0
+
+
+## Instantiates the `Body` node under `VisualRoot` from the currently-selected
+## `CarOption`. Any authored `Body` in the `.tscn` is cleared first so scene
+## files can leave the slot empty. Safe to call multiple times — used both at
+## `_ready` and if a future feature swaps the body mid-run.
+func _spawn_selected_body() -> void:
+	if _visual_root == null:
+		return
+
+	var existing_body: Node = _visual_root.get_node_or_null(NodePath(BODY_NODE_NAME))
+	if existing_body != null:
+		_visual_root.remove_child(existing_body)
+		existing_body.queue_free()
+
+	var selected_index: int = _read_selected_car_index()
+	var option: CarOption = CarOptions.get_option(selected_index)
+	if option == null or option.body_scene == null:
+		push_warning("Car has no valid CarOption for index %d." % selected_index)
+		return
+
+	var body: Node3D = option.body_scene.instantiate() as Node3D
+	if body == null:
+		push_warning("Car failed to instantiate body for option %s." % option.display_name)
+		return
+	body.name = BODY_NODE_NAME
+	_visual_root.add_child(body)
+
+	var body_transform: Transform3D = option.body_transform
+	body_transform.origin.y += _get_body_base_y_offset()
+	body.transform = body_transform
+
+	if option.hue_shift > 0.0:
+		var texture: Texture2D = CarOptions.get_colormap_texture(option.hue_shift)
+		if texture != null:
+			CarOptions.apply_colormap_override(body, texture)
+
+
+## Autoloads (`GameSession`) don't always resolve as a bare identifier during
+## the `update_scripts_classes` phase — the dependency chain that reloads
+## `car.gd` can fire before the autoload is registered. Go through the scene
+## tree like `main.gd._get_game_session` does to stay robust.
+func _read_selected_car_index() -> int:
+	var scene_tree: SceneTree = get_tree()
+	if scene_tree == null:
+		return 0
+	var game_session: Node = scene_tree.root.get_node_or_null(^"GameSession")
+	if game_session == null:
+		return 0
+	return int(game_session.get("selected_car_index"))
+
+
+func _ensure_visual_pose() -> void:
+	var visual_pose: CarVisualPose = get_node_or_null(NodePath(VISUAL_POSE_NODE)) as CarVisualPose
+	if visual_pose == null:
+		visual_pose = CarVisualPose.new()
+		visual_pose.name = VISUAL_POSE_NODE
+		add_child(visual_pose)
+	_visual_pose = visual_pose
+	_visual_pose.bind_car(self)
 
 
 ## Invoked by `CarPhysicsProxy._integrate_forces` on the physics tick. Legacy

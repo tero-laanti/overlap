@@ -12,6 +12,10 @@ const MASTER_BUS_NAME := &"Master"
 ## procedural layout.
 var selected_track_index: int = 5
 
+## Index into `CarOptions.OPTIONS`. 0 is the authored sedan so a fresh launch
+## keeps the current visuals. The main menu's car picker writes this.
+var selected_car_index: int = 0
+
 ## Starts muted so a fresh launch never blares the placeholder audio at the
 ## player. The main menu's mute button flips this through `toggle_audio_muted`.
 var is_audio_muted: bool = true

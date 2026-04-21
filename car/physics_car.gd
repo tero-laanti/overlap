@@ -10,7 +10,10 @@ extends Car
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
 const CAR_AUDIO_NODE := "CarAudio"
-const VISUAL_POSE_NODE := "CarVisualPose"
+## Body Y offset baked into the old `physics_car.tscn` transform; kept here
+## so `Car._spawn_selected_body` can apply it on top of each `CarOption`'s
+## intrinsic body transform.
+const BODY_BASE_Y_OFFSET := -0.1
 ## Car root rests at world Y=-0.15 (proxy_center_height=0.4 vs ProxyCollision
 ## half-height 0.25), so the sedan-tuned smoke Y offset of -0.18 would emit
 ## 33cm below ground and get occluded. Shift up by the Car-root offset so the
@@ -70,7 +73,6 @@ var _last_ground_normal: Vector3 = Vector3.UP
 # on exit so lateral velocity is redirected gradually instead of in a one-tick
 # snap that reads as a spin-out.
 var _drift_grip_blend: float = 0.1
-var _visual_pose: CarVisualPose = null
 
 @onready var _proxy_collision: CollisionShape3D = get_node_or_null(^"PhysicsProxy/ProxyCollision") as CollisionShape3D
 
@@ -90,8 +92,11 @@ func _ready() -> void:
 	if _physics_proxy != null:
 		_physics_proxy.freeze = _is_frozen
 	_teleport_proxy_to_root_transform(global_transform)
-	_ensure_visual_pose()
 	_ensure_car_audio()
+
+
+func _get_body_base_y_offset() -> float:
+	return BODY_BASE_Y_OFFSET
 
 
 func _process(delta: float) -> void:
@@ -578,20 +583,6 @@ func _get_surface_profile(world_position: Vector3) -> SurfaceProfile:
 		return _surface_provider.call("get_surface_profile_at_position", world_position) as SurfaceProfile
 
 	return null
-
-
-func _ensure_visual_pose() -> void:
-	var visual_pose: CarVisualPose = get_node_or_null(VISUAL_POSE_NODE) as CarVisualPose
-	if visual_pose:
-		_visual_pose = visual_pose
-		_visual_pose.bind_car(self)
-		return
-
-	var new_visual_pose: CarVisualPose = CarVisualPose.new()
-	new_visual_pose.name = VISUAL_POSE_NODE
-	add_child(new_visual_pose)
-	new_visual_pose.bind_car(self)
-	_visual_pose = new_visual_pose
 
 
 func _configure_drift_feedback(feedback: DriftFeedback) -> void:

@@ -2,6 +2,7 @@ class_name MainMenu
 extends Node3D
 
 const GAME_SCENE_PATH := "res://main.tscn"
+const CAR_PICKER_SCENE_PATH := "res://ui/car_picker.tscn"
 ## Slow orbit so the map drifts around a fixed frame rather than spinning.
 const ORBIT_RADIANS_PER_SECOND := 0.08
 const SELECTED_BUTTON_COLOR := Color(1.0, 0.92, 0.65, 1.0)
@@ -33,12 +34,16 @@ const START_TRIGGER_IGNORED_KEYCODES: Array[int] = [
 @export var camera_path: NodePath
 @export var track_row_path: NodePath
 @export var mute_button_path: NodePath
+@export var choose_car_button_path: NodePath
+@export var car_selection_label_path: NodePath
 @export var camera_height: float = 90.0
 @export var camera_radius: float = 40.0
 
 var _track: TestTrack = null
 var _menu_camera: Camera3D = null
 var _mute_button: Button = null
+var _choose_car_button: Button = null
+var _car_selection_label: Label = null
 var _track_buttons: Array[Button] = []
 var _orbit_focus: Vector3 = Vector3.ZERO
 var _orbit_angle: float = 0.0
@@ -55,10 +60,14 @@ func _ready() -> void:
 		# physics process" warning.
 		_menu_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_mute_button = get_node_or_null(mute_button_path) as Button
+	_choose_car_button = get_node_or_null(choose_car_button_path) as Button
+	_car_selection_label = get_node_or_null(car_selection_label_path) as Label
 	_collect_track_buttons()
 	_warn_about_track_option_drift()
 	_apply_selection(GameSession.selected_track_index)
 	_setup_mute_button()
+	_setup_choose_car_button()
+	_refresh_car_selection_label()
 
 
 func _process(delta: float) -> void:
@@ -196,6 +205,25 @@ func _setup_mute_button() -> void:
 	if not _mute_button.pressed.is_connected(_on_mute_button_pressed):
 		_mute_button.pressed.connect(_on_mute_button_pressed)
 	_refresh_mute_button_label()
+
+
+func _setup_choose_car_button() -> void:
+	if _choose_car_button == null:
+		return
+	if not _choose_car_button.pressed.is_connected(_on_choose_car_pressed):
+		_choose_car_button.pressed.connect(_on_choose_car_pressed)
+
+
+func _on_choose_car_pressed() -> void:
+	get_tree().change_scene_to_file(CAR_PICKER_SCENE_PATH)
+
+
+func _refresh_car_selection_label() -> void:
+	if _car_selection_label == null:
+		return
+	var option: CarOption = CarOptions.get_option(GameSession.selected_car_index)
+	var name_text: String = option.display_name if option != null else "Unknown"
+	_car_selection_label.text = "Currently: %s" % name_text
 
 
 func _on_mute_button_pressed() -> void:

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CarOption" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://car/car_option.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://cifuipyy1unq0" path="res://car/assets/kenney_car_kit/kart-oopi.glb" id="2"]
+[ext_resource type="PackedScene" uid="uid://dxxopuknldken" path="res://car/physics_car.tscn" id="3"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Buzzer Kart"
+description = "Small, mean, and always sideways."
+body_scene = ExtResource("2")
+body_transform = Transform3D(-1.6, 0, 0, 0, 1.6, 0, 0, 0, -1.6, 0, 0.1, 0)
+hue_shift = 0.0
+preview_scale = 0.8
+controller_override = ExtResource("3")
+controller_label = "Normal controller"

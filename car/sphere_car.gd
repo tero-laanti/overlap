@@ -22,6 +22,10 @@ const SPHERE_CENTER_HEIGHT := 0.5
 const DRIFT_ENTER_LATERAL_SPEED := 4.0
 const DRIFT_EXIT_LATERAL_SPEED := 2.0
 const DRIFT_MIN_FORWARD_SPEED := 3.0
+## Body Y offset baked into the old `sphere_car.tscn` transform; kept here
+## so `Car._spawn_selected_body` can apply it on top of each `CarOption`'s
+## intrinsic body transform.
+const BODY_BASE_Y_OFFSET := -0.25
 
 var _input: Vector2 = Vector2.ZERO  # x = +right steering, y = +forward throttle
 var _linear_speed: float = 0.0
@@ -37,6 +41,10 @@ func _ready() -> void:
 	if _physics_proxy != null:
 		_physics_proxy.reset_physics_interpolation()
 	reset_physics_interpolation()
+
+
+func _get_body_base_y_offset() -> float:
+	return BODY_BASE_Y_OFFSET
 
 
 func _physics_process(delta: float) -> void:
@@ -71,6 +79,8 @@ func _physics_process(delta: float) -> void:
 	global_position = _physics_proxy.global_position - Vector3(0.0, SPHERE_CENTER_HEIGHT, 0.0)
 	_align_visual_to_ground()
 	_update_drift_state()
+	if _visual_pose != null:
+		_visual_pose.tick_wheels(delta)
 
 
 func _sample_inputs() -> void:
