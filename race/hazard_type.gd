@@ -8,6 +8,7 @@ enum Type {
 	CONE_CHICANE,
 	GRAVEL_SPILL,
 	CROSSWIND_FAN,
+	SHUTTER_GATE,
 }
 
 enum Category {
@@ -24,6 +25,7 @@ const SCENE_PATHS := {
 	Type.CONE_CHICANE: "res://race/hazards/cone_chicane.tscn",
 	Type.GRAVEL_SPILL: "res://race/hazards/gravel_spill.tscn",
 	Type.CROSSWIND_FAN: "res://race/hazards/crosswind_fan.tscn",
+	Type.SHUTTER_GATE: "res://race/hazards/shutter_gate.tscn",
 }
 
 const DISPLAY_NAMES := {
@@ -33,6 +35,7 @@ const DISPLAY_NAMES := {
 	Type.CONE_CHICANE: "Cone Chicane",
 	Type.GRAVEL_SPILL: "Gravel Spill",
 	Type.CROSSWIND_FAN: "Crosswind Fan",
+	Type.SHUTTER_GATE: "Shutter Gate",
 }
 
 const DESCRIPTIONS := {
@@ -42,6 +45,7 @@ const DESCRIPTIONS := {
 	Type.CONE_CHICANE: "Staggered blockers that turn a straight line into a slalom.",
 	Type.GRAVEL_SPILL: "A mushy surface patch that bleeds speed and traction.",
 	Type.CROSSWIND_FAN: "A lateral shove zone that pushes you off the easy line.",
+	Type.SHUTTER_GATE: "A wall that rises and falls on a timer. Read the rhythm or wait.",
 }
 
 const NODE_NAMES := {
@@ -51,6 +55,7 @@ const NODE_NAMES := {
 	Type.CONE_CHICANE: "ConeChicane",
 	Type.GRAVEL_SPILL: "GravelSpill",
 	Type.CROSSWIND_FAN: "CrosswindFan",
+	Type.SHUTTER_GATE: "ShutterGate",
 }
 
 const CATEGORIES := {
@@ -60,6 +65,7 @@ const CATEGORIES := {
 	Type.CONE_CHICANE: Category.HARD_REROUTE,
 	Type.GRAVEL_SPILL: Category.LINE_TAX,
 	Type.CROSSWIND_FAN: Category.LINE_TAX,
+	Type.SHUTTER_GATE: Category.HARD_REROUTE,
 }
 
 const DRAFT_WEIGHTS := {
@@ -69,6 +75,7 @@ const DRAFT_WEIGHTS := {
 	Type.CONE_CHICANE: 3,
 	Type.GRAVEL_SPILL: 2,
 	Type.CROSSWIND_FAN: 1,
+	Type.SHUTTER_GATE: 2,
 }
 
 
@@ -80,6 +87,7 @@ static func get_available_types() -> Array[int]:
 		Type.CONE_CHICANE,
 		Type.GRAVEL_SPILL,
 		Type.CROSSWIND_FAN,
+		Type.SHUTTER_GATE,
 	]
 
 

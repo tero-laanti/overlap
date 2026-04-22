@@ -178,12 +178,12 @@ Difficulty through behavior (readable hazards, tighter racing lines), not stat s
 A lap through the current track IS the encounter. The Encounter Triangle maps:
 
 - **Space** — track geometry + active mutations
-- **Adversaries** — placed hazards (Oil Slick, Wall Barrier, Cone Chicane, Slow Zone, Gravel Spill, Crosswind Fan)
+- **Adversaries** — placed hazards (Oil Slick, Wall Barrier, Cone Chicane, Slow Zone, Gravel Spill, Crosswind Fan, Shutter Gate)
 - **Resources** — placed positives (Boost Pad, Coin Gate, Drift Ribbon, Wash Gate, Time Bank) + remaining timer + current multiplier
 
 **Hazard archetypes (already in `hazard_type.gd`):**
 - **Line Tax** — makes the existing racing line expensive (Oil Slick, Slow Zone, Gravel Spill, Crosswind Fan)
-- **Hard Reroute** — forces a new line (Wall Barrier, Cone Chicane)
+- **Hard Reroute** — forces a new line (Wall Barrier, Cone Chicane, Shutter Gate)
 
 **Composition rule:** a lap needs at least one of each archetype to stay interesting. All line-tax = grind. All hard-reroute = maze with no line to optimize. Draft offers already enforce one-of-each.
 

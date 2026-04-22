@@ -401,6 +401,7 @@ use.
 | Crosswind Fan | `res://race/hazards/crosswind_fan.tscn` | Pushes the car laterally off the ideal line.                | 5 (`track_modifier`) |
 | Wall Barrier  | `res://race/hazards/wall_barrier.tscn`  | Solid blocker — throws the car back on impact.              | 2 (`track_wall`)     |
 | Cone Chicane  | `res://race/hazards/cone_chicane.tscn`  | Staggered blockers that force a slalom through the segment. | 2 (`track_wall`)     |
+| Shutter Gate  | `res://race/hazards/shutter_gate.tscn`  | Wall that rises and falls on a cycle. Read the rhythm or wait. | 2 (`track_wall`)  |
 
 ### Adding a hazard
 
