@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="TrackTileDefinition" format=3]
 
 [ext_resource type="Script" path="res://track/track_tile_definition.gd" id="1"]
+[ext_resource type="PackedScene" path="res://track/tiles/meshes/corner_tight_90.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Corner Tight 90"
 exit_direction = 0
 interior_points = PackedVector3Array(-0.24, 0, -0.08, -0.08, 0, -0.24)
+scene = ExtResource("2")

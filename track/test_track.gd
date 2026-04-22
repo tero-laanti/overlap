@@ -160,9 +160,12 @@ static func get_centerline_perpendicular(
 
 
 ## Iterates the active layout's placed tiles and instantiates each tile's
-## authored scene at the tile's grid position and rotation. Tiles with no
-## scene are skipped with a warning — useful while migrating, since not
-## every tile definition has a scene wired up yet.
+## authored scene at the tile's grid position and rotation. TileGeometry
+## instances receive `tile_size`, `rotation_steps`, and `reverse_path`
+## before entering the tree so their mesh builds already oriented — the
+## scene transform is then identity-rotation. Other scene roots fall back
+## to a simple Y-axis rotation, which is only correct for 1×1 tiles.
+## Tiles with no scene are skipped with a warning.
 func _instance_tiles() -> void:
 	var active_layout: TrackLayoutResource = _get_active_layout()
 	if active_layout == null:
@@ -200,11 +203,16 @@ func _instance_tiles() -> void:
 			0.0,
 			float(layout_tile.grid_position.y) * layout_tile_size,
 		)
-		var rotation_angle: float = deg_to_rad(-float(layout_tile.rotation_steps) * 45.0)
-		instance_3d.transform = Transform3D(
-			Basis(Vector3.UP, rotation_angle),
-			world_position,
-		)
+		if instance_3d is TileGeometry:
+			var tile_geometry: TileGeometry = instance_3d
+			tile_geometry.definition = tile_def
+			tile_geometry.tile_size = layout_tile_size
+			tile_geometry.rotation_steps = layout_tile.rotation_steps
+			tile_geometry.reverse_path = layout_tile.reverse_path
+			instance_3d.transform = Transform3D(Basis.IDENTITY, world_position)
+		else:
+			var rotation_angle: float = deg_to_rad(-float(layout_tile.rotation_steps) * 45.0)
+			instance_3d.transform = Transform3D(Basis(Vector3.UP, rotation_angle), world_position)
 		instance_3d.name = "Tile_%s_%s" % [tile_def.display_name.replace(" ", ""), layout_tile.grid_position]
 		tiles_root.add_child(instance_3d)
 

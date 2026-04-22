@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://track/tiles/tile_geometry.gd" id="1"]
 
-[node name="StraightCardinalTile" type="Node3D"]
+[node name="DetourHairpinShort1x3Tile" type="Node3D"]
 script = ExtResource("1")

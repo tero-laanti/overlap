@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="TrackTileDefinition" format=3]
 
 [ext_resource type="Script" path="res://track/track_tile_definition.gd" id="1"]
+[ext_resource type="PackedScene" path="res://track/tiles/meshes/corner_wide_45.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Corner Wide 45"
 exit_direction = 1
 interior_points = PackedVector3Array(-0.28, 0, -0.04, 0.1, 0, -0.3)
+scene = ExtResource("2")
