@@ -3,6 +3,7 @@ class_name TestTrack
 extends Node3D
 
 const TrackLayoutResource := preload("res://track/track_layout.gd")
+const TrackTileDefinitionResource := preload("res://track/track_tile_definition.gd")
 
 class ClosestSegmentResult:
 	var distance: float
@@ -16,6 +17,8 @@ class ClosestSegmentResult:
 
 
 const SURFACE_PROVIDER_GROUP := &"surface_provider"
+## Pads the background-grass plane and safety-net slab past the track bounds
+## so the edges of the play area stay visible/drivable at speed.
 const GROUND_MARGIN := 24.0
 
 var _starter_layouts: Array[TrackLayoutResource] = []
@@ -42,13 +45,13 @@ var _active_starter_layout_index: int = 0
 @export var semi_minor_z: float = 40.0
 @export var oval_segments: int = 64
 
-## Track dimensions.
+## Lateral distance from centerline that `get_surface_profile_at_position`
+## uses to return `tarmac_surface`. Must stay in sync with the drivable
+## width authored into tile scenes so the physics query matches the visual.
 @export var track_width: float = 12.0
+## Additional band beyond `track_width` that returns `sand_surface`. Past
+## this, the query returns `grass_surface`.
 @export var sand_width: float = 8.0
-
-## Wall dimensions.
-@export var wall_height: float = 1.2
-@export var wall_thickness: float = 0.4
 
 @export_group("Surface Profiles")
 @export var tarmac_surface: SurfaceProfile = preload("res://track/tarmac_surface.tres")
@@ -58,31 +61,28 @@ var _active_starter_layout_index: int = 0
 @export_group("Lap")
 @export_range(0.0, 1.0, 0.01) var lap_start_progress: float = 0.5
 
-const WALL_COLLISION_LAYER := 2
 const TRACK_SURFACE_COLLISION_LAYER := 3
 const GROUND_COLLIDER_THICKNESS := 1.0
 ## Generous extra margin on the invisible ground slab so ramp launches and
 ## wall deflections at high speed cannot overshoot the play area and fall
 ## into the void. Independent of `GROUND_MARGIN` (visual grass width).
 const GROUND_COLLIDER_MARGIN := 200.0
-const TARMAC_COLOR := Color(0.20, 0.20, 0.25)
-const SAND_COLOR := Color(0.76, 0.70, 0.50)
 const GRASS_COLOR := Color(0.30, 0.45, 0.22)
-const BARRIER_COLOR := Color(0.60, 0.60, 0.62)
-const START_LINE_COLOR := Color(0.95, 0.95, 0.95)
-const START_LINE_LENGTH := 0.8
-const START_LINE_HEIGHT := 0.04
-const START_LINE_Y_OFFSET := 0.03
-const TRACK_EDGE_PADDING := 0.6
 const PLACEMENT_SURFACE_Y_OFFSET := 0.02
-## Every surface is non-overlapping in XZ and shares boundary vertices with
-## its neighbours, so they all sit on the same plane without cracks or
-## z-fighting. Gameplay elements still use PLACEMENT_SURFACE_Y_OFFSET and
-## START_LINE_Y_OFFSET to float above this plane.
+## Top of authored tile drivable surface. Background grass sits just below
+## this so visible edges align with tile roads without z-fighting.
 const SURFACE_Y := 0.0
+## Offset applied to the background grass plane so it renders below the
+## tile roads but above the safety-net ground slab.
+const BACKGROUND_GRASS_Y_OFFSET := 0.05
 const GENERATED_ROOT_NAME := "GeneratedTrack"
+const GENERATED_TILES_NAME := "Tiles"
 const START_SEGMENT_MAX_TURN_ANGLE := deg_to_rad(10.0)
 const START_SEGMENT_SAMPLE_DISTANCE_RATIO := 0.75
+## Floor for the "how far along the centerline to look for a straight
+## segment" heuristic in `_find_best_start_segment`. Empirically tuned so
+## very short straights still register as candidates.
+const START_SEGMENT_MIN_SAMPLE_DISTANCE := 1.6
 
 var _points: Array[Vector3] = []
 var _segment_lengths: Array[float] = []
@@ -131,50 +131,9 @@ func _build_fallback_oval_centerline() -> void:
 	_rebuild_length_cache()
 
 
-## Returns the inward-pointing perpendicular at the given centerline index.
-func _perp_at(index: int) -> Vector3:
-	return get_centerline_perpendicular(_points, index, true)
-
-
-## Inward-pointing miter vector for wall extrusion. Equivalent to `_perp_at`
-## scaled by `1 / cos(theta/2)` so offsetting along it keeps the wall's face
-## at constant perpendicular distance from the centerline through a bend,
-## instead of pinching inward by `cos(theta/2)` at every corner. Capped at
-## ~3.3× for near-U-turn bends to avoid runaway vertex placement.
-func _miter_at(index: int) -> Vector3:
-	var n: int = _points.size()
-	if n < 2:
-		return _perp_at(index)
-
-	var prev_index: int = (index - 1 + n) % n
-	var next_index: int = (index + 1) % n
-
-	var dir_in: Vector3 = _points[index] - _points[prev_index]
-	dir_in.y = 0.0
-	if dir_in.length_squared() < 0.0001:
-		return _perp_at(index)
-	dir_in = dir_in.normalized()
-
-	var dir_out: Vector3 = _points[next_index] - _points[index]
-	dir_out.y = 0.0
-	if dir_out.length_squared() < 0.0001:
-		return _perp_at(index)
-	dir_out = dir_out.normalized()
-
-	var dir_sum: Vector3 = dir_in + dir_out
-	if dir_sum.length_squared() < 0.0001:
-		return _perp_at(index)
-	var bisector: Vector3 = dir_sum.normalized()
-
-	var cos_half: float = bisector.dot(dir_in)
-	cos_half = maxf(cos_half, 0.3)
-
-	return Vector3(-bisector.z, 0.0, bisector.x) / cos_half
-
-
-## Shared ribbon/road helper. Closed loops use wrapped neighbors so the
-## resulting perpendicular keeps pointing inward around the full track;
-## open polylines fall back to start/end tangents.
+## Shared ribbon/road helper kept for hazard preview code. Closed loops use
+## wrapped neighbors so the resulting perpendicular keeps pointing inward
+## around the full track; open polylines fall back to start/end tangents.
 static func get_centerline_perpendicular(
 	points: Array[Vector3],
 	index: int,
@@ -200,46 +159,80 @@ static func get_centerline_perpendicular(
 	return Vector3(-direction.z, 0.0, direction.x)
 
 
-## Builds the grass in two pieces that share no XZ area with the track, so
-## nothing is coplanar with the sand/tarmac strips. Keeps z-fighting
-## structurally impossible and leaves the centerline free to pick up Y
-## variation later (jumps, banked sections) without reworking the ground.
-func _add_ground() -> void:
-	_add_grass_infield()
-	_add_grass_outer_band()
-
-
-func _add_grass_outer_band() -> void:
-	var inner_offset: float = -(track_width / 2.0 + sand_width)
-	var outer_offset: float = inner_offset - GROUND_MARGIN
-	_add_strip_mesh("GroundOuterBand", inner_offset, outer_offset, SURFACE_Y, GRASS_COLOR)
-
-
-func _add_grass_infield() -> void:
-	if _points.size() < 3:
+## Iterates the active layout's placed tiles and instantiates each tile's
+## authored scene at the tile's grid position and rotation. Tiles with no
+## scene are skipped with a warning — useful while migrating, since not
+## every tile definition has a scene wired up yet.
+func _instance_tiles() -> void:
+	var active_layout: TrackLayoutResource = _get_active_layout()
+	if active_layout == null:
 		return
 
-	var inner_edge_offset: float = track_width / 2.0 + sand_width
-	var polygon_xz := PackedVector2Array()
-	polygon_xz.resize(_points.size())
-	for i in range(_points.size()):
-		var p: Vector3 = _points[i] + _miter_at(i) * inner_edge_offset
-		polygon_xz[i] = Vector2(p.x, p.z)
+	var layout_tile_size: float = active_layout.tile_size
+	var tiles_root: Node3D = Node3D.new()
+	tiles_root.name = GENERATED_TILES_NAME
+	_add_generated_child(tiles_root)
 
-	var tri_indices: PackedInt32Array = Geometry2D.triangulate_polygon(polygon_xz)
-	if tri_indices.is_empty():
-		return
+	for layout_tile in active_layout.tiles:
+		if layout_tile == null or layout_tile.tile == null:
+			continue
+		var tile_def: TrackTileDefinitionResource = layout_tile.tile
+		if tile_def.scene == null:
+			push_warning(
+				"TestTrack tile '%s' has no scene; nothing to instantiate at grid %s." % [
+					tile_def.display_name,
+					layout_tile.grid_position,
+				]
+			)
+			continue
+
+		var instance: Node = tile_def.scene.instantiate()
+		var instance_3d: Node3D = instance as Node3D
+		if instance_3d == null:
+			push_warning(
+				"TestTrack tile '%s' scene root is not Node3D; skipping." % tile_def.display_name
+			)
+			instance.queue_free()
+			continue
+
+		var world_position: Vector3 = Vector3(
+			float(layout_tile.grid_position.x) * layout_tile_size,
+			0.0,
+			float(layout_tile.grid_position.y) * layout_tile_size,
+		)
+		var rotation_angle: float = deg_to_rad(-float(layout_tile.rotation_steps) * 45.0)
+		instance_3d.transform = Transform3D(
+			Basis(Vector3.UP, rotation_angle),
+			world_position,
+		)
+		instance_3d.name = "Tile_%s_%s" % [tile_def.display_name.replace(" ", ""), layout_tile.grid_position]
+		tiles_root.add_child(instance_3d)
+
+
+## Background grass plane filling the full track bounds. Sits below tile
+## drivable surfaces so the edges of tile meshes blend into a grass field.
+## Single flat mesh — authored tile scenes handle the road look themselves.
+func _add_background_grass() -> void:
+	var bounds: AABB = _get_track_bounds()
+	var min_x: float = bounds.position.x
+	var min_z: float = bounds.position.z
+	var max_x: float = bounds.position.x + bounds.size.x
+	var max_z: float = bounds.position.z + bounds.size.z
+	var y: float = SURFACE_Y - BACKGROUND_GRASS_Y_OFFSET
 
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_smooth_group(-1)
 	st.set_normal(Vector3.UP)
-	for idx in tri_indices:
-		var v: Vector2 = polygon_xz[idx]
-		st.add_vertex(Vector3(v.x, SURFACE_Y, v.y))
+	var a := Vector3(min_x, y, min_z)
+	var b := Vector3(max_x, y, min_z)
+	var c := Vector3(max_x, y, max_z)
+	var d := Vector3(min_x, y, max_z)
+	st.add_vertex(a); st.add_vertex(b); st.add_vertex(c)
+	st.add_vertex(a); st.add_vertex(c); st.add_vertex(d)
 
 	var mi := MeshInstance3D.new()
-	mi.name = "GroundInfield"
+	mi.name = "BackgroundGrass"
 	mi.mesh = st.commit()
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = GRASS_COLOR
@@ -248,7 +241,8 @@ func _add_grass_infield() -> void:
 
 
 ## Invisible floor spanning the full track bounds so the car has something to
-## land on once gravity is enabled. One slab, layer 3 (`track_surface`), mask 0.
+## land on if it overshoots a tile's authored collider. One slab, layer 3
+## (`track_surface`), mask 0.
 func _add_ground_collider() -> void:
 	var bounds: AABB = _get_track_bounds()
 	var slab_size: Vector3 = Vector3(
@@ -263,7 +257,7 @@ func _add_ground_collider() -> void:
 	body.collision_mask = 0
 	body.position = Vector3(
 		bounds.position.x + bounds.size.x * 0.5,
-		SURFACE_Y - GROUND_COLLIDER_THICKNESS * 0.5,
+		SURFACE_Y - GROUND_COLLIDER_THICKNESS * 0.5 - BACKGROUND_GRASS_Y_OFFSET,
 		bounds.position.z + bounds.size.z * 0.5
 	)
 	_add_generated_child(body)
@@ -343,7 +337,7 @@ func get_track_transform(progress: float, lateral_offset: float = 0.0, y_offset:
 	return Transform3D(global_basis * local_basis, to_global(local_position))
 
 
-func get_start_transform(y_offset: float = START_LINE_Y_OFFSET) -> Transform3D:
+func get_start_transform(y_offset: float = PLACEMENT_SURFACE_Y_OFFSET) -> Transform3D:
 	return get_track_transform(get_lap_start_progress(), 0.0, y_offset)
 
 
@@ -384,71 +378,6 @@ func get_inside_lateral_sign(progress: float, sample_distance: float = 6.0, min_
 	# so a CCW signed turn (positive angle) curves the track toward -lateral
 	# and the inside sits on the negative side.
 	return -1 if signed_angle > 0.0 else 1
-
-
-## Builds a mesh strip that follows the centerline. `side_a_offset` is the
-## perpendicular distance to the strip's infield (+perp) edge, `side_b_offset`
-## is the distance to the exterior (-perp) edge. Both are signed; require
-## `side_a_offset > side_b_offset` so the strip has positive area and the
-## generated triangles face +Y.
-func _add_strip_mesh(
-	mesh_name: String,
-	side_a_offset: float,
-	side_b_offset: float,
-	y_offset: float,
-	color: Color,
-) -> void:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	st.set_smooth_group(-1)
-	var n := _points.size()
-	var y := Vector3.UP * y_offset
-
-	for i in range(n):
-		var j := (i + 1) % n
-		var p0 := _points[i]
-		var p1 := _points[j]
-		var n0 := _miter_at(i)
-		var n1 := _miter_at(j)
-
-		var a := p0 + n0 * side_a_offset + y
-		var b := p0 + n0 * side_b_offset + y
-		var c := p1 + n1 * side_b_offset + y
-		var d := p1 + n1 * side_a_offset + y
-
-		st.set_normal(Vector3.UP)
-		st.add_vertex(b)
-		st.add_vertex(c)
-		st.add_vertex(d)
-
-		st.set_normal(Vector3.UP)
-		st.add_vertex(b)
-		st.add_vertex(d)
-		st.add_vertex(a)
-
-	var mi := MeshInstance3D.new()
-	mi.name = mesh_name
-	mi.mesh = st.commit()
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mi.material_override = mat
-	_add_generated_child(mi)
-
-
-func _add_start_finish_line() -> void:
-	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
-		return
-
-	var line := MeshInstance3D.new()
-	line.name = "StartFinishLine"
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(maxf(track_width - TRACK_EDGE_PADDING, 0.2), START_LINE_HEIGHT, START_LINE_LENGTH)
-	line.mesh = mesh
-	line.global_transform = get_start_transform()
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = START_LINE_COLOR
-	line.material_override = mat
-	_add_generated_child(line)
 
 
 func _rebuild_length_cache() -> void:
@@ -499,7 +428,10 @@ func _find_best_start_segment(preferred_distance: float, fallback_segment_index:
 	var best_fallback_turn_angle: float = INF
 	var best_fallback_distance: float = INF
 	var best_fallback_length: float = -INF
-	var sample_distance: float = minf(_track_length * 0.25, maxf(track_width * START_SEGMENT_SAMPLE_DISTANCE_RATIO, START_LINE_LENGTH * 2.0))
+	var sample_distance: float = minf(
+		_track_length * 0.25,
+		maxf(track_width * START_SEGMENT_SAMPLE_DISTANCE_RATIO, START_SEGMENT_MIN_SAMPLE_DISTANCE)
+	)
 
 	for segment_index in range(_segment_lengths.size()):
 		var segment_length: float = _segment_lengths[segment_index]
@@ -625,110 +557,13 @@ func _get_closest_segment(point: Vector2, probe_y: float = 0.0) -> ClosestSegmen
 	return nearest
 
 
-## Build inner and outer walls as single continuous trimesh ribbons instead
-## of one box per centerline segment. Per-segment boxes with a `+0.5m` overlap
-## introduce ~10-15cm pointy teeth at every corner seam because adjacent
-## rotated boxes poke past each other; a ribbon hugs the centerline polyline
-## exactly and has no seams.
-func _add_walls() -> void:
-	var boundary: float = track_width / 2.0 + sand_width
-	_add_wall_ribbon("WallOuter", -boundary)
-	_add_wall_ribbon("WallInner", boundary)
-
-
-## `perp_offset` is the signed distance from the centerline to the wall's
-## own centerline along the miter vector. Inner wall uses `+boundary`, outer
-## uses `-boundary`. The ribbon is a closed-loop prism of the polyline,
-## extruded by `wall_thickness` across the miter direction and `wall_height`
-## upward. Top/inner/outer faces are emitted; the bottom is skipped because
-## it sits on or below the ground slab.
-func _add_wall_ribbon(wall_name: String, perp_offset: float) -> void:
-	if _points.size() < 3:
-		return
-
-	var half_thickness: float = wall_thickness * 0.5
-	var thickness_sign: float = signf(perp_offset)
-	var inner_offset: float = perp_offset - thickness_sign * half_thickness
-	var outer_offset: float = perp_offset + thickness_sign * half_thickness
-	var up: Vector3 = Vector3.UP * wall_height
-	var n: int = _points.size()
-
-	var miter_vectors: Array[Vector3] = []
-	miter_vectors.resize(n)
-	for i in range(n):
-		miter_vectors[i] = _miter_at(i)
-
-	var st: SurfaceTool = SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	st.set_smooth_group(-1)
-
-	for i in range(n):
-		var j: int = (i + 1) % n
-		var p0: Vector3 = _points[i]
-		var p1: Vector3 = _points[j]
-		var perp0: Vector3 = miter_vectors[i]
-		var perp1: Vector3 = miter_vectors[j]
-
-		var b0_in: Vector3 = p0 + perp0 * inner_offset
-		var b0_out: Vector3 = p0 + perp0 * outer_offset
-		var b1_in: Vector3 = p1 + perp1 * inner_offset
-		var b1_out: Vector3 = p1 + perp1 * outer_offset
-		var t0_in: Vector3 = b0_in + up
-		var t0_out: Vector3 = b0_out + up
-		var t1_in: Vector3 = b1_in + up
-		var t1_out: Vector3 = b1_out + up
-
-		_emit_wall_quad(st, b0_in, b1_in, t1_in, t0_in)
-		_emit_wall_quad(st, b1_out, b0_out, t0_out, t1_out)
-		_emit_wall_quad(st, t0_in, t1_in, t1_out, t0_out)
-
-	st.generate_normals()
-	var mesh: ArrayMesh = st.commit()
-	var shape: ConcavePolygonShape3D = mesh.create_trimesh_shape()
-	if shape == null:
-		return
-
-	var body: StaticBody3D = StaticBody3D.new()
-	body.name = wall_name
-	body.collision_layer = WALL_COLLISION_LAYER
-	body.collision_mask = 0
-	_add_generated_child(body)
-
-	var col: CollisionShape3D = CollisionShape3D.new()
-	col.shape = shape
-	body.add_child(col)
-
-	var mi: MeshInstance3D = MeshInstance3D.new()
-	mi.name = wall_name + "Mesh"
-	mi.mesh = mesh
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.albedo_color = BARRIER_COLOR
-	mi.material_override = mat
-	body.add_child(mi)
-
-
-func _emit_wall_quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
-	st.add_vertex(a)
-	st.add_vertex(b)
-	st.add_vertex(c)
-	st.add_vertex(a)
-	st.add_vertex(c)
-	st.add_vertex(d)
-
-
 func _rebuild_generated_track() -> void:
 	_clear_generated_track()
 	_build_centerline()
 	_generated_root = _get_or_create_generated_root()
-	_add_ground()
+	_add_background_grass()
 	_add_ground_collider()
-	var tarmac_half: float = track_width / 2.0
-	var sand_outer: float = tarmac_half + sand_width
-	_add_strip_mesh("SandShoulderInner", sand_outer, tarmac_half, SURFACE_Y, SAND_COLOR)
-	_add_strip_mesh("SandShoulderOuter", -tarmac_half, -sand_outer, SURFACE_Y, SAND_COLOR)
-	_add_strip_mesh("TrackSurface", tarmac_half, -tarmac_half, SURFACE_Y, TARMAC_COLOR)
-	_add_start_finish_line()
-	_add_walls()
+	_instance_tiles()
 
 
 func _clear_generated_track() -> void:

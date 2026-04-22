@@ -17,6 +17,14 @@ const TrackDirectionRef := preload("res://track/track_direction.gd")
 @export var exit_cell: Vector2i = Vector2i.ZERO
 @export var center_feature_tag: StringName = &""
 @export var interior_points: PackedVector3Array = PackedVector3Array()
+## Authored 3D tile scene instanced by `TestTrack` at the tile's grid
+## position and rotation. When null, the tile contributes a centerline but
+## no geometry — useful while only some tiles have been authored. Scenes
+## are authored in absolute world units matching the layout's `tile_size`
+## (a 1×1 tile at tile_size=36 means the scene covers ±18 on X and Z),
+## with the drivable surface's top face at Y=0 and the scene origin on the
+## center of the entry-cell.
+@export var scene: PackedScene = null
 
 
 func get_entry_direction(rotation_steps: int = 0, reverse_path: bool = false) -> int:
