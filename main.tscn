@@ -34,7 +34,7 @@ car_path = NodePath("Car")
 run_state_path = NodePath("RunState")
 round_end_screen_path = NodePath("RoundEndScreen")
 camera_path = NodePath("GameCamera")
-track_mutation_enabled = false
+track_mutation_enabled = true
 
 [node name="WorldEnv" type="WorldEnvironment" parent="." unique_id=1062281694]
 environment = SubResource("env")
@@ -52,7 +52,7 @@ target_path = NodePath("../Car")
 [node name="Track" type="Node3D" parent="." unique_id=2097169173]
 script = ExtResource("track_script")
 starter_layouts = Array[ExtResource("4_dg77c")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout"), ExtResource("starter_figure_eight_layout")])
-active_starter_layout_index = 5
+active_starter_layout_index = 0
 
 [node name="Coins" type="Node3D" parent="Track" unique_id=2022227611]
 

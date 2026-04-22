@@ -6,11 +6,11 @@ extends Node
 
 const MASTER_BUS_NAME := &"Master"
 
-## Default lands on the figure-eight (index 5) so a fresh launch puts the new
-## bridge crossing in front of the player. The chicane (index 1) is still a
-## good fallback if the web build or editor surfaces issues with the
-## procedural layout.
-var selected_track_index: int = 5
+## Default lands on the rectangle loop (index 0) — tile-based layout that the
+## track mutator can splice detours into, so a fresh launch exercises the
+## round-evolution path. Figure-eight (index 5) is procedural and the mutator
+## skips it; pick it from the menu when you want to test the bridge crossing.
+var selected_track_index: int = 0
 
 ## Index into `CarOptions.OPTIONS`. 0 is the authored sedan so a fresh launch
 ## keeps the current visuals. The main menu's car picker writes this.
