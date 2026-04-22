@@ -28,8 +28,8 @@ extends Resource
 @export_range(0.2, 2.0, 0.05) var preview_scale: float = 1.0
 ## Picks the physics controller used in game. null = fall through to the
 ## track's `preferred_vehicle`, then to `main.tscn`'s default. Setting this
-## makes the car choice authoritative — picking a Sphere-controller car on
-## the figure-eight overrides that track's physics-car preference.
+## makes the car choice authoritative — overrides any track-level
+## `preferred_vehicle`.
 @export var controller_override: PackedScene
 ## Short controller tag shown on the picker card (e.g., "Sphere",
 ## "Normal"). Purely descriptive; the actual controller comes from

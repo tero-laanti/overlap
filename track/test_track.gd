@@ -80,11 +80,6 @@ const PLACEMENT_SURFACE_Y_OFFSET := 0.02
 ## z-fighting. Gameplay elements still use PLACEMENT_SURFACE_Y_OFFSET and
 ## START_LINE_Y_OFFSET to float above this plane.
 const SURFACE_Y := 0.0
-## Self-intersecting layouts render a grass slab under the whole bounds
-## instead of the per-track infield polygon. This sinks the slab just far
-## enough below the tarmac/sand plane to stay out of z-fighting range while
-## the car still lands on the trimesh collider at SURFACE_Y.
-const SELF_CROSSING_GRASS_Y_OFFSET := 0.01
 const GENERATED_ROOT_NAME := "GeneratedTrack"
 const START_SEGMENT_MAX_TURN_ANGLE := deg_to_rad(10.0)
 const START_SEGMENT_SAMPLE_DISTANCE_RATIO := 0.75
@@ -209,14 +204,7 @@ static func get_centerline_perpendicular(
 ## nothing is coplanar with the sand/tarmac strips. Keeps z-fighting
 ## structurally impossible and leaves the centerline free to pick up Y
 ## variation later (jumps, banked sections) without reworking the ground.
-## Self-intersecting layouts (figure-8) take a different path: a single
-## grass slab slightly below the track plane gives the lobes flat coverage
-## that would otherwise require splitting a self-intersecting polygon.
 func _add_ground() -> void:
-	if _layout_has_self_crossing():
-		_add_grass_bounds_plane()
-		return
-
 	_add_grass_infield()
 	_add_grass_outer_band()
 
@@ -257,43 +245,6 @@ func _add_grass_infield() -> void:
 	mat.albedo_color = GRASS_COLOR
 	mi.material_override = mat
 	_add_generated_child(mi)
-
-
-## Renders a single flat grass rectangle under the whole track footprint,
-## set a hair below SURFACE_Y so the tarmac/sand strips above never fight
-## it. Used only for self-intersecting layouts where the tile pipeline's
-## polygon triangulation cannot produce clean lobes.
-func _add_grass_bounds_plane() -> void:
-	var bounds: AABB = _get_track_bounds()
-	var min_x: float = bounds.position.x
-	var min_z: float = bounds.position.z
-	var max_x: float = bounds.position.x + bounds.size.x
-	var max_z: float = bounds.position.z + bounds.size.z
-	var y: float = SURFACE_Y - SELF_CROSSING_GRASS_Y_OFFSET
-
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	st.set_smooth_group(-1)
-	st.set_normal(Vector3.UP)
-	var a := Vector3(min_x, y, min_z)
-	var b := Vector3(max_x, y, min_z)
-	var c := Vector3(max_x, y, max_z)
-	var d := Vector3(min_x, y, max_z)
-	st.add_vertex(a); st.add_vertex(b); st.add_vertex(c)
-	st.add_vertex(a); st.add_vertex(c); st.add_vertex(d)
-
-	var mi := MeshInstance3D.new()
-	mi.name = "GroundPlane"
-	mi.mesh = st.commit()
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = GRASS_COLOR
-	mi.material_override = mat
-	_add_generated_child(mi)
-
-
-func _layout_has_self_crossing() -> bool:
-	var active_layout: TrackLayoutResource = _get_active_layout()
-	return active_layout != null and active_layout.has_self_crossing()
 
 
 ## Invisible floor spanning the full track bounds so the car has something to
@@ -439,16 +390,13 @@ func get_inside_lateral_sign(progress: float, sample_distance: float = 6.0, min_
 ## perpendicular distance to the strip's infield (+perp) edge, `side_b_offset`
 ## is the distance to the exterior (-perp) edge. Both are signed; require
 ## `side_a_offset > side_b_offset` so the strip has positive area and the
-## generated triangles face +Y. `double_sided` disables back-face culling so
-## the underside of an elevated section (figure-8 bridge) stays visible when
-## the camera is below it.
+## generated triangles face +Y.
 func _add_strip_mesh(
 	mesh_name: String,
 	side_a_offset: float,
 	side_b_offset: float,
 	y_offset: float,
 	color: Color,
-	double_sided: bool = false
 ) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -483,8 +431,6 @@ func _add_strip_mesh(
 	mi.mesh = st.commit()
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
-	if double_sided:
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mi.material_override = mat
 	_add_generated_child(mi)
 
@@ -537,11 +483,6 @@ func _get_segment_index_for_distance(distance_along_track: float) -> int:
 func _resolve_lap_start_progress() -> float:
 	var requested_progress: float = _get_requested_lap_start_progress()
 	if _segment_lengths.is_empty() or is_zero_approx(_track_length):
-		return requested_progress
-	var active_layout: TrackLayoutResource = _get_active_layout()
-	# Procedural layouts already author a deliberate start location; re-homing
-	# them to an arbitrary "straight" can land the car on a ramp transition.
-	if active_layout != null and active_layout.procedural_shape != &"":
 		return requested_progress
 
 	var preferred_distance: float = wrapf(requested_progress, 0.0, 1.0) * _track_length
@@ -651,10 +592,10 @@ func _get_requested_lap_start_progress() -> float:
 	return wrapf(lap_start_progress, 0.0, 1.0)
 
 
-## Self-crossing layouts (figure-8) need `probe_y` so the car on a bridge and
-## the car beneath pick different centerline segments at the same XZ. The
-## returned `distance` stays 2D so surface-type thresholds keep their meaning
-## — only segment selection uses the 3D metric.
+## Elevated sections need `probe_y` so a car above the ground plane and a
+## car at ground level pick different centerline segments at the same XZ.
+## The returned `distance` stays 2D so surface-type thresholds keep their
+## meaning — only segment selection uses the 3D metric.
 func _get_closest_segment(point: Vector2, probe_y: float = 0.0) -> ClosestSegmentResult:
 	var nearest: ClosestSegmentResult = ClosestSegmentResult.new()
 	var best_3d_distance_squared: float = INF
@@ -783,69 +724,11 @@ func _rebuild_generated_track() -> void:
 	_add_ground_collider()
 	var tarmac_half: float = track_width / 2.0
 	var sand_outer: float = tarmac_half + sand_width
-	var has_self_crossing: bool = _layout_has_self_crossing()
-	_add_strip_mesh("SandShoulderInner", sand_outer, tarmac_half, SURFACE_Y, SAND_COLOR, has_self_crossing)
-	_add_strip_mesh("SandShoulderOuter", -tarmac_half, -sand_outer, SURFACE_Y, SAND_COLOR, has_self_crossing)
-	_add_strip_mesh("TrackSurface", tarmac_half, -tarmac_half, SURFACE_Y, TARMAC_COLOR, has_self_crossing)
-	if has_self_crossing:
-		_add_track_surface_collider(sand_outer)
+	_add_strip_mesh("SandShoulderInner", sand_outer, tarmac_half, SURFACE_Y, SAND_COLOR)
+	_add_strip_mesh("SandShoulderOuter", -tarmac_half, -sand_outer, SURFACE_Y, SAND_COLOR)
+	_add_strip_mesh("TrackSurface", tarmac_half, -tarmac_half, SURFACE_Y, TARMAC_COLOR)
 	_add_start_finish_line()
 	_add_walls()
-
-
-## Builds a trimesh collider that hugs the drivable strip (tarmac + sand) so
-## the car can physically ride along Y-varying sections like the figure-8
-## bridge. The flat `GroundCollider` slab stays in place as a safety net for
-## falls and for grass areas outside this strip.
-func _add_track_surface_collider(strip_half_width: float) -> void:
-	if _points.size() < 3:
-		return
-
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	st.set_smooth_group(-1)
-	st.set_normal(Vector3.UP)
-
-	var n := _points.size()
-	for i in range(n):
-		var j := (i + 1) % n
-		var p0 := _points[i]
-		var p1 := _points[j]
-		var n0 := _miter_at(i)
-		var n1 := _miter_at(j)
-
-		var a := p0 + n0 * strip_half_width
-		var b := p0 - n0 * strip_half_width
-		var c := p1 - n1 * strip_half_width
-		var d := p1 + n1 * strip_half_width
-
-		st.add_vertex(b)
-		st.add_vertex(c)
-		st.add_vertex(d)
-
-		st.add_vertex(b)
-		st.add_vertex(d)
-		st.add_vertex(a)
-
-	var mesh := st.commit()
-	var shape := mesh.create_trimesh_shape()
-	if shape == null:
-		return
-	## The strip's triangle winding follows the visual mesh convention, which
-	## leaves the trimesh's physics normals pointing down. Rather than reverse
-	## winding only for physics (and risk the visual going with it), enable
-	## backface collision so the car lands on either side of the bridge strip.
-	shape.backface_collision = true
-
-	var body := StaticBody3D.new()
-	body.name = "TrackSurfaceCollider"
-	body.collision_layer = 1 << (TRACK_SURFACE_COLLISION_LAYER - 1)
-	body.collision_mask = 0
-	_add_generated_child(body)
-
-	var col := CollisionShape3D.new()
-	col.shape = shape
-	body.add_child(col)
 
 
 func _clear_generated_track() -> void:

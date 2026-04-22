@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://ui/main_menu.gd" id="menu_script"]
 [ext_resource type="Resource" path="res://track/layouts/starter_chicane_loop.tres" id="starter_chicane_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_dogleg_sprint.tres" id="starter_dogleg_layout"]
-[ext_resource type="Resource" path="res://track/layouts/starter_figure_eight.tres" id="starter_figure_eight_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_octagon_loop.tres" id="starter_octagon_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_offset_loop.tres" id="starter_offset_layout"]
 [ext_resource type="Resource" path="res://track/layouts/starter_rectangle_loop.tres" id="starter_rectangle_layout"]
@@ -52,8 +51,8 @@ current = true
 
 [node name="Track" type="Node3D" parent="."]
 script = ExtResource("track_script")
-starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout"), ExtResource("starter_figure_eight_layout")])
-active_starter_layout_index = 5
+starter_layouts = Array[ExtResource("track_layout_script")]([ExtResource("starter_rectangle_layout"), ExtResource("starter_chicane_layout"), ExtResource("starter_offset_layout"), ExtResource("starter_dogleg_layout"), ExtResource("starter_octagon_layout")])
+active_starter_layout_index = 0
 
 [node name="MenuUI" type="CanvasLayer" parent="."]
 layer = 2
@@ -131,11 +130,6 @@ text = "4"
 custom_minimum_size = Vector2(54, 54)
 theme_override_font_sizes/font_size = 24
 text = "5"
-
-[node name="TrackButton6" type="Button" parent="MenuUI/Center/VBox/TrackRow"]
-custom_minimum_size = Vector2(54, 54)
-theme_override_font_sizes/font_size = 24
-text = "8"
 
 [node name="ChooseCarButton" type="Button" parent="MenuUI/Center/VBox"]
 custom_minimum_size = Vector2(320, 44)

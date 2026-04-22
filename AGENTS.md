@@ -32,8 +32,8 @@ conflict.
   forces, explicit heading state, `CarStats` governs every knob, ground grace
   periods, surface-aware modifiers. The global default comes from `main.tscn`'s
   `vehicle_scene` `ExtResource`; a `TrackLayout.preferred_vehicle` override
-  swaps in a different controller per layout (the figure-eight uses
-  `physics_car.tscn` so the bridge crossing runs on the heavier integrator).
+  swaps in a different controller per layout when a particular track needs a
+  different feel.
 - `car/car_physics_proxy.gd` — Hidden rigidbody proxy shared by both
   controllers. Relays `_integrate_forces` and collision events back to the
   bound `Car` subclass.
@@ -310,28 +310,6 @@ use.
   pieces.
 - Keep using deliberate collision layers as new collidable types are added. Do
   not reuse layer 1 as the default for unrelated objects.
-
-### Procedural self-crossing layouts
-
-- `TrackLayout.procedural_shape` swaps the tile pipeline for a procedurally
-  generated centerline. Today the only supported value is
-  `&"figure_eight"`, which produces a lemniscate with one of the two
-  crossings elevated into a bridge. `procedural_half_size`,
-  `procedural_segment_count`, `procedural_bridge_height`, and
-  `procedural_bridge_fraction` tune the shape and the ramp profile.
-- `TrackLayout.has_self_crossing()` is the runtime signal consumed by
-  `TestTrack`: it switches ground rendering to a single grass slab under the
-  bounds (the tile infield triangulator cannot handle a self-intersecting
-  polygon), emits a tarmac/sand trimesh collider so the bridge is physically
-  drivable, and flips the drivable strip's `cull_mode` to
-  `CULL_DISABLED` so the bridge underside stays visible.
-- `TestTrack._get_closest_segment()` uses 3D distance to pick the active
-  segment and 2D distance to return surface-type thresholds. That keeps
-  `get_progress_at_position()` and `get_surface_profile_at_position()`
-  disambiguating at the crossing — a car on the bridge reads bridge
-  progress, a car underneath reads the ground pass.
-- `TrackMutator` skips procedural layouts; keep `track_mutation_enabled =
-  false` on the `Main` node while those layouts are active.
 
 ### Track evolution
 

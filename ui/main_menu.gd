@@ -15,7 +15,6 @@ const TRACK_SELECT_ACTIONS: Array[StringName] = [
 	&"menu_track_3",
 	&"menu_track_4",
 	&"menu_track_5",
-	&"menu_track_6",
 ]
 ## Key events whose standalone press shouldn't start the game (Shift tap, Caps
 ## Lock, etc.). Gameplay-adjacent UI, so a targeted keycode filter is simpler

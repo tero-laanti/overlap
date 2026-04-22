@@ -10,8 +10,8 @@ extends SceneTree
 
 const MAIN_SCENE: PackedScene = preload("res://main.tscn")
 ## Any layout without a `preferred_vehicle` override. The auto-swap would hide
-## the plain `main.tscn` default if we let it point at the figure-eight
-## (which now force-selects PhysicsCar).
+## the plain `main.tscn` default if we pointed at a layout that force-selected
+## a different controller.
 const RECTANGLE_LAYOUT_INDEX := 0
 const TEST_DURATION_SEC := 3.0
 const MINIMUM_TRAVEL := 10.0

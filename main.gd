@@ -258,10 +258,10 @@ func _cache_default_vehicle_scene() -> void:
 
 
 func _get_desired_vehicle_scene() -> PackedScene:
-	# Priority: track's hard preference (e.g., figure-eight bridge needs the
-	# physics car) > player's car pick > main.tscn default. The track-author
-	# intent wins because certain layouts are designed around a specific
-	# controller — the picker controller_label is a hint, not a guarantee.
+	# Priority: track's hard preference > player's car pick > main.tscn
+	# default. The track-author intent wins because certain layouts are
+	# designed around a specific controller — the picker controller_label
+	# is a hint, not a guarantee.
 	var active_layout: TrackLayout = _track.get_active_layout() if _track != null else null
 	if active_layout != null and active_layout.preferred_vehicle != null:
 		return active_layout.preferred_vehicle

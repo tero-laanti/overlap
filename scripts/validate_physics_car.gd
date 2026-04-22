@@ -14,7 +14,6 @@ const SLOW_ZONE_SCENE: PackedScene = preload("res://race/hazards/slow_zone.tscn"
 const GRAVEL_SPILL_SCENE: PackedScene = preload("res://race/hazards/gravel_spill.tscn")
 
 const RECTANGLE_LAYOUT_INDEX := 0
-const FIGURE_EIGHT_LAYOUT_INDEX := 5
 const EXTRA_ROUND_TIME := 120.0
 const SURFACE_TEST_SECONDS := 2.0
 const AUTOPILOT_TEST_SECONDS := 3.5
@@ -30,14 +29,13 @@ func _initialize() -> void:
 
 
 func _run_validation() -> void:
-	await _validate_flat_and_figure_eight()
+	await _validate_flat_autopilot()
 	await _validate_drift_and_jump()
 	await _validate_surface_speeds()
 	await _validate_reverse_throttle_release_no_flip()
 	await _validate_collision_owner_resolution()
 	await _validate_hazard_exit_cleanup_after_owner_cleared()
 	await _validate_reset_to_transform_grounded_state()
-	await _validate_layout_vehicle_swap_contract()
 
 	_clear_drive_input()
 	await _await_idle_and_physics()
@@ -45,7 +43,7 @@ func _run_validation() -> void:
 	quit(1 if not _failures.is_empty() else 0)
 
 
-func _validate_flat_and_figure_eight() -> void:
+func _validate_flat_autopilot() -> void:
 	var flat_scene: MainSceneController = await _spawn_main_scene(RECTANGLE_LAYOUT_INDEX)
 	var flat_metrics: Dictionary = await _drive_with_autopilot(flat_scene, AUTOPILOT_TEST_SECONDS)
 	print("flat metrics: %s" % flat_metrics)
@@ -54,15 +52,6 @@ func _validate_flat_and_figure_eight() -> void:
 	if int(flat_metrics.get("grounded_frames", 0)) <= int(flat_metrics.get("airborne_frames", 0)):
 		_fail("Flat track spent too much time airborne.")
 	await _free_scene(flat_scene)
-
-	var figure_eight_scene: MainSceneController = await _spawn_main_scene(FIGURE_EIGHT_LAYOUT_INDEX)
-	var figure_eight_metrics: Dictionary = await _drive_with_autopilot(figure_eight_scene, AUTOPILOT_TEST_SECONDS)
-	print("figure-eight metrics: %s" % figure_eight_metrics)
-	if float(figure_eight_metrics.get("travel_distance", 0.0)) <= 30.0:
-		_fail("Figure-eight validation did not cover enough distance.")
-	if float(figure_eight_metrics.get("min_height", 0.0)) < -1.0:
-		_fail("Figure-eight drive fell too far below the track.")
-	await _free_scene(figure_eight_scene)
 
 
 func _validate_drift_and_jump() -> void:
@@ -233,60 +222,6 @@ func _validate_reset_to_transform_grounded_state() -> void:
 		_fail("Car ground_normal is not near world UP after reset_to_transform on flat track.")
 
 	await _free_scene(scene)
-
-
-## Boots the unmodified main scene, confirms the figure-eight auto-swaps to
-## PhysicsCar, then flips back to a layout with no override and confirms
-## `apply_preferred_vehicle()` restores the cached default sphere car. Also
-## guards eager consumer rebinding (camera, RunHUD, PauseMenu).
-func _validate_layout_vehicle_swap_contract() -> void:
-	var game_session: Node = root.get_node_or_null(^"GameSession")
-	if game_session == null:
-		_fail("GameSession autoload not available; cannot exercise auto-swap.")
-		return
-	var previous_index: int = int(game_session.get("selected_track_index"))
-	game_session.set("selected_track_index", FIGURE_EIGHT_LAYOUT_INDEX)
-
-	var scene: MainSceneController = MAIN_SCENE.instantiate() as MainSceneController
-	root.add_child(scene)
-	await _await_physics_frames(2)
-
-	var car: Car = _get_car(scene)
-	var track: TestTrack = _get_track(scene)
-	print("auto-swap vehicle: %s on layout %s" % [car.get_script().resource_path.get_file(), track.get_active_layout().display_name])
-	if not (car is PhysicsCar):
-		_fail("Figure-eight did not auto-select PhysicsCar; got %s" % car.get_class())
-	if car.scene_file_path != "res://car/physics_car.tscn":
-		_fail("Swapped Car has unexpected scene_file_path: %s" % car.scene_file_path)
-	_assert_eager_car_rebinds(scene, car)
-
-	track.set_starter_layout_index(RECTANGLE_LAYOUT_INDEX)
-	scene.apply_preferred_vehicle()
-	await _await_physics_frames(2)
-	car = _get_car(scene)
-	print("late-swap vehicle: %s on layout %s" % [car.get_script().resource_path.get_file(), track.get_active_layout().display_name])
-	if not (car is SphereCar):
-		_fail("Layout switch back to the rectangle did not restore SphereCar; got %s" % car.get_class())
-	if car.scene_file_path != "res://car/sphere_car.tscn":
-		_fail("Reverted Car has unexpected scene_file_path: %s" % car.scene_file_path)
-	_assert_eager_car_rebinds(scene, car)
-
-	game_session.set("selected_track_index", previous_index)
-	await _free_scene(scene)
-
-
-func _assert_eager_car_rebinds(scene: MainSceneController, car: Car) -> void:
-	# Validators can inspect underscored state so the swap contract stays narrow
-	# in gameplay code while still proving no UI node holds the freed Car.
-	var camera: GameCamera = scene.get_node_or_null(^"GameCamera") as GameCamera
-	if camera != null and camera.target != car:
-		_fail("GameCamera target was not rebound after vehicle swap.")
-	var run_hud: RunHUD = scene.get_node_or_null(^"RunHUD") as RunHUD
-	if run_hud != null and run_hud._car != car:
-		_fail("RunHUD _car reference was not rebound after vehicle swap.")
-	var pause_menu: PauseMenu = scene.get_node_or_null(^"PauseMenu") as PauseMenu
-	if pause_menu != null and pause_menu._car != car:
-		_fail("PauseMenu _car reference was not rebound after vehicle swap.")
 
 
 func _spawn_main_scene(track_index: int) -> MainSceneController:

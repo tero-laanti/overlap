@@ -7,30 +7,15 @@ const TrackLayoutTileResource := preload("res://track/track_layout_tile.gd")
 
 const CONNECTION_EPSILON := 0.05
 
-## StringName encoding for the optional procedural centerline generator. Leave
-## empty for the tile-based pipeline. Recognised values: "figure_eight".
-const SHAPE_FIGURE_EIGHT := &"figure_eight"
-const FIGURE_EIGHT_MIN_SEGMENTS := 32
-
 @export var display_name: String = ""
 @export_range(16.0, 64.0, 1.0) var tile_size: float = 36.0
 @export_range(0.0, 1.0, 0.01) var lap_start_progress: float = 0.0
 @export var tiles: Array[TrackLayoutTileResource] = []
 
 ## When non-null, `Main` swaps `main.tscn`'s default `vehicle_scene` for this
-## scene on round start. Lets a layout request a specific controller (e.g.
-## the figure-eight's bridge crossing benefits from PhysicsCar). Null means
-## keep the main.tscn default.
+## scene on round start. Lets a layout request a specific controller for a
+## particular track feel. Null means keep the main.tscn default.
 @export var preferred_vehicle: PackedScene = null
-
-## When non-empty, the centerline is generated procedurally and `tiles` is
-## ignored. Self-intersecting shapes (figure_eight) also signal TestTrack to
-## switch to the split-lobe ground renderer.
-@export var procedural_shape: StringName = &""
-@export var procedural_half_size: Vector2 = Vector2(60.0, 40.0)
-@export_range(32, 256, 4) var procedural_segment_count: int = 128
-@export var procedural_bridge_height: float = 4.5
-@export_range(0.04, 0.5, 0.01) var procedural_bridge_fraction: float = 0.18
 
 var _observed_tiles: Array[TrackLayoutTileResource] = []
 
@@ -44,9 +29,6 @@ func refresh_tile_observers() -> void:
 
 
 func build_centerline_points() -> Array[Vector3]:
-	if procedural_shape == SHAPE_FIGURE_EIGHT:
-		return _build_figure_eight_points()
-
 	var centerline_points: Array[Vector3] = []
 
 	for layout_tile in tiles:
@@ -72,52 +54,7 @@ func build_centerline_points() -> Array[Vector3]:
 	return centerline_points
 
 
-func has_self_crossing() -> bool:
-	return procedural_shape == SHAPE_FIGURE_EIGHT
-
-
-func _build_figure_eight_points() -> Array[Vector3]:
-	var centerline_points: Array[Vector3] = []
-	var segment_count: int = _get_resolved_segment_count()
-	var half_width: float = maxf(procedural_half_size.x, 1.0)
-	var half_depth: float = maxf(procedural_half_size.y, 1.0)
-	# Lemniscate of Gerono: x = cos(t), z = sin(t)*cos(t). The two crossings
-	# at t=PI/2 and t=3*PI/2 both land on the XZ origin — we elevate the first
-	# crossing into a bridge so the two passes resolve in 3D.
-	for index in range(segment_count):
-		var t: float = float(index) / float(segment_count) * TAU
-		var x: float = half_width * cos(t)
-		var z: float = half_depth * 2.0 * sin(t) * cos(t)
-		var y: float = _figure_eight_bridge_height(t)
-		centerline_points.append(Vector3(x, y, z))
-	return centerline_points
-
-
-func _figure_eight_bridge_height(t: float) -> float:
-	if procedural_bridge_height <= 0.0 or procedural_bridge_fraction <= 0.0:
-		return 0.0
-
-	var delta: float = wrapf(t - PI * 0.5, -PI, PI)
-	var window: float = TAU * procedural_bridge_fraction * 0.5
-	if window <= 0.0 or absf(delta) >= window:
-		return 0.0
-
-	var normalized: float = absf(delta) / window
-	return procedural_bridge_height * 0.5 * (1.0 + cos(normalized * PI))
-
-
-func _get_resolved_segment_count() -> int:
-	var requested: int = procedural_segment_count
-	# Clamp up to the minimum and force divisible-by-4 so the two crossings
-	# fall on explicit centerline points instead of mid-segment.
-	var safe: int = maxi(requested, FIGURE_EIGHT_MIN_SEGMENTS)
-	return safe - (safe % 4)
-
-
 func get_validation_issues() -> PackedStringArray:
-	if procedural_shape == SHAPE_FIGURE_EIGHT:
-		return _get_figure_eight_validation_issues()
-
 	var issues: PackedStringArray = PackedStringArray()
 	var valid_tiles: Array[TrackLayoutTileResource] = []
 	var occupied_cells: Dictionary = {}
@@ -228,28 +165,3 @@ func _on_layout_tile_changed() -> void:
 
 func _get_layout_name() -> String:
 	return display_name if not display_name.is_empty() else "TrackLayout"
-
-
-func _get_figure_eight_validation_issues() -> PackedStringArray:
-	var issues: PackedStringArray = PackedStringArray()
-	var layout_name: String = _get_layout_name()
-
-	if procedural_half_size.x <= 0.0 or procedural_half_size.y <= 0.0:
-		issues.append("%s: procedural_half_size must be positive in both axes." % layout_name)
-	if procedural_segment_count < FIGURE_EIGHT_MIN_SEGMENTS:
-		issues.append(
-			"%s: procedural_segment_count %d is below the required minimum %d." % [
-				layout_name,
-				procedural_segment_count,
-				FIGURE_EIGHT_MIN_SEGMENTS,
-			]
-		)
-	if procedural_bridge_height < 2.0:
-		issues.append(
-			"%s: procedural_bridge_height %f is too low for the crossing to clear the ground walls." % [
-				layout_name,
-				procedural_bridge_height,
-			]
-		)
-
-	return issues
