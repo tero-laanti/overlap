@@ -26,11 +26,16 @@ const DRIFT_MIN_FORWARD_SPEED := 3.0
 ## so `Car._spawn_selected_body` can apply it on top of each `CarOption`'s
 ## intrinsic body transform.
 const BODY_BASE_Y_OFFSET := -0.25
+const DEFAULT_SPEED_CAP_FACTOR := 1.0
+const DEFAULT_GRIP_MODIFIER := 1.0
 
 var _input: Vector2 = Vector2.ZERO  # x = +right steering, y = +forward throttle
 var _linear_speed: float = 0.0
 var _angular_speed: float = 0.0
 var _visual_root_rest_transform: Transform3D = Transform3D.IDENTITY
+var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
+var _grip_modifier: float = DEFAULT_GRIP_MODIFIER
+var _grip_modifier_time_remaining: float = 0.0
 
 
 func _ready() -> void:
@@ -51,12 +56,13 @@ func _physics_process(delta: float) -> void:
 	if _physics_proxy == null:
 		return
 
+	_tick_handling_modifiers(delta)
 	_update_ground_probe()
 	_sample_inputs()
 
 	# Always turn in the direction pressed. No reverse-inversion.
 	var direction: float = 1.0
-	var steering_grip: float = clampf(absf(_linear_speed), STEERING_GRIP_MIN, 1.0)
+	var steering_grip: float = clampf(absf(_linear_speed), STEERING_GRIP_MIN, 1.0) * _grip_modifier
 	var target_angular: float = -_input.x * steering_grip * STEERING_MULTIPLIER * direction
 	_angular_speed = lerpf(_angular_speed, target_angular, delta * STEERING_LERP_RATE)
 
@@ -69,6 +75,7 @@ func _physics_process(delta: float) -> void:
 		_linear_speed = lerpf(_linear_speed, target_speed * REVERSE_FRACTION, delta * REVERSE_LERP_RATE)
 	else:
 		_linear_speed = lerpf(_linear_speed, target_speed, delta * ACCELERATION_LERP_RATE)
+	_linear_speed = clampf(_linear_speed, -1.0, _speed_cap_factor)
 
 	# Roll torque around the car's right axis. `+global_basis.x` would roll the
 	# sphere toward `+Z` (backward in Godot's `-Z = forward` convention), so
@@ -192,6 +199,9 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	throttle_input = 0.0
 	is_grounded = false
 	ground_normal = Vector3.UP
+	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+	_grip_modifier = DEFAULT_GRIP_MODIFIER
+	_grip_modifier_time_remaining = 0.0
 	if is_drifting:
 		is_drifting = false
 		drift_ended.emit()
@@ -219,3 +229,42 @@ func set_frozen(should_freeze: bool) -> void:
 	if should_freeze:
 		_linear_speed = 0.0
 		_angular_speed = 0.0
+
+
+func set_speed_cap(factor: float) -> void:
+	_speed_cap_factor = clampf(factor, 0.0, DEFAULT_SPEED_CAP_FACTOR)
+
+
+func clear_speed_cap() -> void:
+	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+
+
+# Grip penalties attenuate steering authority on the sphere model; the sphere
+# keeps rolling along its prior heading instead of snapping to the new yaw.
+# Stacks toward the more-punishing value and refreshes duration.
+func apply_grip_penalty(multiplier: float, duration: float) -> void:
+	if multiplier >= DEFAULT_GRIP_MODIFIER or duration <= 0.0:
+		return
+	_grip_modifier = minf(_grip_modifier, multiplier)
+	_grip_modifier_time_remaining = maxf(_grip_modifier_time_remaining, duration)
+
+
+func apply_grip_bonus(multiplier: float, duration: float) -> void:
+	if multiplier <= DEFAULT_GRIP_MODIFIER or duration <= 0.0:
+		return
+	_grip_modifier = maxf(_grip_modifier, multiplier)
+	_grip_modifier_time_remaining = maxf(_grip_modifier_time_remaining, duration)
+
+
+func clear_temporary_handling_modifiers() -> void:
+	_grip_modifier = DEFAULT_GRIP_MODIFIER
+	_grip_modifier_time_remaining = 0.0
+
+
+func _tick_handling_modifiers(delta: float) -> void:
+	if _grip_modifier_time_remaining <= 0.0:
+		return
+	_grip_modifier_time_remaining -= delta
+	if _grip_modifier_time_remaining <= 0.0:
+		_grip_modifier_time_remaining = 0.0
+		_grip_modifier = DEFAULT_GRIP_MODIFIER
