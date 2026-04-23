@@ -7,5 +7,5 @@
 script = ExtResource("1")
 display_name = "Corner Wide 90"
 exit_direction = 0
-interior_points = PackedVector3Array(-0.44, 0, -0.18, -0.18, 0, -0.44)
+interior_points = PackedVector3Array(-0.24, 0, -0.08, -0.08, 0, -0.24)
 scene = ExtResource("2")

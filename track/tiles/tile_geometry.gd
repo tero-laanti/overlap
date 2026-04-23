@@ -18,6 +18,7 @@ extends Node3D
 
 const TrackTileDefinitionResource := preload("res://track/track_tile_definition.gd")
 const TrackDirectionRef := preload("res://track/track_direction.gd")
+const TrackCurveRef := preload("res://track/track_curve.gd")
 
 ## Must stay in sync with `TestTrack.track_width`: the physics surface
 ## profile query returns `tarmac_surface` inside this band.
@@ -25,6 +26,8 @@ const TRACK_WIDTH: float = 12.0
 ## Must stay in sync with `TestTrack.sand_width`: the physics surface
 ## profile query returns `sand_surface` in this band past the tarmac edge.
 const SAND_WIDTH: float = 8.0
+const CURVE_SAMPLE_SPACING: float = 2.5
+const ROAD_VISUAL_Y_OFFSET: float = 0.001
 const MARKING_WIDTH: float = 0.4
 const MARKING_Y_OFFSET: float = 0.02
 
@@ -44,40 +47,74 @@ func _ready() -> void:
 	if definition == null:
 		return
 
-	var world_points: Array[Vector3] = definition.get_world_points(tile_size, Vector2i.ZERO, rotation_steps, reverse_path)
-	if world_points.size() < 2:
+	var sampled_points: Array[Vector3] = build_sampled_path(definition, tile_size, rotation_steps, reverse_path)
+	if sampled_points.size() < 2:
 		return
 
-	var perpendiculars: Array[Vector3] = _compute_perpendiculars(world_points)
-	_build_road(world_points, perpendiculars)
-	_build_sand_strips(world_points, perpendiculars)
-	_build_center_marking(world_points, perpendiculars)
+	var endpoint_tangents: Array[Vector3] = get_endpoint_tangents(definition, rotation_steps, reverse_path)
+	_build_road(sampled_points, endpoint_tangents[0], endpoint_tangents[1])
+	_build_sand_strips(sampled_points, endpoint_tangents[0], endpoint_tangents[1])
+	_build_center_marking(sampled_points, endpoint_tangents[0], endpoint_tangents[1])
 
 
-## Perpendiculars at every polyline point, with the two endpoints forced
-## to the cardinal tangent implied by the tile's socket directions. That
-## way two tiles sharing a socket (one's exit == opposite of the next's
-## entry) land on the exact same perpendicular at the boundary, so road,
-## sand, and marking ribbons stitch flush across tiles instead of
-## leaving notches at every tile seam.
-func _compute_perpendiculars(points: Array[Vector3]) -> Array[Vector3]:
-	var result: Array[Vector3] = []
-	var n: int = points.size()
-	result.resize(n)
+## Curved tiles are authored as sparse control points. Resample them into a
+## denser Hermite curve before building ribbons so broad corners read as
+## continuous arcs instead of a handful of straight segments.
+static func build_sampled_path(
+	tile_definition: TrackTileDefinitionResource,
+	target_tile_size: float,
+	target_rotation_steps: int = 0,
+	target_reverse_path: bool = false
+) -> Array[Vector3]:
+	if tile_definition == null:
+		return []
 
-	var entry_dir: int = definition.get_entry_direction(rotation_steps, reverse_path)
-	var exit_dir: int = definition.get_exit_direction(rotation_steps, reverse_path)
-	var entry_tangent: Vector3 = _socket_tangent_inward(entry_dir)
-	var exit_tangent: Vector3 = _socket_tangent_outward(exit_dir)
+	var world_points: Array[Vector3] = tile_definition.get_world_points(
+		target_tile_size,
+		Vector2i.ZERO,
+		target_rotation_steps,
+		target_reverse_path
+	)
+	if world_points.size() < 2:
+		return world_points
 
-	result[0] = _perpendicular_from_tangent(entry_tangent)
-	result[n - 1] = _perpendicular_from_tangent(exit_tangent)
+	var endpoint_tangents: Array[Vector3] = get_endpoint_tangents(
+		tile_definition,
+		target_rotation_steps,
+		target_reverse_path
+	)
+	return TrackCurveRef.build_smoothed_path(
+		world_points,
+		false,
+		CURVE_SAMPLE_SPACING,
+		endpoint_tangents[0],
+		endpoint_tangents[1]
+	)
 
-	for i in range(1, n - 1):
-		var direction: Vector3 = points[i + 1] - points[i - 1]
-		result[i] = _perpendicular_from_tangent(direction)
 
-	return result
+static func get_endpoint_tangents(
+	tile_definition: TrackTileDefinitionResource,
+	target_rotation_steps: int = 0,
+	target_reverse_path: bool = false
+) -> Array[Vector3]:
+	if tile_definition == null:
+		return [Vector3.ZERO, Vector3.ZERO]
+
+	var entry_direction: int = tile_definition.get_entry_direction(target_rotation_steps, target_reverse_path)
+	var exit_direction: int = tile_definition.get_exit_direction(target_rotation_steps, target_reverse_path)
+	return [
+		_socket_tangent_inward(entry_direction),
+		_socket_tangent_outward(exit_direction),
+	]
+
+
+static func build_offset_polyline(
+	points: Array[Vector3],
+	offset: float,
+	start_tangent: Vector3 = Vector3.ZERO,
+	end_tangent: Vector3 = Vector3.ZERO
+) -> Array[Vector3]:
+	return TrackCurveRef.build_offset_path(points, offset, false, start_tangent, end_tangent)
 
 
 ## Tangent pointing INTO the cell at an entry socket. The boundary point
@@ -103,52 +140,50 @@ static func _socket_tangent_outward(direction: int) -> Vector3:
 	return boundary.normalized()
 
 
-## Right-hand perpendicular (in XZ) of the given tangent: rotate 90° CW
-## from above so the returned vector points to the right side of a car
-## moving along `tangent`.
-static func _perpendicular_from_tangent(tangent: Vector3) -> Vector3:
-	var flat: Vector3 = tangent
-	flat.y = 0.0
-	if flat.length_squared() < 0.0001:
-		return Vector3(0.0, 0.0, 1.0)
-	flat = flat.normalized()
-	return Vector3(-flat.z, 0.0, flat.x)
+func _build_road(points: Array[Vector3], start_tangent: Vector3, end_tangent: Vector3) -> void:
+	var right_edge: Array[Vector3] = build_offset_polyline(points, TRACK_WIDTH * 0.5, start_tangent, end_tangent)
+	var left_edge: Array[Vector3] = build_offset_polyline(points, -TRACK_WIDTH * 0.5, start_tangent, end_tangent)
+	var visual_mesh: ArrayMesh = _build_strip_mesh(right_edge, left_edge, ROAD_VISUAL_Y_OFFSET)
+	var collider_mesh: ArrayMesh = _build_strip_mesh(right_edge, left_edge, 0.0)
+	_add_visual_ribbon("RoadVisual", visual_mesh, TARMAC_COLOR)
+	_add_trimesh_collider("RoadCollider", collider_mesh, 1 << (TRACK_SURFACE_COLLISION_LAYER - 1))
 
 
-func _build_road(points: Array[Vector3], perpendiculars: Array[Vector3]) -> void:
-	var mesh: ArrayMesh = _build_ribbon_mesh(points, perpendiculars, TRACK_WIDTH * 0.5, -TRACK_WIDTH * 0.5, 0.0)
-	_add_visual_ribbon("RoadVisual", mesh, TARMAC_COLOR)
-	_add_trimesh_collider("RoadCollider", mesh, 1 << (TRACK_SURFACE_COLLISION_LAYER - 1))
-
-
-func _build_sand_strips(points: Array[Vector3], perpendiculars: Array[Vector3]) -> void:
+func _build_sand_strips(points: Array[Vector3], start_tangent: Vector3, end_tangent: Vector3) -> void:
 	var inner: float = TRACK_WIDTH * 0.5
 	var outer: float = inner + SAND_WIDTH
-	var right_mesh: ArrayMesh = _build_ribbon_mesh(points, perpendiculars, outer, inner, 0.0)
-	var left_mesh: ArrayMesh = _build_ribbon_mesh(points, perpendiculars, -inner, -outer, 0.0)
+	var sand_right: Array[Vector3] = build_offset_polyline(points, outer, start_tangent, end_tangent)
+	var road_right: Array[Vector3] = build_offset_polyline(points, inner, start_tangent, end_tangent)
+	var road_left: Array[Vector3] = build_offset_polyline(points, -inner, start_tangent, end_tangent)
+	var sand_left: Array[Vector3] = build_offset_polyline(points, -outer, start_tangent, end_tangent)
+	var right_mesh: ArrayMesh = _build_strip_mesh(sand_right, road_right, 0.0)
+	var left_mesh: ArrayMesh = _build_strip_mesh(road_left, sand_left, 0.0)
 	_add_visual_ribbon("SandRight", right_mesh, SAND_COLOR)
 	_add_visual_ribbon("SandLeft", left_mesh, SAND_COLOR)
 
 
-func _build_center_marking(points: Array[Vector3], perpendiculars: Array[Vector3]) -> void:
-	var mesh: ArrayMesh = _build_ribbon_mesh(points, perpendiculars, MARKING_WIDTH * 0.5, -MARKING_WIDTH * 0.5, MARKING_Y_OFFSET)
+func _build_center_marking(points: Array[Vector3], start_tangent: Vector3, end_tangent: Vector3) -> void:
+	var right_edge: Array[Vector3] = build_offset_polyline(points, MARKING_WIDTH * 0.5, start_tangent, end_tangent)
+	var left_edge: Array[Vector3] = build_offset_polyline(points, -MARKING_WIDTH * 0.5, start_tangent, end_tangent)
+	var mesh: ArrayMesh = _build_strip_mesh(right_edge, left_edge, MARKING_Y_OFFSET)
 	_add_visual_ribbon("CenterMarking", mesh, MARKING_COLOR)
 
 
-func _build_ribbon_mesh(points: Array[Vector3], perpendiculars: Array[Vector3], side_a_offset: float, side_b_offset: float, y_offset: float) -> ArrayMesh:
+func _build_strip_mesh(
+	side_a_points: Array[Vector3],
+	side_b_points: Array[Vector3],
+	y_offset: float
+) -> ArrayMesh:
 	var st: SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_smooth_group(-1)
 
-	for i in range(points.size() - 1):
-		var p0: Vector3 = points[i]
-		var p1: Vector3 = points[i + 1]
-		var perp0: Vector3 = perpendiculars[i]
-		var perp1: Vector3 = perpendiculars[i + 1]
-		var a: Vector3 = p0 + perp0 * side_a_offset + Vector3.UP * y_offset
-		var b: Vector3 = p0 + perp0 * side_b_offset + Vector3.UP * y_offset
-		var c: Vector3 = p1 + perp1 * side_b_offset + Vector3.UP * y_offset
-		var d: Vector3 = p1 + perp1 * side_a_offset + Vector3.UP * y_offset
+	var point_count: int = mini(side_a_points.size(), side_b_points.size())
+	for i in range(point_count - 1):
+		var a: Vector3 = side_a_points[i] + Vector3.UP * y_offset
+		var b: Vector3 = side_b_points[i] + Vector3.UP * y_offset
+		var c: Vector3 = side_b_points[i + 1] + Vector3.UP * y_offset
+		var d: Vector3 = side_a_points[i + 1] + Vector3.UP * y_offset
 		st.set_normal(Vector3.UP)
 		st.add_vertex(b); st.add_vertex(c); st.add_vertex(d)
 		st.add_vertex(b); st.add_vertex(d); st.add_vertex(a)
