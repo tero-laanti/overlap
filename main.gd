@@ -989,7 +989,8 @@ func _get_node_footprint_samples(
 	var sample_transform: Transform3D = root_transform if use_root_transform else node.global_transform
 	sample_positions.append(sample_transform.origin)
 
-	for collision_shape in _get_collision_shapes(node):
+	for collision_entry in _get_collision_shapes(node):
+		var collision_shape: CollisionShape3D = collision_entry["shape"] as CollisionShape3D
 		if collision_shape == null or collision_shape.shape == null:
 			continue
 
@@ -1000,7 +1001,7 @@ func _get_node_footprint_samples(
 		# Sample ring is symmetric around the origin in both axes, so we only
 		# need two orthonormal ground-plane basis vectors — the sign of the
 		# local Z axis (Godot's `back`) does not matter here.
-		var collision_transform: Transform3D = sample_transform * collision_shape.transform
+		var collision_transform: Transform3D = sample_transform * (collision_entry["relative_transform"] as Transform3D)
 		var width_axis: Vector3 = collision_transform.basis.x
 		var depth_axis: Vector3 = collision_transform.basis.z
 		if width_axis.length_squared() < 0.0001:
@@ -1021,16 +1022,34 @@ func _get_node_footprint_samples(
 	return sample_positions
 
 
-## Collects only direct `CollisionShape3D` children. Compound bodies that
-## nest shapes under intermediate Node3Ds (none today) would need deeper
-## traversal; the placement filter silently ignores any unreachable shape.
-func _get_collision_shapes(node: Node3D) -> Array[CollisionShape3D]:
-	var collision_shapes: Array[CollisionShape3D] = []
-	for child in node.get_children():
+## Collects every descendant `CollisionShape3D` plus its transform relative to
+## the sampled root node so compound blockers (for example `ShutterGate`) take
+## part in overlap checks, mutation safety, and placement filtering.
+func _get_collision_shapes(node: Node3D) -> Array[Dictionary]:
+	var collision_shapes: Array[Dictionary] = []
+	_append_collision_shapes_recursive(node, Transform3D.IDENTITY, collision_shapes)
+	return collision_shapes
+
+
+func _append_collision_shapes_recursive(
+	current_node: Node,
+	current_transform: Transform3D,
+	collision_shapes: Array[Dictionary]
+) -> void:
+	for child in current_node.get_children():
+		var child_transform: Transform3D = current_transform
+		var child_node_3d: Node3D = child as Node3D
+		if child_node_3d != null:
+			child_transform = current_transform * child_node_3d.transform
+
 		var collision_shape: CollisionShape3D = child as CollisionShape3D
 		if collision_shape != null:
-			collision_shapes.append(collision_shape)
-	return collision_shapes
+			collision_shapes.append({
+				"shape": collision_shape,
+				"relative_transform": child_transform,
+			})
+
+		_append_collision_shapes_recursive(child, child_transform, collision_shapes)
 
 
 func _is_track_item_clear(

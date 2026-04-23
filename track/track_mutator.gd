@@ -151,10 +151,16 @@ func _footprint_contains_any_position(
 		return false
 	var occupied_cells: Array[Vector2i] = layout_tile.get_occupied_cells()
 	for position in occupied_world_positions:
-		var cell: Vector2i = Vector2i(floori(position.x / tile_size), floori(position.z / tile_size))
+		var cell: Vector2i = _world_position_to_grid_cell(position, tile_size)
 		if occupied_cells.has(cell):
 			return true
 	return false
+
+
+func _world_position_to_grid_cell(position: Vector3, tile_size: float) -> Vector2i:
+	# Layout cells are centered on grid_position * tile_size, so occupancy
+	# must map to the nearest cell center rather than the lower bound.
+	return Vector2i(roundi(position.x / tile_size), roundi(position.z / tile_size))
 
 
 func _detour_fits(

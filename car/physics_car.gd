@@ -29,6 +29,7 @@ const DRIFT_EXIT_THRESHOLD_FACTOR := 0.75
 const DRIFT_INTENT_SPEED_FACTOR := 0.45
 const DEFAULT_GRIP_MODIFIER_MULTIPLIER := 1.0
 const DEFAULT_SPEED_CAP_FACTOR := 1.0
+const DEFAULT_SPEED_CAP_SOURCE := &"default"
 const SPEED_CAP_RESISTANCE := 0.5
 const ACTIVE_INPUT_DRAG_FACTOR := 0.35
 const OVERSPEED_BRAKE_RATIO := 0.65
@@ -58,6 +59,7 @@ var _surface_provider: Node = null
 var _grip_modifier_multiplier: float = DEFAULT_GRIP_MODIFIER_MULTIPLIER
 var _grip_modifier_time_remaining: float = 0.0
 var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
+var _speed_cap_sources: Dictionary[StringName, float] = {}
 var _pending_reset_transform: Transform3D = Transform3D.IDENTITY
 var _has_pending_reset: bool = false
 var _heading_forward: Vector3 = Vector3.FORWARD
@@ -213,6 +215,7 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	_pending_reset_transform = spawn_transform
 	_has_pending_reset = true
 	_clear_grip_modifier()
+	_speed_cap_sources.clear()
 	clear_speed_cap()
 	_set_drifting(false)
 
@@ -310,16 +313,30 @@ func apply_grip_bonus(multiplier: float, duration: float) -> void:
 
 
 func set_speed_cap(factor: float) -> void:
-	_speed_cap_factor = clampf(factor, 0.0, 1.0)
+	set_speed_cap_for_source(DEFAULT_SPEED_CAP_SOURCE, factor)
 
 
 func clear_speed_cap() -> void:
-	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+	clear_speed_cap_for_source(DEFAULT_SPEED_CAP_SOURCE)
+
+
+func set_speed_cap_for_source(source: StringName, factor: float) -> void:
+	var source_key: StringName = _normalize_speed_cap_source(source)
+	var safe_factor: float = clampf(factor, 0.0, DEFAULT_SPEED_CAP_FACTOR)
+	if is_equal_approx(safe_factor, DEFAULT_SPEED_CAP_FACTOR):
+		_speed_cap_sources.erase(source_key)
+	else:
+		_speed_cap_sources[source_key] = safe_factor
+	_recompute_speed_cap_factor()
+
+
+func clear_speed_cap_for_source(source: StringName) -> void:
+	_speed_cap_sources.erase(_normalize_speed_cap_source(source))
+	_recompute_speed_cap_factor()
 
 
 func clear_temporary_handling_modifiers() -> void:
 	_clear_grip_modifier()
-	clear_speed_cap()
 
 
 func apply_planar_velocity_delta(delta_velocity: Vector3) -> void:
@@ -689,6 +706,16 @@ func _apply_grip_modifier(multiplier: float, duration: float) -> void:
 func _clear_grip_modifier() -> void:
 	_grip_modifier_multiplier = DEFAULT_GRIP_MODIFIER_MULTIPLIER
 	_grip_modifier_time_remaining = 0.0
+
+
+func _normalize_speed_cap_source(source: StringName) -> StringName:
+	return source if not String(source).is_empty() else DEFAULT_SPEED_CAP_SOURCE
+
+
+func _recompute_speed_cap_factor() -> void:
+	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+	for factor_value in _speed_cap_sources.values():
+		_speed_cap_factor = minf(_speed_cap_factor, float(factor_value))
 
 
 func _sync_root_from_proxy() -> void:

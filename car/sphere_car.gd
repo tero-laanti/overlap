@@ -27,6 +27,7 @@ const DRIFT_MIN_FORWARD_SPEED := 3.0
 ## intrinsic body transform.
 const BODY_BASE_Y_OFFSET := -0.25
 const DEFAULT_SPEED_CAP_FACTOR := 1.0
+const DEFAULT_SPEED_CAP_SOURCE := &"default"
 const DEFAULT_GRIP_MODIFIER := 1.0
 
 var _input: Vector2 = Vector2.ZERO  # x = +right steering, y = +forward throttle
@@ -34,6 +35,7 @@ var _linear_speed: float = 0.0
 var _angular_speed: float = 0.0
 var _visual_root_rest_transform: Transform3D = Transform3D.IDENTITY
 var _speed_cap_factor: float = DEFAULT_SPEED_CAP_FACTOR
+var _speed_cap_sources: Dictionary[StringName, float] = {}
 var _grip_modifier: float = DEFAULT_GRIP_MODIFIER
 var _grip_modifier_time_remaining: float = 0.0
 
@@ -199,6 +201,7 @@ func reset_to_transform(spawn_transform: Transform3D) -> void:
 	throttle_input = 0.0
 	is_grounded = false
 	ground_normal = Vector3.UP
+	_speed_cap_sources.clear()
 	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
 	_grip_modifier = DEFAULT_GRIP_MODIFIER
 	_grip_modifier_time_remaining = 0.0
@@ -232,11 +235,26 @@ func set_frozen(should_freeze: bool) -> void:
 
 
 func set_speed_cap(factor: float) -> void:
-	_speed_cap_factor = clampf(factor, 0.0, DEFAULT_SPEED_CAP_FACTOR)
+	set_speed_cap_for_source(DEFAULT_SPEED_CAP_SOURCE, factor)
 
 
 func clear_speed_cap() -> void:
-	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+	clear_speed_cap_for_source(DEFAULT_SPEED_CAP_SOURCE)
+
+
+func set_speed_cap_for_source(source: StringName, factor: float) -> void:
+	var source_key: StringName = _normalize_speed_cap_source(source)
+	var safe_factor: float = clampf(factor, 0.0, DEFAULT_SPEED_CAP_FACTOR)
+	if is_equal_approx(safe_factor, DEFAULT_SPEED_CAP_FACTOR):
+		_speed_cap_sources.erase(source_key)
+	else:
+		_speed_cap_sources[source_key] = safe_factor
+	_recompute_speed_cap_factor()
+
+
+func clear_speed_cap_for_source(source: StringName) -> void:
+	_speed_cap_sources.erase(_normalize_speed_cap_source(source))
+	_recompute_speed_cap_factor()
 
 
 # Grip penalties attenuate steering authority on the sphere model; the sphere
@@ -268,3 +286,13 @@ func _tick_handling_modifiers(delta: float) -> void:
 	if _grip_modifier_time_remaining <= 0.0:
 		_grip_modifier_time_remaining = 0.0
 		_grip_modifier = DEFAULT_GRIP_MODIFIER
+
+
+func _normalize_speed_cap_source(source: StringName) -> StringName:
+	return source if not String(source).is_empty() else DEFAULT_SPEED_CAP_SOURCE
+
+
+func _recompute_speed_cap_factor() -> void:
+	_speed_cap_factor = DEFAULT_SPEED_CAP_FACTOR
+	for factor_value in _speed_cap_sources.values():
+		_speed_cap_factor = minf(_speed_cap_factor, float(factor_value))

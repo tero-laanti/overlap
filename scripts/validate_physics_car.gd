@@ -12,6 +12,8 @@ const COIN_SCENE: PackedScene = preload("res://race/coin.tscn")
 const BOOST_PAD_SCENE: PackedScene = preload("res://race/boost_pad.tscn")
 const SLOW_ZONE_SCENE: PackedScene = preload("res://race/hazards/slow_zone.tscn")
 const GRAVEL_SPILL_SCENE: PackedScene = preload("res://race/hazards/gravel_spill.tscn")
+const SHUTTER_GATE_SCENE: PackedScene = preload("res://race/hazards/shutter_gate.tscn")
+const WASH_GATE_SCENE: PackedScene = preload("res://race/wash_gate.tscn")
 
 const RECTANGLE_LAYOUT_INDEX := 0
 const EXTRA_ROUND_TIME := 120.0
@@ -34,7 +36,9 @@ func _run_validation() -> void:
 	await _validate_surface_speeds()
 	await _validate_reverse_throttle_release_no_flip()
 	await _validate_collision_owner_resolution()
+	await _validate_overlapping_speed_caps_and_wash_gate()
 	await _validate_hazard_exit_cleanup_after_owner_cleared()
+	await _validate_nested_shutter_gate_footprint_sampling()
 	await _validate_reset_to_transform_grounded_state()
 
 	_clear_drive_input()
@@ -200,6 +204,85 @@ func _validate_hazard_exit_cleanup_after_owner_cleared() -> void:
 	print("gravel-spill orphaned-exit cleanup: ok")
 	proxy.bind_car(car)
 	gravel.queue_free()
+	await _free_scene(scene)
+
+
+func _validate_overlapping_speed_caps_and_wash_gate() -> void:
+	var scene: MainSceneController = await _spawn_main_scene(RECTANGLE_LAYOUT_INDEX)
+	var car: Car = _get_car(scene)
+	if car == null:
+		_fail("Speed-cap validator could not resolve the spawned car.")
+		await _free_scene(scene)
+		return
+	var proxy: CarPhysicsProxy = car.get_physics_proxy()
+	var slow_zone: SlowZone = SLOW_ZONE_SCENE.instantiate() as SlowZone
+	var gravel: GravelSpill = GRAVEL_SPILL_SCENE.instantiate() as GravelSpill
+	var wash_gate: WashGate = WASH_GATE_SCENE.instantiate() as WashGate
+	scene.add_child(slow_zone)
+	scene.add_child(gravel)
+	scene.add_child(wash_gate)
+	await _await_physics_frames(1)
+
+	slow_zone._on_body_entered(proxy)
+	if not is_equal_approx(car._speed_cap_factor, slow_zone.speed_factor):
+		_fail("SlowZone did not set the expected speed cap factor.")
+
+	gravel._on_body_entered(proxy)
+	var combined_speed_cap: float = minf(slow_zone.speed_factor, gravel.speed_factor)
+	if not is_equal_approx(car._speed_cap_factor, combined_speed_cap):
+		_fail("Overlapping slow hazards did not keep the most restrictive speed cap.")
+	var grip_modifier: float = _get_temporary_grip_modifier(car)
+	if not is_equal_approx(grip_modifier, gravel.grip_multiplier):
+		_fail("GravelSpill did not apply its grip penalty on entry.")
+
+	wash_gate._on_body_entered(proxy)
+	grip_modifier = _get_temporary_grip_modifier(car)
+	if not is_equal_approx(grip_modifier, 1.0):
+		_fail("WashGate did not clear the temporary grip modifier.")
+	if not is_equal_approx(car._speed_cap_factor, combined_speed_cap):
+		_fail("WashGate should not clear active speed caps.")
+
+	slow_zone._on_body_exited(proxy)
+	if not is_equal_approx(car._speed_cap_factor, gravel.speed_factor):
+		_fail("Exiting one slow hazard cleared the remaining active speed cap.")
+
+	gravel._on_body_exited(proxy)
+	if not is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("Speed cap did not restore after all slow hazards exited.")
+	print("overlapping speed caps and wash gate: ok")
+
+	await _free_scene(scene)
+
+
+func _validate_nested_shutter_gate_footprint_sampling() -> void:
+	var scene: MainSceneController = await _spawn_main_scene(RECTANGLE_LAYOUT_INDEX)
+	var track: TestTrack = _get_track(scene)
+	var hazard_root: Node3D = scene._hazard_controller.get_hazard_root()
+	if track == null or hazard_root == null:
+		_fail("ShutterGate footprint validator could not resolve the track or hazard root.")
+		await _free_scene(scene)
+		return
+
+	var shutter_gate: ShutterGate = SHUTTER_GATE_SCENE.instantiate() as ShutterGate
+	var boost_pad: BoostPad = BOOST_PAD_SCENE.instantiate() as BoostPad
+	if shutter_gate == null or boost_pad == null:
+		_fail("ShutterGate footprint validator could not instantiate the test scenes.")
+		await _free_scene(scene)
+		return
+
+	var gate_transform: Transform3D = track.get_track_transform(track.get_lap_start_progress(), 0.0, 0.0)
+	hazard_root.add_child(shutter_gate)
+	shutter_gate.global_transform = gate_transform
+	await _await_physics_frames(1)
+
+	var overlapping_transform: Transform3D = gate_transform.translated_local(Vector3(2.4, 0.0, 0.0))
+	var occupied_positions: Array[Vector3] = scene._get_occupied_track_item_positions()
+	if scene._is_track_item_clear(boost_pad, overlapping_transform, occupied_positions):
+		_fail("Nested ShutterGate collision shapes did not block an overlapping placement.")
+	print("nested shutter-gate footprint sampling: ok")
+
+	boost_pad.queue_free()
+	shutter_gate.queue_free()
 	await _free_scene(scene)
 
 
@@ -427,6 +510,14 @@ func _get_track(scene: MainSceneController) -> TestTrack:
 
 func _get_car(scene: MainSceneController) -> Car:
 	return scene.get_node(^"Car") as Car
+
+
+func _get_temporary_grip_modifier(car: Car) -> float:
+	if car is PhysicsCar:
+		return (car as PhysicsCar)._grip_modifier_multiplier
+	if car is SphereCar:
+		return (car as SphereCar)._grip_modifier
+	return 1.0
 
 
 func _get_run_state(scene: MainSceneController) -> RunState:

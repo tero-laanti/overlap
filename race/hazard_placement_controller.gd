@@ -72,9 +72,9 @@ func get_focused_index() -> int:
 	return _focused_index
 
 
-## Starts the placement flow. Returns true if previews spawned and the flow is active;
-## returns false (and emits placement_abandoned) if the drafted hazard could not be
-## placed, so main can resume the round start sequence.
+## Starts the placement flow. Returns true if at least one preview spawned and
+## the flow is active; returns false (and emits placement_abandoned) only when
+## the drafted hazard has no legal placement at all.
 func begin_placement(occupied_positions: Array[Vector3]) -> bool:
 	if _track == null or not has_pending_draft():
 		_pending_hazard_type = HazardTypeRegistry.NONE
@@ -90,11 +90,18 @@ func begin_placement(occupied_positions: Array[Vector3]) -> bool:
 	_clear_selection_internal(null)
 
 	var generated_positions: Array[Dictionary] = _generate_positions(occupied_positions)
-	if generated_positions.size() < CANDIDATE_COUNT:
-		push_warning("HazardPlacementController could not find %d valid hazard placement positions." % CANDIDATE_COUNT)
+	if generated_positions.is_empty():
+		push_warning("HazardPlacementController could not find any valid hazard placement positions.")
 		_pending_hazard_type = HazardTypeRegistry.NONE
 		placement_abandoned.emit()
 		return false
+	if generated_positions.size() < CANDIDATE_COUNT:
+		push_warning(
+			"HazardPlacementController found only %d of %d requested hazard placement positions." % [
+				generated_positions.size(),
+				CANDIDATE_COUNT,
+			]
+		)
 
 	for candidate in generated_positions:
 		var preview_transform: Transform3D = candidate["transform"]
@@ -103,8 +110,8 @@ func begin_placement(occupied_positions: Array[Vector3]) -> bool:
 			continue
 		_position_previews.append(preview)
 
-	if _position_previews.size() < CANDIDATE_COUNT:
-		push_warning("HazardPlacementController failed to prepare %d hazard placement previews." % CANDIDATE_COUNT)
+	if _position_previews.is_empty():
+		push_warning("HazardPlacementController failed to prepare any hazard placement previews.")
 		_clear_selection_internal(null)
 		_pending_hazard_type = HazardTypeRegistry.NONE
 		placement_abandoned.emit()
@@ -206,9 +213,6 @@ func _generate_positions(occupied_positions: Array[Vector3]) -> Array[Dictionary
 			"lateral_offset": lateral_offset,
 			"transform": candidate_transform,
 		})
-
-	if positions.size() < CANDIDATE_COUNT:
-		return []
 
 	return positions
 

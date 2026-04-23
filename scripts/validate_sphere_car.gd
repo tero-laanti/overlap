@@ -9,10 +9,14 @@ extends SceneTree
 ## a reasonable distance in a few physics seconds?
 
 const MAIN_SCENE: PackedScene = preload("res://main.tscn")
+const SLOW_ZONE_SCENE: PackedScene = preload("res://race/hazards/slow_zone.tscn")
+const GRAVEL_SPILL_SCENE: PackedScene = preload("res://race/hazards/gravel_spill.tscn")
+const WASH_GATE_SCENE: PackedScene = preload("res://race/wash_gate.tscn")
 ## Any layout without a `preferred_vehicle` override. The auto-swap would hide
 ## the plain `main.tscn` default if we pointed at a layout that force-selected
 ## a different controller.
 const RECTANGLE_LAYOUT_INDEX := 0
+const EXTRA_ROUND_TIME := 120.0
 const TEST_DURATION_SEC := 3.0
 const MINIMUM_TRAVEL := 10.0
 const CAR_SPAWN_Y_OFFSET := 0.37
@@ -34,17 +38,26 @@ func _run_validation() -> void:
 
 	var car: Car = scene.get_node_or_null(^"Car") as Car
 	var track: TestTrack = scene.get_node_or_null(^"Track") as TestTrack
+	var run_state: RunState = scene.get_node_or_null(^"RunState") as RunState
 	if car == null or track == null:
 		_fail("main.tscn missing Car or Track")
+		_finish(scene)
+		return
+	if run_state == null:
+		_fail("main.tscn missing RunState")
 		_finish(scene)
 		return
 	if not (car is SphereCar):
 		_fail("main.tscn Car is not a SphereCar instance (got %s)" % car.get_class())
 
+	run_state.reset_for_new_run()
+	run_state.start_round(EXTRA_ROUND_TIME)
+	await _await_physics_frames(1)
 	car.reset_to_transform(track.get_start_transform(CAR_SPAWN_Y_OFFSET))
 	await _await_physics_frames(2)
 
 	_check_reset_restores_visual_root(car as SphereCar, track)
+	await _check_speed_cap_sources_and_wash_gate(scene, car as SphereCar)
 
 	var start_position: Vector3 = car.global_position
 	Input.action_press("throttle", 1.0)
@@ -78,6 +91,48 @@ func _check_reset_restores_visual_root(car: SphereCar, track: TestTrack) -> void
 	print("sphere car visual-root roll after reset: %.2f°" % roll_after_reset)
 	if absf(roll_after_reset) > 0.5:
 		_fail("SphereCar.reset_to_transform did not restore VisualRoot (roll %.2f°)." % roll_after_reset)
+
+
+func _check_speed_cap_sources_and_wash_gate(scene: Node3D, car: SphereCar) -> void:
+	var proxy: CarPhysicsProxy = car.get_physics_proxy()
+	var slow_zone: SlowZone = SLOW_ZONE_SCENE.instantiate() as SlowZone
+	var gravel: GravelSpill = GRAVEL_SPILL_SCENE.instantiate() as GravelSpill
+	var wash_gate: WashGate = WASH_GATE_SCENE.instantiate() as WashGate
+	scene.add_child(slow_zone)
+	scene.add_child(gravel)
+	scene.add_child(wash_gate)
+	await _await_physics_frames(1)
+
+	slow_zone._on_body_entered(proxy)
+	if not is_equal_approx(car._speed_cap_factor, slow_zone.speed_factor):
+		_fail("SphereCar SlowZone speed cap mismatch.")
+
+	gravel._on_body_entered(proxy)
+	var combined_speed_cap: float = minf(slow_zone.speed_factor, gravel.speed_factor)
+	if not is_equal_approx(car._speed_cap_factor, combined_speed_cap):
+		_fail("SphereCar overlapping slow hazards did not keep the tightest speed cap.")
+	if not is_equal_approx(car._grip_modifier, gravel.grip_multiplier):
+		_fail("SphereCar GravelSpill grip penalty mismatch.")
+
+	wash_gate._on_body_entered(proxy)
+	if not is_equal_approx(car._grip_modifier, 1.0):
+		_fail("SphereCar WashGate did not clear the temporary grip modifier.")
+	if not is_equal_approx(car._speed_cap_factor, combined_speed_cap):
+		_fail("SphereCar WashGate should not clear active speed caps.")
+
+	slow_zone._on_body_exited(proxy)
+	if not is_equal_approx(car._speed_cap_factor, gravel.speed_factor):
+		_fail("SphereCar exiting one slow hazard cleared the remaining speed cap.")
+
+	gravel._on_body_exited(proxy)
+	if not is_equal_approx(car._speed_cap_factor, 1.0):
+		_fail("SphereCar speed cap did not restore after all hazards exited.")
+
+	print("sphere car speed caps and wash gate: ok")
+	slow_zone.queue_free()
+	gravel.queue_free()
+	wash_gate.queue_free()
+	await _await_physics_frames(1)
 
 
 func _finish(scene: Node) -> void:

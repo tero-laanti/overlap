@@ -32,7 +32,7 @@ On a fresh clone, bootstrap Godot's global `class_name` registry before running 
 
 After that first editor-style scan, use your normal headless command for follow-up checks.
 
-If you want the repo to do both steps for you, run `scripts/headless_check.sh` and set `GODOT_BIN` if your Godot executable is not on `PATH`.
+If you want the repo to do both steps for you, run `scripts/headless_check.sh` and set `GODOT_BIN` if your Godot executable is not on `PATH`. It bootstraps the editor scan, smoke-tests the project, and runs the default track, mutator, car, and car-option validators in one pass.
 
 ## Project Structure
 

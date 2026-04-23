@@ -4,6 +4,7 @@ extends Node3D
 
 const TrackLayoutResource := preload("res://track/track_layout.gd")
 const TrackTileDefinitionResource := preload("res://track/track_tile_definition.gd")
+const TrackCurveRef := preload("res://track/track_curve.gd")
 
 class ClosestSegmentResult:
 	var distance: float
@@ -83,6 +84,7 @@ const START_SEGMENT_SAMPLE_DISTANCE_RATIO := 0.75
 ## segment" heuristic in `_find_best_start_segment`. Empirically tuned so
 ## very short straights still register as candidates.
 const START_SEGMENT_MIN_SAMPLE_DISTANCE := 1.6
+const CENTERLINE_SAMPLE_SPACING := 2.5
 
 var _points: Array[Vector3] = []
 var _segment_lengths: Array[float] = []
@@ -113,7 +115,8 @@ func _build_centerline() -> void:
 	var active_layout: TrackLayoutResource = _get_active_layout()
 	if active_layout != null:
 		_warn_about_layout_issues(active_layout)
-		_points = active_layout.build_centerline_points()
+		var raw_points: Array[Vector3] = active_layout.build_centerline_points()
+		_points = TrackCurveRef.build_smoothed_path(raw_points, true, CENTERLINE_SAMPLE_SPACING)
 		if _points.size() >= 3:
 			_rebuild_length_cache()
 			return

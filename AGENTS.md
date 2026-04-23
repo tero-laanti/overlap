@@ -435,6 +435,10 @@ use.
 - Use `res://scripts/validate_track_layouts.gd` when changing tile definitions
   or authored layouts to catch overlaps, unsupported rotations, and broken
   socket continuity across every layout resource.
+- Use `res://scripts/validate_track_geometry.gd` when changing track mesh
+  generation, curve smoothing, or ribbon offsets. It checks that curved tiles
+  gain runtime samples and that the generated road/sand strips do not invert
+  segment-by-segment.
 - If MCP or editor-backed validation is unavailable, say so explicitly in the
   handoff. Do not claim runtime validation you did not perform.
 - After every non-trivial code change, run two code-review passes when agent
@@ -539,9 +543,11 @@ Required before any PR:
 
 ### Before committing
 
-1. `bash scripts/headless_check.sh` — boots the project headless and runs
-   both per-controller validators (`validate_sphere_car.gd`,
-   `validate_physics_car.gd`). Exit 0 is mandatory; inspect the metrics line
+1. `bash scripts/headless_check.sh` — boots the project headless and runs the
+   default validator suite (`validate_track_layouts.gd`,
+   `validate_track_geometry.gd`, `validate_track_mutator.gd`,
+   `validate_sphere_car.gd`, `validate_physics_car.gd`,
+   `validate_car_options.gd`). Exit 0 is mandatory; inspect the metrics line
    for each test, not just the exit code.
 2. For a narrower targeted run:
    `godot --headless --path . --script res://scripts/validate_physics_car.gd`
