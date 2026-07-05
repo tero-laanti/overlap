@@ -22,7 +22,7 @@ size = Vector2(300, 1400)
 size = Vector2(300, 800)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_bar"]
-size = Vector2(300, 24)
+size = Vector2(700, 24)
 
 [node name="Track" type="Node2D" groups=["track"]]
 script = ExtResource("1_track")
@@ -101,11 +101,23 @@ shape = SubResource("RectangleShape2D_gate_bar")
 
 [node name="Bar" type="Polygon2D" parent="IslandGate"]
 color = Color(0.95, 0.55, 0.1, 1)
-polygon = PackedVector2Array(-150, -12, 150, -12, 150, 12, -150, 12)
+polygon = PackedVector2Array(-350, -12, 350, -12, 350, 12, -350, 12)
 
-[node name="BarStripes" type="Polygon2D" parent="IslandGate"]
+[node name="Stripe1" type="Polygon2D" parent="IslandGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-290, -12, -250, -12, -250, 12, -290, 12)
+
+[node name="Stripe2" type="Polygon2D" parent="IslandGate"]
 color = Color(0.15, 0.13, 0.1, 1)
 polygon = PackedVector2Array(-90, -12, -50, -12, -50, 12, -90, 12)
+
+[node name="Stripe3" type="Polygon2D" parent="IslandGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
+
+[node name="Stripe4" type="Polygon2D" parent="IslandGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(310, -12, 350, -12, 350, 12, 310, 12)
 
 [node name="OuterWalls" type="StaticBody2D" parent="."]
 
