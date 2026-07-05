@@ -37,6 +37,8 @@ var _waypoint_index := 0
 var _laps_done := 0
 var _redrive_target := 0
 var _watch_until := 0.0
+var _stuck_time := 0.0
+var _reverse_until := 0.0
 
 
 func _ready() -> void:
@@ -94,6 +96,8 @@ func _process(delta: float) -> void:
 				])
 				_enter(Phase.DONE, "finished")
 				set_process(false)
+				if DisplayServer.get_name() == "headless":
+					get_tree().quit()
 				return
 		Phase.DONE:
 			return
@@ -136,6 +140,19 @@ func _enter(phase: Phase, note: String) -> void:
 
 
 func _drive() -> void:
+	# Nose-in-wall recovery: back straight up for a moment, then resume.
+	if _elapsed < _reverse_until:
+		_hold(["brake"])
+		return
+	if _car.velocity.length() < 40.0:
+		_stuck_time += get_process_delta_time()
+		if _stuck_time > 2.0:
+			_stuck_time = 0.0
+			_reverse_until = _elapsed + 1.3
+			return
+	else:
+		_stuck_time = 0.0
+
 	var target := WAYPOINTS[_waypoint_index]
 	if _car.global_position.distance_to(target) < WAYPOINT_REACHED_DISTANCE:
 		_waypoint_index = (_waypoint_index + 1) % WAYPOINTS.size()
