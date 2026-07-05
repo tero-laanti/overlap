@@ -34,18 +34,17 @@ zero script errors.
    cherry-picked onto main (one trivial conflict in ghost_fleet.gd);
    probe loop green. Branch `polish/quality-pass` and its worktree
    deleted.
-3. **Build the gate-network prototype.** THE big one. Branch
-   `proto/gate-network` is an EMPTY stub (points at the design commit —
-   the original prototype agent died before starting; delete or reuse
-   the branch). The full implementation spec is
-   docs/GATE_NETWORK.md §8 step 1 ("Pretzel-lite") on the design
-   branch: one purchasable gated chord through the island → 2 authored
-   routes, analytic line-crossing route detection (NOT Area2D — see
-   docs/research/branching_track_tech.md), per-route PB/recording/fleet
-   in Bank (save v3 with migration), route-discovery toast. This
-   subsumes ROADMAP's "second track" checkbox — prefer it over a
-   separate track02.
-4. After the prototype: route log UI, then the Path2D road pipeline
+3. ~~Build the gate-network prototype.~~ DONE 2026-07-05, folded into
+   main (see ROADMAP slice 7): TrackNetworkDef/RouteDef/GateDef/
+   CrossingLineDef resources + RouteTracker (analytic line-crossing,
+   scenes/track/route_tracker.gd), per-route PB/recording/fleet in Bank
+   (save v3, v2 migration verified), island gate in GARAGE, discovery
+   toast. The chord sits at x=300 — NOT x=0 — because the start line is
+   vertical at x=0 and a car descending a chord there would move
+   parallel to it and never cross. Probe now covers the whole flow
+   (BUY_GATE/DRIVE_CUT/WATCH_CUT phases). Human feel pass on the cut
+   route + gate UX still pending.
+4. Next, in order: route log UI, then the Path2D road pipeline
    (research doc has the exact recipe), then Clover petal 1.
 
 ## Verification workflow (mandatory before any commit)

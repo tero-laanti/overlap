@@ -79,21 +79,38 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 ## Slice 6 — Idle game shape
 - [x] Offline earnings on launch ("While you were away…")
 - [ ] More ghost slots, cost curves from data/
-- [ ] Second track (TrackDef unlock)
+- [x] ~~Second track (TrackDef unlock)~~ SUBSUMED by the gate network
+      (slice 7): new asphalt arrives as gated routes on one growing
+      network, not separate track scenes.
 - **Accept:** relaunching after time away grants income; buying track 2 and
       racing it with its own ghosts works.
 - Notes: verified 2026-07-05 via temporary save/load run — 2 ghosts, $10
   payout, 10.0 s PB, and ~1 h elapsed launched from $100 to ~$7300 and
   rewrote the save timestamp. Offline cap lives in data/economy.tres.
 
+## Slice 7 — The gate network (design: docs/GATE_NETWORK.md on design branch)
+- [x] Pretzel-lite prototype: island gate ($120 in GARAGE) opens a chord →
+      2 authored routes (Grand Ring / Island Cut), analytic line-crossing
+      route detection (RouteTracker, no Area2D checkpoints), per-route
+      PB/recording/ghost fleet in Bank (save v3 + v2 migration),
+      route-discovery toast, par-normalized payouts.
+- [ ] Route log UI (cards, silhouettes, X/N counter)
+- [ ] Path2D road pipeline (curved segments; needed before petals)
+- [ ] Clover petal 1 (theme + risk grammar + mastery medals)
+- **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
+      PB and fleet, income adds up across routes.
+- Notes: prototype verified headless 2026-07-05 — gate bought, Island Cut
+  discovered on first lap through it, cut PB 5.12 s, income 3.01 → 5.55/s
+  (exactly Σ slots × payout / pb), 4 ghosts in 2 fleets, v2 save migrated
+  with offline earnings intact. Human feel pass on the cut still pending.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:
-  Clover topology, Pretzel-lite prototype first.
-- `proto/gate-network` — Pretzel-lite prototype (1 gate, 2 routes,
-  per-route PBs and fleets, analytic route detection). Not started yet:
-  branch currently points at the same design-only commit as
-  `design/gate-network`.
+  Clover topology, Pretzel-lite prototype first. KEEP — later slices
+  still reference it.
+- `proto/gate-network` — FOLDED into main 2026-07-05 (Pretzel-lite
+  prototype, see slice 7). Branch and worktree deleted.
 - `polish/quality-pass` — FOLDED into main 2026-07-05 (ghost tint variety,
   garage milestone label, HUD next-purchase hint cherry-picked; superseded
   steering-floor commit dropped). Branch and worktree deleted.
