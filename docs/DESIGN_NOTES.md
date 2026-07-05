@@ -23,9 +23,32 @@ bottom. These are defaults — change them from playtesting, not from vibes.
 
 ## Economy (slices 4–6)
 
+### Tuned economy v1 (simulated 2026-07-05 — supersedes the raw research
+### defaults below; sim: scratchpad econ_sim.py, config "FINAL")
+
+Simulated 60-min sessions with a skill-improving greedy player exposed the
+raw research numbers as ~10× too generous here (lap times are seconds, not
+minutes — a ghost repaid itself in 1–2 laps and the sim made 240 purchases
+in an hour, maxing everything). Tuned so a ghost repays in ~6–8 laps and
+purchases stay decisions:
+
+- **Ghost slots: base 25, growth 1.30** (first extra ghost ≈ 30 s of play).
+- **Upgrades: growth 1.5, max level 8** — top speed base 75, accel/grip 50.
+  Chunky treats between ghost buys, exhausted ~25–30 min in.
+- **Milestones ×2 at 10 / 25 / 50 ghosts** (EconomyDef).
+- **Active lap bonus ×3**: your own laps pay 3× a ghost lap. Fixes the
+  cold start (income from lap 1) and keeps driving strictly better than
+  watching.
+- Simulated shape: first buy ~20–40 s (human), all four purchase types
+  within the first 2 min, income ×29 by 30 min, hard slowdown 25–35 min —
+  that wall is where track 2 (10–20×) must land, and later prestige.
+- All knobs live in data/economy.tres + data/upgrades/*.tres.
+
+### Original research defaults (kept for reference)
+
 - Cost curves: `cost = base × growth^owned`.
-  - Ghost slots: **base 10, growth 1.08** (spammy, satisfying).
-  - Car upgrades / track unlocks: **growth 1.15** (chunky, strategic).
+  - Ghost slots: base 10, growth 1.08 (spammy, satisfying).
+  - Car upgrades / track unlocks: growth 1.15 (chunky, strategic).
 - **Milestones**: ×2 track income at 10 / 25 / 50 ghosts on a track.
 - **Multiplicative bonuses only.** Additive bonuses killed Idle Racing GO's
   progression (its league bonus was additive and therefore pointless).

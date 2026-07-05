@@ -14,7 +14,7 @@ const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
 const TIMEOUT := 150.0
 const DRIVE_LAPS := 2
-const EARN_TARGET := 65.0
+const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
 const WATCH_SECONDS := 16.0
 
 const WAYPOINTS: Array[Vector2] = [

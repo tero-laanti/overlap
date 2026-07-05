@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EconomyDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://autoload/economy_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ghost_base_cost = 25.0
+ghost_cost_growth = 1.3
+active_lap_multiplier = 3.0
+milestone_counts = Array[int]([10, 25, 50])
+milestone_multiplier = 2.0

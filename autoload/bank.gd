@@ -8,8 +8,7 @@ extends Node
 const SAVE_PATH := "user://save.dat"
 const SAVE_INTERVAL := 5.0
 const CATALOG: UpgradeCatalog = preload("res://data/upgrades/catalog.tres")
-const GHOST_SLOT_BASE_COST := 10.0
-const GHOST_SLOT_COST_GROWTH := 1.08
+const ECONOMY: EconomyDef = preload("res://data/economy.tres")
 
 var currency := 0.0
 var best_recording: LapRecording
@@ -24,6 +23,7 @@ var _dirty := false
 func _ready() -> void:
 	Events.best_lap_recorded.connect(_on_best_lap_recorded)
 	Events.ghost_lap_completed.connect(_on_ghost_lap_completed)
+	Events.lap_completed.connect(_on_player_lap_completed)
 	load_profile()
 
 
@@ -38,10 +38,20 @@ func _notification(what: int) -> void:
 		save_profile()
 
 
+## ×2 for every fleet milestone reached (10/25/50 ghosts by default).
+func milestone_multiplier() -> float:
+	var m := 1.0
+	for count in ECONOMY.milestone_counts:
+		if ghost_slots >= count:
+			m *= ECONOMY.milestone_multiplier
+	return m
+
+
 func income_per_second() -> float:
 	if best_recording == null or best_recording.lap_time <= 0.0:
 		return 0.0
-	return ghost_slots * active_track_payout / best_recording.lap_time
+	return ghost_slots * active_track_payout * milestone_multiplier() \
+			/ best_recording.lap_time
 
 
 func upgrade_level(id: String) -> int:
@@ -72,7 +82,7 @@ func try_buy_upgrade(id: String) -> bool:
 
 
 func ghost_slot_cost() -> float:
-	return GHOST_SLOT_BASE_COST * pow(GHOST_SLOT_COST_GROWTH, ghost_slots - 1)
+	return ECONOMY.ghost_base_cost * pow(ECONOMY.ghost_cost_growth, ghost_slots - 1)
 
 
 func try_buy_ghost_slot() -> bool:
@@ -88,7 +98,16 @@ func try_buy_ghost_slot() -> bool:
 
 
 func _on_ghost_lap_completed() -> void:
-	currency += active_track_payout
+	currency += active_track_payout * milestone_multiplier()
+	_dirty = true
+	Events.currency_changed.emit(currency)
+
+
+## Active play always out-earns watching: your own laps pay a multiple of
+## the ghost payout.
+func _on_player_lap_completed(_lap_time: float, _is_best: bool) -> void:
+	currency += active_track_payout * ECONOMY.active_lap_multiplier \
+			* milestone_multiplier()
 	_dirty = true
 	Events.currency_changed.emit(currency)
 
