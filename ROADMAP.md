@@ -100,7 +100,10 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       ??? + authored clue for hinted (gates owned, undriven), X/N counter.
       Gate hardened: 700 px bar + chord_mouth line required in the cut's
       edge sequence, so flanking the gate over grass validates nothing.
-- [ ] Path2D road pipeline (curved segments; needed before petals)
+- [x] Path2D road pipeline: RoadSegment (@tool) bakes surface + grass
+      hitbox from a Curve2D centerline (tessellate + offset_polyline,
+      square caps seal junctions). track01 rebuilt from 5 centerlines,
+      byte-for-byte drivable-area equivalent — probe lap times identical.
 - [ ] Clover petal 1 (theme + risk grammar + mastery medals)
 - **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
       PB and fleet, income adds up across routes.

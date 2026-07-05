@@ -46,11 +46,18 @@ zero script errors.
    route + gate UX still pending.
 4. ~~Route log UI~~ DONE 2026-07-05 (R key; cards/clues/counter; gate
    also hardened — wider bar + chord_mouth line in the cut's edges so
-   grass-flanking validates nothing). Next, in order: the Path2D road
-   pipeline (research doc has the exact recipe; NOTE — preserve the
-   current drivable geometry exactly on the first pass, sharp mitered
-   corners, so car feel doesn't change; curves arrive with the petals),
-   then Clover petal 1 (theme + risk grammar + mastery medals).
+   grass-flanking validates nothing).
+5. ~~Path2D road pipeline~~ DONE 2026-07-05: RoadSegment @tool scene
+   bakes surface + grass hitbox from Curve2D centerlines; track01
+   rebuilt drivable-area-identical (probe laps byte-identical). Curves
+   are now just curvier centerlines.
+6. **Next: Clover petal 1** (docs/GATE_NETWORK.md §4B + §8 step 4):
+   a themed curved loop grafted onto the ring via a purchasable gate,
+   risk grammar (screen-right = richer), mastery medals. This is the
+   first real feel-relevant geometry — playtest curves with the human
+   early. Border/curb rendering (two-layer overdraw, borders below all
+   surfaces — beware z_index vs drift-trail draw order) can land with
+   the petal theme.
 
 ## Verification workflow (mandatory before any commit)
 
