@@ -74,6 +74,17 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 - **Accept:** relaunching after time away grants income; buying track 2 and
       racing it with its own ghosts works.
 
+## In review (branches, 2026-07-05 autonomous session)
+- `design/gate-network` — full gate/route-discovery design + topology
+  diagrams + research (docs/GATE_NETWORK.md there). Recommendation:
+  Clover topology, Pretzel-lite prototype first.
+- `proto/gate-network` — Pretzel-lite prototype (1 gate, 2 routes,
+  per-route PBs and fleets, analytic route detection). In progress.
+- `feel/drift-heavy`, `feel/grippy-kart`, `feel/heavy-momentum` — three
+  car-feel candidates to test-drive; pick one or mix values.
+- `polish/quality-pass` — low-speed steering floor, ghost crowd variety,
+  milestone + next-purchase UI hints.
+
 ## Later (unordered)
 - Prestige/reset layer; more cars (CarStats variants); track hazards that
   make YOUR lap risky but ghosts immune (risk = better recorded lines);
