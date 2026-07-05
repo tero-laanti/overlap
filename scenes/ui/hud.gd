@@ -13,7 +13,8 @@ var race_state: RaceStateScript
 var car: CarScript
 
 var _pips_filled := 0
-var _pips_total := 3
+var _pips_total := 2
+var _suppress_lap_toast := false
 var _toast_tween: Tween
 
 @onready var _current_label: Label = %CurrentLap
@@ -30,6 +31,7 @@ var _toast_tween: Tween
 func _ready() -> void:
 	Events.lap_completed.connect(_on_lap_completed)
 	Events.offline_earnings_granted.connect(_on_offline_earnings_granted)
+	Events.route_discovered.connect(_on_route_discovered)
 	_toast_label.modulate.a = 0.0
 	_refresh_pips()
 
@@ -46,8 +48,8 @@ func _process(_delta: float) -> void:
 	_next_label.text = _next_purchase_hint()
 
 
-## Cheapest thing still buyable in the garage: a ghost slot or any
-## non-maxed upgrade. Read-only against Bank — no purchase logic here.
+## Cheapest thing still buyable in the garage: a ghost slot, a gate, or
+## any non-maxed upgrade. Read-only against Bank — no purchase logic here.
 func _next_purchase_hint() -> String:
 	var next_name := "Hire Ghost"
 	var next_cost := Bank.ghost_slot_cost()
@@ -58,6 +60,10 @@ func _next_purchase_hint() -> String:
 		if cost < next_cost:
 			next_cost = cost
 			next_name = def.display_name
+	for gate in Bank.unpurchased_gates():
+		if gate.price < next_cost:
+			next_cost = gate.price
+			next_name = gate.display_name
 	if Bank.currency >= next_cost:
 		return "TAB: %s ready!" % next_name
 	var income := Bank.income_per_second()
@@ -78,14 +84,23 @@ func on_checkpoint_crossed(index: int, total: int) -> void:
 	_refresh_pips()
 
 
-func _on_lap_completed(lap_time: float, is_best: bool) -> void:
+func _on_lap_completed(_route_id: String, lap_time: float, is_best: bool) -> void:
 	_pips_filled = 0
 	_refresh_pips()
+	if _suppress_lap_toast:
+		_suppress_lap_toast = false
+		return
 	_show_toast(
 		"NEW BEST  %s" % format_time(lap_time) if is_best
 		else "LAP  %s" % format_time(lap_time),
 		is_best,
 	)
+
+
+## Discovery outranks the routine lap toast that lands the same instant.
+func _on_route_discovered(_route_id: String, display_name: String) -> void:
+	_show_toast("NEW ROUTE  %s" % display_name, true)
+	_suppress_lap_toast = true
 
 
 func _on_offline_earnings_granted(amount: float, elapsed_seconds: float) -> void:

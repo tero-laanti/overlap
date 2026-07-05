@@ -1,9 +1,10 @@
 extends CanvasLayer
 ## Shop UI. Presentation and purchase intents only: reads Bank's catalog
 ## and prices, calls Bank.try_buy_*. All pricing and effects live in Bank
-## and the UpgradeDef resources. Toggled with the toggle_shop action.
+## and the def resources. Toggled with the toggle_shop action.
 
 var _upgrade_rows := {}
+var _gate_rows := {}
 var _ghost_label: Label
 var _ghost_button: Button
 
@@ -16,7 +17,10 @@ func _ready() -> void:
 	Events.currency_changed.connect(func(_amount: float) -> void: _refresh())
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void: _refresh())
 	Events.ghost_hired.connect(func(_count: int) -> void: _refresh())
+	Events.gate_purchased.connect(func(_id: String) -> void: _refresh())
 	_build_rows()
+	# Bank learns the active network in Main._ready, after this ready runs.
+	_build_gate_rows.call_deferred()
 	_refresh()
 
 
@@ -36,6 +40,14 @@ func _build_rows() -> void:
 	ghost_row.button.pressed.connect(Bank.try_buy_ghost_slot)
 	_ghost_label = ghost_row.label
 	_ghost_button = ghost_row.button
+
+
+func _build_gate_rows() -> void:
+	for gate in Bank.unpurchased_gates():
+		var row := _make_row(gate.display_name)
+		row.button.pressed.connect(Bank.try_buy_gate.bind(gate.id))
+		_gate_rows[gate.id] = row
+	_refresh()
 
 
 func _make_row(title: String) -> Dictionary:
@@ -65,6 +77,15 @@ func _refresh() -> void:
 		var button := row.button as Button
 		button.text = "MAX" if maxed else "$ %d" % int(Bank.upgrade_cost(id))
 		button.disabled = maxed or Bank.currency < Bank.upgrade_cost(id)
+	for id: String in _gate_rows:
+		var row: Dictionary = _gate_rows[id]
+		var button := row.button as Button
+		if Bank.is_gate_purchased(id):
+			button.text = "OPEN"
+			button.disabled = true
+		else:
+			button.text = "$ %d" % int(Bank.gate_cost(id))
+			button.disabled = Bank.currency < Bank.gate_cost(id)
 	_ghost_label.text = "Hire Ghost  ×%d" % Bank.ghost_slots
 	_ghost_button.text = "$ %d" % int(Bank.ghost_slot_cost())
 	_ghost_button.disabled = Bank.currency < Bank.ghost_slot_cost()

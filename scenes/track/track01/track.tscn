@@ -1,7 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
+[ext_resource type="Resource" path="res://data/tracks/track01_network.tres" id="3_network"]
+[ext_resource type="Script" path="res://scenes/track/route_tracker.gd" id="4_tracker"]
+[ext_resource type="Script" path="res://scenes/track/gate.gd" id="5_gate"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
 size = Vector2(3580, 60)
@@ -15,15 +18,16 @@ size = Vector2(2400, 300)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_road_v"]
 size = Vector2(300, 1400)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_line_v"]
-size = Vector2(40, 300)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_road_chord"]
+size = Vector2(300, 800)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_line_h"]
-size = Vector2(300, 40)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_bar"]
+size = Vector2(300, 24)
 
 [node name="Track" type="Node2D" groups=["track"]]
 script = ExtResource("1_track")
 def = ExtResource("2_def")
+network = ExtResource("3_network")
 
 [node name="Grass" type="Polygon2D" parent="."]
 color = Color(0.2, 0.42, 0.18, 1)
@@ -51,6 +55,10 @@ polygon = PackedVector2Array(900, -700, 1200, -700, 1200, 700, 900, 700)
 color = Color(0.16, 0.34, 0.15, 1)
 polygon = PackedVector2Array(-900, -400, 900, -400, 900, 400, -900, 400)
 
+[node name="ChordRoad" type="Polygon2D" parent="."]
+color = Color(0.25, 0.25, 0.27, 1)
+polygon = PackedVector2Array(150, -400, 450, -400, 450, 400, 150, 400)
+
 [node name="StartLine" type="Polygon2D" parent="."]
 color = Color(0.92, 0.92, 0.92, 1)
 polygon = PackedVector2Array(-8, 400, 8, 400, 8, 700, -8, 700)
@@ -76,35 +84,28 @@ shape = SubResource("RectangleShape2D_road_v")
 position = Vector2(1050, 0)
 shape = SubResource("RectangleShape2D_road_v")
 
-[node name="StartLineArea" type="Area2D" parent="."]
-position = Vector2(0, 550)
-collision_layer = 0
+[node name="ChordRoad" type="CollisionShape2D" parent="RoadSurface"]
+position = Vector2(300, 0)
+shape = SubResource("RectangleShape2D_road_chord")
 
-[node name="Shape" type="CollisionShape2D" parent="StartLineArea"]
-shape = SubResource("RectangleShape2D_line_v")
+[node name="RouteTracker" type="Node" parent="."]
+script = ExtResource("4_tracker")
 
-[node name="Checkpoints" type="Node2D" parent="."]
+[node name="IslandGate" type="StaticBody2D" parent="."]
+position = Vector2(300, -384)
+script = ExtResource("5_gate")
+gate_id = "island_chord"
 
-[node name="CP0" type="Area2D" parent="Checkpoints"]
-position = Vector2(-1050, 0)
-collision_layer = 0
+[node name="Shape" type="CollisionShape2D" parent="IslandGate"]
+shape = SubResource("RectangleShape2D_gate_bar")
 
-[node name="Shape" type="CollisionShape2D" parent="Checkpoints/CP0"]
-shape = SubResource("RectangleShape2D_line_h")
+[node name="Bar" type="Polygon2D" parent="IslandGate"]
+color = Color(0.95, 0.55, 0.1, 1)
+polygon = PackedVector2Array(-150, -12, 150, -12, 150, 12, -150, 12)
 
-[node name="CP1" type="Area2D" parent="Checkpoints"]
-position = Vector2(0, -550)
-collision_layer = 0
-
-[node name="Shape" type="CollisionShape2D" parent="Checkpoints/CP1"]
-shape = SubResource("RectangleShape2D_line_v")
-
-[node name="CP2" type="Area2D" parent="Checkpoints"]
-position = Vector2(1050, 0)
-collision_layer = 0
-
-[node name="Shape" type="CollisionShape2D" parent="Checkpoints/CP2"]
-shape = SubResource("RectangleShape2D_line_h")
+[node name="BarStripes" type="Polygon2D" parent="IslandGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-90, -12, -50, -12, -50, 12, -90, 12)
 
 [node name="OuterWalls" type="StaticBody2D" parent="."]
 

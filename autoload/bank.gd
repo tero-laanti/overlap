@@ -1,24 +1,33 @@
 extends Node
 ## Economy and persistence. Pure data — never references scene nodes.
-## Each completed ghost lap pays the active track's base payout, so income
-## per second is ghost_slots × payout / lap_time and improves with every
-## PB, every upgrade-driven faster lap, and every hired ghost. State is
-## saved with store_var (plain data only, no serialized objects).
+## Every authored route keeps its own PB recording; each route's ghost
+## fleet pays that route's payout per completed ghost lap, so income per
+## second is Σ over routes of ghost_slots × payout / pb. Gates and route
+## discovery live here too: a lap on an undiscovered route discovers it.
+## State is saved with store_var (plain data only, no serialized objects).
 
 const SAVE_PATH := "user://save.dat"
 const SAVE_INTERVAL := 5.0
+const SAVE_VERSION := 3
 const EconomyDefScript = preload("res://autoload/economy_def.gd")
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 const UpgradeCatalogScript = preload("res://scenes/car/upgrade_catalog.gd")
+const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
+const GateDefScript = preload("res://scenes/track/gate_def.gd")
 const CATALOG: UpgradeCatalogScript = preload("res://data/upgrades/catalog.tres")
 const ECONOMY: EconomyDefScript = preload("res://data/economy.tres")
+## The route id every pre-network save's single best lap belongs to.
+const LEGACY_ROUTE_ID := "ring"
 
 var currency := 0.0
-var best_recording: LapRecordingScript
-var active_track_payout := 0.0
+## route_id -> LapRecording (the PB; pb time is recording.lap_time).
+var route_records := {}
+var discovered_routes: Array[String] = []
+var purchased_gates: Array[String] = []
 var upgrade_levels := {}
 var ghost_slots := 1
 
+var _network: TrackNetworkDefScript
 var _save_timer := 0.0
 var _dirty := false
 var _loaded_save_unix := 0.0
@@ -43,6 +52,23 @@ func _notification(what: int) -> void:
 		save_profile()
 
 
+func set_active_network(network: TrackNetworkDefScript) -> void:
+	_network = network
+	_apply_pending_offline_earnings()
+
+
+func route_payout(route_id: String) -> float:
+	if _network == null:
+		return 0.0
+	var route := _network.find_route(route_id)
+	return route.payout_per_lap if route else 0.0
+
+
+func route_pb(route_id: String) -> float:
+	var recording: LapRecordingScript = route_records.get(route_id)
+	return recording.lap_time if recording else 0.0
+
+
 ## ×2 for every fleet milestone reached (10/25/50 ghosts by default).
 func milestone_multiplier() -> float:
 	var m := 1.0
@@ -53,15 +79,12 @@ func milestone_multiplier() -> float:
 
 
 func income_per_second() -> float:
-	if best_recording == null or best_recording.lap_time <= 0.0:
-		return 0.0
-	return ghost_slots * active_track_payout * milestone_multiplier() \
-				/ best_recording.lap_time
-
-
-func set_active_track_payout(payout: float) -> void:
-	active_track_payout = payout
-	_apply_pending_offline_earnings()
+	var total := 0.0
+	for route_id: String in route_records:
+		var pb := route_pb(route_id)
+		if pb > 0.0:
+			total += ghost_slots * route_payout(route_id) / pb
+	return total * milestone_multiplier()
 
 
 func upgrade_level(id: String) -> int:
@@ -107,23 +130,64 @@ func try_buy_ghost_slot() -> bool:
 	return true
 
 
-func _on_ghost_lap_completed() -> void:
-	currency += active_track_payout * milestone_multiplier()
+func is_gate_purchased(gate_id: String) -> bool:
+	return gate_id in purchased_gates
+
+
+func gate_cost(gate_id: String) -> float:
+	if _network == null:
+		return INF
+	var gate := _network.find_gate(gate_id)
+	return gate.price if gate else INF
+
+
+func unpurchased_gates() -> Array[GateDefScript]:
+	var open: Array[GateDefScript] = []
+	if _network == null:
+		return open
+	for gate in _network.gates:
+		if not is_gate_purchased(gate.id):
+			open.append(gate)
+	return open
+
+
+func try_buy_gate(gate_id: String) -> bool:
+	if is_gate_purchased(gate_id):
+		return false
+	var cost := gate_cost(gate_id)
+	if currency < cost:
+		return false
+	currency -= cost
+	purchased_gates.append(gate_id)
+	save_profile()
+	Events.currency_changed.emit(currency)
+	Events.gate_purchased.emit(gate_id)
+	return true
+
+
+func _on_ghost_lap_completed(route_id: String) -> void:
+	currency += route_payout(route_id) * milestone_multiplier()
 	_dirty = true
 	Events.currency_changed.emit(currency)
 
 
 ## Active play always out-earns watching: your own laps pay a multiple of
-## the ghost payout.
-func _on_player_lap_completed(_lap_time: float, _is_best: bool) -> void:
-	currency += active_track_payout * ECONOMY.active_lap_multiplier \
+## the ghost payout. First lap on a route also discovers it.
+func _on_player_lap_completed(route_id: String, _lap_time: float, _is_best: bool) -> void:
+	currency += route_payout(route_id) * ECONOMY.active_lap_multiplier \
 			* milestone_multiplier()
 	_dirty = true
 	Events.currency_changed.emit(currency)
+	if route_id not in discovered_routes:
+		discovered_routes.append(route_id)
+		save_profile()
+		var route := _network.find_route(route_id) if _network else null
+		Events.route_discovered.emit(route_id,
+				route.display_name if route else route_id)
 
 
-func _on_best_lap_recorded(recording: LapRecordingScript) -> void:
-	best_recording = recording
+func _on_best_lap_recorded(route_id: String, recording: LapRecordingScript) -> void:
+	route_records[route_id] = recording
 	save_profile()
 
 
@@ -132,21 +196,25 @@ func save_profile() -> void:
 	if file == null:
 		push_error("Bank: cannot write save file: %s" % FileAccess.get_open_error())
 		return
-	var data := {
-		"version": 2,
+	var routes := {}
+	for route_id: String in route_records:
+		var recording: LapRecordingScript = route_records[route_id]
+		routes[route_id] = {
+			"sample_dt": recording.sample_dt,
+			"positions": recording.positions,
+			"rotations": recording.rotations,
+			"lap_time": recording.lap_time,
+		}
+	file.store_var({
+		"version": SAVE_VERSION,
 		"currency": currency,
 		"upgrade_levels": upgrade_levels,
 		"ghost_slots": ghost_slots,
 		"saved_at_unix": Time.get_unix_time_from_system(),
-	}
-	if best_recording != null:
-		data["best_lap"] = {
-			"sample_dt": best_recording.sample_dt,
-			"positions": best_recording.positions,
-			"rotations": best_recording.rotations,
-			"lap_time": best_recording.lap_time,
-		}
-	file.store_var(data)
+		"routes": routes,
+		"discovered_routes": discovered_routes,
+		"purchased_gates": purchased_gates,
+	})
 	_dirty = false
 	_save_timer = 0.0
 
@@ -164,14 +232,31 @@ func load_profile() -> void:
 	upgrade_levels = data.get("upgrade_levels", {})
 	ghost_slots = data.get("ghost_slots", 1)
 	_loaded_save_unix = data.get("saved_at_unix", 0.0)
+	if int(data.get("version", 1)) < 3:
+		_migrate_v2(data)
+	else:
+		for route_id: String in data.get("routes", {}):
+			route_records[route_id] = _recording_from(data["routes"][route_id])
+		discovered_routes.assign(data.get("discovered_routes", []))
+		purchased_gates.assign(data.get("purchased_gates", []))
+	Events.currency_changed.emit(currency)
+
+
+## v2 saves had a single best lap: it becomes the legacy route's record.
+func _migrate_v2(data: Dictionary) -> void:
 	var lap: Variant = data.get("best_lap")
 	if lap is Dictionary:
-		best_recording = LapRecordingScript.new()
-		best_recording.sample_dt = lap.get("sample_dt", 1.0 / 30.0)
-		best_recording.positions = lap.get("positions", PackedVector2Array())
-		best_recording.rotations = lap.get("rotations", PackedFloat32Array())
-		best_recording.lap_time = lap.get("lap_time", 0.0)
-	Events.currency_changed.emit(currency)
+		route_records[LEGACY_ROUTE_ID] = _recording_from(lap)
+		discovered_routes.append(LEGACY_ROUTE_ID)
+
+
+func _recording_from(lap: Dictionary) -> LapRecordingScript:
+	var recording := LapRecordingScript.new()
+	recording.sample_dt = lap.get("sample_dt", 1.0 / 30.0)
+	recording.positions = lap.get("positions", PackedVector2Array())
+	recording.rotations = lap.get("rotations", PackedFloat32Array())
+	recording.lap_time = lap.get("lap_time", 0.0)
+	return recording
 
 
 func _apply_pending_offline_earnings() -> void:

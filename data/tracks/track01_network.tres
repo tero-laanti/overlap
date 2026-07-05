@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="TrackNetworkDef" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scenes/track/track_network_def.gd" id="1"]
+[ext_resource type="Script" path="res://scenes/track/crossing_line_def.gd" id="2"]
+[ext_resource type="Script" path="res://scenes/track/route_def.gd" id="3"]
+[ext_resource type="Script" path="res://scenes/track/gate_def.gd" id="4"]
+
+[sub_resource type="Resource" id="Resource_line_start"]
+script = ExtResource("2")
+id = "start"
+a = Vector2(0, 400)
+b = Vector2(0, 700)
+
+[sub_resource type="Resource" id="Resource_line_west"]
+script = ExtResource("2")
+id = "west"
+a = Vector2(-900, 0)
+b = Vector2(-1200, 0)
+
+[sub_resource type="Resource" id="Resource_line_east"]
+script = ExtResource("2")
+id = "east"
+a = Vector2(900, 0)
+b = Vector2(1200, 0)
+
+[sub_resource type="Resource" id="Resource_line_chord"]
+script = ExtResource("2")
+id = "chord"
+a = Vector2(150, 0)
+b = Vector2(450, 0)
+
+[sub_resource type="Resource" id="Resource_route_ring"]
+script = ExtResource("3")
+id = "ring"
+display_name = "Grand Ring"
+edges = PackedStringArray("west", "east")
+par_time = 7.0
+payout_per_lap = 10.0
+
+[sub_resource type="Resource" id="Resource_route_cut"]
+script = ExtResource("3")
+id = "cut"
+display_name = "Island Cut"
+edges = PackedStringArray("west", "chord")
+par_time = 4.6
+payout_per_lap = 6.5
+
+[sub_resource type="Resource" id="Resource_gate_chord"]
+script = ExtResource("4")
+id = "island_chord"
+display_name = "Island Gate"
+price = 120.0
+
+[resource]
+script = ExtResource("1")
+start_line_id = "start"
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut")])
+gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord")])

@@ -2,25 +2,33 @@ extends Node
 ## Dev-only verification probe. Dormant unless user://autopilot.flag exists
 ## (created by tooling before a run). Runs a phased full-loop test with a
 ## waypoint autopilot: drive PB laps, idle to earn, buy a ghost slot and an
-## upgrade through the real Bank APIs, re-drive with the upgraded car, then
-## watch fleet income. Prints telemetry and saves screenshots to user://dev/.
-## Never active in release builds.
+## upgrade through the real Bank APIs, re-drive with the upgraded car, watch
+## fleet income, then buy the island gate and discover the Island Cut route.
+## Prints telemetry and saves screenshots to user://dev/. Never active in
+## release builds.
 
-enum Phase { DRIVE, EARN, SPEND, REDRIVE, WATCH, DONE }
+enum Phase { DRIVE, EARN, SPEND, REDRIVE, WATCH, BUY_GATE, DRIVE_CUT, WATCH_CUT, DONE }
 
 const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 150.0
+const TIMEOUT := 180.0
 const DRIVE_LAPS := 2
 const REDRIVE_LAPS := 2
+const CUT_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
 const WATCH_SECONDS := 16.0
+const WATCH_CUT_SECONDS := 12.0
+const GATE_ID := "island_chord"
 
-const WAYPOINTS: Array[Vector2] = [
+const RING_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1050, -550),
 	Vector2(1050, -550), Vector2(1050, 550),
+]
+const CUT_WAYPOINTS: Array[Vector2] = [
+	Vector2(-1050, 550), Vector2(-1050, -550),
+	Vector2(300, -550), Vector2(300, -100), Vector2(300, 550),
 ]
 const WAYPOINT_REACHED_DISTANCE := 240.0
 const STEER_DEADZONE := 0.06
@@ -38,9 +46,10 @@ var _next_screenshot := 0.0
 var _shot_index := 0
 var _held: Array[String] = []
 var _car: CarScript
+var _waypoints: Array[Vector2] = RING_WAYPOINTS
 var _waypoint_index := 0
 var _laps_done := 0
-var _redrive_target := 0
+var _lap_target := 0
 var _watch_until := 0.0
 var _stuck_time := 0.0
 var _reverse_until := 0.0
@@ -53,18 +62,21 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_car = get_tree().get_first_node_in_group("player_car")
 	Events.lap_completed.connect(_on_lap_completed)
-	Events.best_lap_recorded.connect(func(rec: LapRecordingScript) -> void:
-		print("[PROBE] best_lap_recorded samples=%d lap_time=%.2f" % [
-			rec.positions.size(), rec.lap_time]))
-	Events.ghost_lap_completed.connect(func() -> void:
-		print("[PROBE] ghost_lap_completed money=%.0f" % Bank.currency))
+	Events.best_lap_recorded.connect(func(route_id: String, rec: LapRecordingScript) -> void:
+		print("[PROBE] best_lap_recorded route=%s samples=%d lap_time=%.2f" % [
+			route_id, rec.positions.size(), rec.lap_time]))
+	Events.ghost_lap_completed.connect(func(route_id: String) -> void:
+		print("[PROBE] ghost_lap_completed route=%s money=%.0f" % [route_id, Bank.currency]))
+	Events.route_discovered.connect(func(route_id: String, display_name: String) -> void:
+		print("[PROBE] route_discovered id=%s name=%s" % [route_id, display_name]))
+	Events.gate_purchased.connect(func(gate_id: String) -> void:
+		print("[PROBE] gate_purchased id=%s money=%.0f" % [gate_id, Bank.currency]))
 	var track: TrackScript = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
-	print("[PROBE] loaded money=%.0f best=%.2f slots=%d" % [
-		Bank.currency,
-		Bank.best_recording.lap_time if Bank.best_recording else 0.0,
-		Bank.ghost_slots,
+	print("[PROBE] loaded money=%.0f ring_pb=%.2f slots=%d routes=%d" % [
+		Bank.currency, Bank.route_pb("ring"), Bank.ghost_slots,
+		Bank.discovered_routes.size(),
 	])
 
 
@@ -86,7 +98,7 @@ func _process(delta: float) -> void:
 			pass  # transitions inside _spend()
 		Phase.REDRIVE:
 			_drive()
-			if _laps_done >= _redrive_target:
+			if _laps_done >= _lap_target:
 				_release_all()
 				_watch_until = _elapsed + WATCH_SECONDS
 				var shop := get_node_or_null("/root/Main/Shop")
@@ -95,9 +107,24 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH, "watching fleet income")
 		Phase.WATCH:
 			if _elapsed >= _watch_until:
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d" % [
+				print("[PROBE] ring done money=%.0f income=%.2f/s slots=%d laps=%d" % [
+					Bank.currency, Bank.income_per_second(), Bank.ghost_slots, _laps_done,
+				])
+				_buy_gate()
+		Phase.BUY_GATE:
+			pass  # transitions inside _buy_gate()
+		Phase.DRIVE_CUT:
+			_drive()
+			if _laps_done >= _lap_target:
+				_release_all()
+				_watch_until = _elapsed + WATCH_CUT_SECONDS
+				_enter(Phase.WATCH_CUT, "watching both fleets")
+		Phase.WATCH_CUT:
+			if _elapsed >= _watch_until:
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
-					Bank.ghost_slots, _laps_done,
+					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
+					Bank.route_pb("cut"), get_tree().get_nodes_in_group("ghost").size(),
 				])
 				_enter(Phase.DONE, "finished")
 				set_process(false)
@@ -135,8 +162,18 @@ func _spend() -> void:
 		slot_ok, upgrade_ok, Bank.currency, Bank.ghost_slots,
 		_car.effective_stats().max_speed,
 	])
-	_redrive_target = _laps_done + REDRIVE_LAPS
+	_lap_target = _laps_done + REDRIVE_LAPS
 	_enter(Phase.REDRIVE, "clearing stale lap, then one upgraded lap")
+
+
+func _buy_gate() -> void:
+	_enter(Phase.BUY_GATE, "buying the island gate")
+	var gate_ok := Bank.try_buy_gate(GATE_ID)
+	print("[PROBE] bought gate=%s money=%.0f" % [gate_ok, Bank.currency])
+	_waypoints = CUT_WAYPOINTS
+	_waypoint_index = 0
+	_lap_target = _laps_done + CUT_LAPS
+	_enter(Phase.DRIVE_CUT, "driving the island cut")
 
 
 func _enter(phase: Phase, note: String) -> void:
@@ -158,10 +195,10 @@ func _drive() -> void:
 	else:
 		_stuck_time = 0.0
 
-	var target := WAYPOINTS[_waypoint_index]
+	var target := _waypoints[_waypoint_index]
 	if _car.global_position.distance_to(target) < WAYPOINT_REACHED_DISTANCE:
-		_waypoint_index = (_waypoint_index + 1) % WAYPOINTS.size()
-		target = WAYPOINTS[_waypoint_index]
+		_waypoint_index = (_waypoint_index + 1) % _waypoints.size()
+		target = _waypoints[_waypoint_index]
 
 	var heading := _car.rotation - PI / 2.0
 	var desired := (target - _car.global_position).angle()
@@ -178,9 +215,10 @@ func _drive() -> void:
 	_hold(wanted)
 
 
-func _on_lap_completed(lap_time: float, is_best: bool) -> void:
+func _on_lap_completed(route_id: String, lap_time: float, is_best: bool) -> void:
 	_laps_done += 1
-	print("[PROBE] LAP %d completed in %.2fs best=%s" % [_laps_done, lap_time, is_best])
+	print("[PROBE] LAP %d route=%s completed in %.2fs best=%s" % [
+		_laps_done, route_id, lap_time, is_best])
 
 
 func _hold(wanted: Array[String]) -> void:

@@ -1,8 +1,9 @@
 extends Node2D
-## Owns the ghost instances on the track. Every ghost replays the single
-## best lap — beating your PB upgrades the whole fleet at once. Fleet size
-## comes from Bank.ghost_slots; clones are staggered evenly around the lap
-## so they spread instead of stacking.
+## Owns the ghost fleets, one per route that has a PB recording. Every
+## ghost in a route's fleet replays that route's best lap — beating a
+## route PB upgrades its whole fleet at once. Fleet size comes from
+## Bank.ghost_slots (applies to each route); clones are staggered evenly
+## around the lap so they spread instead of stacking.
 
 const GHOST_SCENE := preload("res://scenes/ghost/ghost.tscn")
 const GhostScript = preload("res://scenes/ghost/ghost.gd")
@@ -12,32 +13,47 @@ const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 const TINT_ALPHA_STEPS := 3
 const TINT_HUE_STEPS := 5
 
-var _recording: LapRecordingScript
+var _recordings := {}
 
 
 func _ready() -> void:
 	Events.best_lap_recorded.connect(_on_best_lap_recorded)
-	Events.ghost_hired.connect(func(_count: int) -> void: _sync())
+	Events.ghost_hired.connect(func(_count: int) -> void: _sync_all())
 
 
-func _on_best_lap_recorded(recording: LapRecordingScript) -> void:
-	_recording = recording
-	_sync()
+func _on_best_lap_recorded(route_id: String, recording: LapRecordingScript) -> void:
+	_recordings[route_id] = recording
+	_sync_route(route_id)
 
 
-func _sync() -> void:
-	if _recording == null:
-		return
-	while get_child_count() < Bank.ghost_slots:
+func _sync_all() -> void:
+	for route_id: String in _recordings:
+		_sync_route(route_id)
+
+
+func _sync_route(route_id: String) -> void:
+	var recording: LapRecordingScript = _recordings[route_id]
+	var fleet := _fleet_for(route_id)
+	while fleet.get_child_count() < Bank.ghost_slots:
 		var ghost: GhostScript = GHOST_SCENE.instantiate()
-		ghost.lap_finished.connect(Events.ghost_lap_completed.emit)
-		add_child(ghost)
-	var count := get_child_count()
+		ghost.lap_finished.connect(func() -> void:
+			Events.ghost_lap_completed.emit(route_id))
+		fleet.add_child(ghost)
+	var count := fleet.get_child_count()
 	for i in count:
-		var ghost: GhostScript = get_child(i)
-		ghost.playback_offset = float(i) * _recording.lap_time / count
+		var ghost: GhostScript = fleet.get_child(i)
+		ghost.playback_offset = float(i) * recording.lap_time / count
 		ghost.modulate = _fleet_tint(i)
-		ghost.set_recording(_recording)
+		ghost.set_recording(recording)
+
+
+func _fleet_for(route_id: String) -> Node2D:
+	var fleet: Node2D = get_node_or_null(NodePath(route_id))
+	if fleet == null:
+		fleet = Node2D.new()
+		fleet.name = route_id
+		add_child(fleet)
+	return fleet
 
 
 ## Stable per-index variation within the cyan-blue family; never drifts
