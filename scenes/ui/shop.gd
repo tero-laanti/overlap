@@ -40,6 +40,12 @@ func _build_rows() -> void:
 	ghost_row.button.pressed.connect(Bank.try_buy_ghost_slot)
 	_ghost_label = ghost_row.label
 	_ghost_button = ghost_row.button
+	if OS.is_debug_build():
+		var reset_row := _make_row("DEBUG · wipe save")
+		(reset_row.button as Button).text = "RESET"
+		reset_row.button.pressed.connect(func() -> void:
+			Bank.reset_profile()
+			get_tree().reload_current_scene.call_deferred())
 
 
 func _build_gate_rows() -> void:

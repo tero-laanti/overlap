@@ -8,17 +8,15 @@ extends Node
 
 const SAVE_PATH := "user://save.dat"
 const SAVE_INTERVAL := 5.0
-const SAVE_VERSION := 3
 const EconomyDefScript = preload("res://autoload/economy_def.gd")
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 const UpgradeCatalogScript = preload("res://scenes/car/upgrade_catalog.gd")
 const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
 const GateDefScript = preload("res://scenes/track/gate_def.gd")
 const RouteDefScript = preload("res://scenes/track/route_def.gd")
+const BankSaveScript = preload("res://autoload/bank_save.gd")
 const CATALOG: UpgradeCatalogScript = preload("res://data/upgrades/catalog.tres")
 const ECONOMY: EconomyDefScript = preload("res://data/economy.tres")
-## The route id every pre-network save's single best lap belongs to.
-const LEGACY_ROUTE_ID := "ring"
 
 var currency := 0.0
 ## route_id -> LapRecording (the PB; pb time is recording.lap_time).
@@ -218,71 +216,31 @@ func _on_best_lap_recorded(route_id: String, recording: LapRecordingScript) -> v
 
 
 func save_profile() -> void:
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file == null:
-		push_error("Bank: cannot write save file: %s" % FileAccess.get_open_error())
-		return
-	var routes := {}
-	for route_id: String in route_records:
-		var recording: LapRecordingScript = route_records[route_id]
-		routes[route_id] = {
-			"sample_dt": recording.sample_dt,
-			"positions": recording.positions,
-			"rotations": recording.rotations,
-			"lap_time": recording.lap_time,
-		}
-	file.store_var({
-		"version": SAVE_VERSION,
-		"currency": currency,
-		"upgrade_levels": upgrade_levels,
-		"ghost_slots": ghost_slots,
-		"saved_at_unix": Time.get_unix_time_from_system(),
-		"routes": routes,
-		"discovered_routes": discovered_routes,
-		"purchased_gates": purchased_gates,
-	})
+	BankSaveScript.write(SAVE_PATH, self)
 	_dirty = false
 	_save_timer = 0.0
 
 
 func load_profile() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		return
-	var data: Variant = file.get_var()
-	if typeof(data) != TYPE_DICTIONARY:
-		return
-	currency = data.get("currency", 0.0)
-	upgrade_levels = data.get("upgrade_levels", {})
-	ghost_slots = data.get("ghost_slots", 1)
-	_loaded_save_unix = data.get("saved_at_unix", 0.0)
-	if int(data.get("version", 1)) < 3:
-		_migrate_v2(data)
-	else:
-		for route_id: String in data.get("routes", {}):
-			route_records[route_id] = _recording_from(data["routes"][route_id])
-		discovered_routes.assign(data.get("discovered_routes", []))
-		purchased_gates.assign(data.get("purchased_gates", []))
+	_loaded_save_unix = BankSaveScript.read_into(SAVE_PATH, self)
 	Events.currency_changed.emit(currency)
 
 
-## v2 saves had a single best lap: it becomes the legacy route's record.
-func _migrate_v2(data: Dictionary) -> void:
-	var lap: Variant = data.get("best_lap")
-	if lap is Dictionary:
-		route_records[LEGACY_ROUTE_ID] = _recording_from(lap)
-		discovered_routes.append(LEGACY_ROUTE_ID)
-
-
-func _recording_from(lap: Dictionary) -> LapRecordingScript:
-	var recording := LapRecordingScript.new()
-	recording.sample_dt = lap.get("sample_dt", 1.0 / 30.0)
-	recording.positions = lap.get("positions", PackedVector2Array())
-	recording.rotations = lap.get("rotations", PackedFloat32Array())
-	recording.lap_time = lap.get("lap_time", 0.0)
-	return recording
+## Dev tool: wipe every bit of progress and the save file. Callers are
+## expected to reload the scene afterwards so nodes rebuild from zero.
+func reset_profile() -> void:
+	currency = 0.0
+	route_records.clear()
+	discovered_routes.clear()
+	purchased_gates.clear()
+	upgrade_levels.clear()
+	ghost_slots = 1
+	_loaded_save_unix = 0.0
+	_dirty = false
+	_save_timer = 0.0
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(SAVE_PATH)
+	Events.currency_changed.emit(currency)
 
 
 func _apply_pending_offline_earnings() -> void:

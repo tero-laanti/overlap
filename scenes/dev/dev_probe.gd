@@ -59,6 +59,11 @@ func _ready() -> void:
 	if not (OS.is_debug_build() and FileAccess.file_exists(FLAG_PATH)):
 		set_process(false)
 		return
+	# Every probe run starts from zero through the real reset path, so
+	# the debug wipe is exercised on every verification loop. Runs
+	# before Main._ready, which then adopts the (now empty) records.
+	Bank.reset_profile()
+	print("[PROBE] profile reset")
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_car = get_tree().get_first_node_in_group("player_car")
 	Events.lap_completed.connect(_on_lap_completed)
