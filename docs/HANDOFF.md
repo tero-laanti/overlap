@@ -20,12 +20,15 @@ zero script errors.
 
 ## Highest-priority next steps, in order
 
-1. **Get the human's feel sign-off.** The drift tuning (esp.
-   drift_grip 0.65) and trail visibility have NEVER been human-tested.
-   If drift feels icy, the retreat position is drift_grip 1.2–1.4; if
-   trails are subtle, raise drift_trail_width or the trail color alpha
-   (all in data/cars/starter_car.tres + car.gd _make_trail). Do not
-   build more feel-dependent systems before this sign-off.
+1. ~~Get the human's feel sign-off.~~ DONE 2026-07-05: human played and
+   signed off the feel as-is. Follow-up fixes landed on main: drift
+   trails are per-stint Line2Ds (fade after 4 s; fixes the
+   stint-connecting streak) and also draw from keyless sideways scrub
+   (threshold drift_trail_min_lateral_speed = 120); road-edge walls and
+   island collision were replaced by slowing grass (car queries the
+   RoadSurface Area2D, physics layer 2; grass knobs in
+   starter_car.tres). Sand/real-wall track elements are a wanted
+   follow-up. Walls remain at the world edge only.
 2. **Cherry-pick the surviving polish work.** Branch
    `polish/quality-pass` (worktree .worktrees/polish, 4 commits) — its
    steering-floor commit is SUPERSEDED by main's data-backed version;

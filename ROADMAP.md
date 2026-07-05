@@ -18,7 +18,12 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   Follow-up playtest chose the drift-heavy candidate over kart/GT; main now
   biases slightly more drifty and adds tire trails while drifting. Rejected
   driving-style branches/worktrees were removed after folding the chosen feel
-  into main.
+  into main. Human playtest 2026-07-05: feel signed off as-is. Trails now
+  spawn a fresh Line2D pair per drift stint (old ones fade after 4 s — fixes
+  stints connecting across the map) and also draw from keyless sideways
+  scrub. Road-edge walls and island collision replaced by slowing grass
+  (grass_speed_multiplier/grass_deceleration in starter_car.tres); walls
+  remain only at the world edge.
 
 ## Slice 2 — Laps exist
 - [x] Start line + 3 checkpoints on Track; ordered lap validation
