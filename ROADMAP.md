@@ -27,10 +27,15 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   screenshot. Track owns validity, RaceState owns time, HUD reads only.
 
 ## Slice 3 — Your ghost drives
-- [ ] LapRecording resource; RaceState records during each lap
-- [ ] Ghost scene replaying the best lap on loop, translucent
-- **Accept:** set a lap, ghost appears and retraces it accurately while you
-      keep driving.
+- [x] LapRecording resource; RaceState records during each lap (30 Hz)
+- [x] Ghost scene replaying the best lap on loop, translucent; GhostFleet
+      re-arms every ghost on a new PB
+- [x] **Accept:** set a lap, ghost appears and retraces it accurately while
+      you keep driving.
+- Notes: verified 2026-07-05 — 214 samples @ 33.3 ms for a 7.10 s lap;
+  ghost traced the recorded line within interpolation error while the car
+  drove a different line; three consecutive PBs re-armed the fleet each
+  time. Ghost has no physics and no collision (hard rule 5 holds).
 
 ## Slice 4 — Ghosts pay
 - [ ] Bank autoload (currency, income = track_value / lap_time per ghost)

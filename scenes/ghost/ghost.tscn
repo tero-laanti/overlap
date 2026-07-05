@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ghost/ghost.gd" id="1_ghost"]
+
+[node name="Ghost" type="Node2D" groups=["ghost"]]
+modulate = Color(1, 1, 1, 0.45)
+script = ExtResource("1_ghost")
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.35, 0.8, 1, 1)
+polygon = PackedVector2Array(-20, 35, 20, 35, 20, -15, 12, -35, -12, -35, -20, -15)
+
+[node name="Windshield" type="Polygon2D" parent="."]
+color = Color(0.1, 0.25, 0.35, 1)
+polygon = PackedVector2Array(-14, -8, 14, -8, 10, -22, -10, -22)

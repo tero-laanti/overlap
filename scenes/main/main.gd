@@ -7,6 +7,7 @@ extends Node2D
 
 
 func _ready() -> void:
+	_race_state.car = $Car
 	_track.lap_started.connect(_race_state.on_lap_started)
 	_track.lap_completed.connect(_race_state.on_lap_completed)
 	var hud := $HUD

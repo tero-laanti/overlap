@@ -11,7 +11,7 @@ const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
 const TIMEOUT := 60.0
-const TARGET_LAPS := 2
+const TARGET_LAPS := 3
 
 ## Corner apex targets at road center, clockwise from the spawn point.
 const WAYPOINTS: Array[Vector2] = [
@@ -40,6 +40,9 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_car = get_tree().get_first_node_in_group("player_car")
 	Events.lap_completed.connect(_on_lap_completed)
+	Events.best_lap_recorded.connect(func(rec: LapRecording) -> void:
+		print("[PROBE] best_lap_recorded samples=%d dt=%.4f lap_time=%.2f" % [
+			rec.positions.size(), rec.sample_dt, rec.lap_time]))
 	var track: Track = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
@@ -57,10 +60,14 @@ func _process(delta: float) -> void:
 
 	if _elapsed >= _next_telemetry:
 		_next_telemetry += TELEMETRY_INTERVAL
-		print("[PROBE] t=%.1f pos=(%.0f, %.0f) speed=%.0f wp=%d" % [
+		var line := "[PROBE] t=%.1f pos=(%.0f, %.0f) speed=%.0f wp=%d" % [
 			_elapsed, _car.global_position.x, _car.global_position.y,
 			_car.velocity.length(), _waypoint_index,
-		])
+		]
+		var ghost: Ghost = get_tree().get_first_node_in_group("ghost")
+		if ghost != null:
+			line += " ghost=(%.0f, %.0f)" % [ghost.global_position.x, ghost.global_position.y]
+		print(line)
 
 	if _elapsed >= _next_screenshot:
 		_next_screenshot += SCREENSHOT_INTERVAL
