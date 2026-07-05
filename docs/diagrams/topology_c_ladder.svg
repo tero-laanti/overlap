@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="Menlo, monospace">
+  <rect width="800" height="600" fill="#17191d"/>
+  <text x="30" y="42" fill="#e8e8ea" font-size="22" font-weight="bold">C · Interchange Ladder</text>
+  <text x="30" y="66" fill="#9aa0a8" font-size="13">two concentric rings + 3 gated rungs (one jump-only soft gate)</text>
+
+  <!-- outer ring -->
+  <rect x="150" y="120" width="500" height="360" rx="110" fill="none" stroke="#4a4a52" stroke-width="26"/>
+  <!-- inner ring -->
+  <rect x="260" y="210" width="280" height="180" rx="70" fill="none" stroke="#4a4a52" stroke-width="26"/>
+  <!-- rungs -->
+  <path d="M 205 300 L 260 300" stroke="#3c3c44" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="M 540 300 L 595 300" stroke="#3c3c44" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="M 400 210 L 400 133" stroke="#2e3a46" stroke-width="26" stroke-linecap="round" fill="none"/>
+
+  <!-- start line on outer bottom -->
+  <rect x="394" y="466" width="12" height="28" fill="#ffffff"/>
+  <text x="418" y="512" fill="#ffffff" font-size="12">START</text>
+
+  <!-- gates -->
+  <g stroke="#e6b43c" stroke-width="8">
+    <line x1="232" y1="286" x2="232" y2="314"/>
+    <line x1="567" y1="286" x2="567" y2="314"/>
+  </g>
+  <g stroke="#c85aff" stroke-width="8">
+    <line x1="386" y1="172" x2="414" y2="172"/>
+  </g>
+  <g font-size="12">
+    <text x="150" y="270" fill="#e6b43c">G1 west rung</text>
+    <text x="560" y="270" fill="#e6b43c">G2 east rung</text>
+    <text x="420" y="168" fill="#c85aff">JUMP rung (soft gate · Jump Kit)</text>
+  </g>
+
+  <!-- decision points -->
+  <g fill="#57c8ff">
+    <circle cx="205" cy="300" r="7"/><circle cx="595" cy="300" r="7"/>
+    <circle cx="400" cy="196" r="7"/><circle cx="400" cy="133" r="7"/>
+    <circle cx="260" cy="300" r="7"/>
+  </g>
+
+  <g fill="#9aa0a8" font-size="13">
+    <text x="30" y="540">decision points 5 · gates 2 + 1 soft · authored routes 14–16 (theoretical ~32)</text>
+    <text x="30" y="560">+ richest combinatorics per segment · inner=safe / outer=fast risk grammar</text>
+    <text x="30" y="580">− least legible; needs strict grammar or players get lost in the middle</text>
+  </g>
+  <g font-size="11" fill="#9aa0a8">
+    <circle cx="612" cy="536" r="6" fill="#57c8ff"/><text x="624" y="540">decision point</text>
+    <line x1="604" y1="556" x2="620" y2="556" stroke="#e6b43c" stroke-width="6"/><text x="624" y="560">purchase gate</text>
+    <line x1="604" y1="576" x2="620" y2="576" stroke="#c85aff" stroke-width="6"/><text x="624" y="580">upgrade soft gate</text>
+  </g>
+</svg>

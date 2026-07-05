@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="Menlo, monospace">
+  <rect width="800" height="600" fill="#17191d"/>
+  <text x="30" y="42" fill="#e8e8ea" font-size="22" font-weight="bold">D · Spiral Annex</text>
+  <text x="30" y="66" fill="#9aa0a8" font-size="13">annexed rings all share ONE start straight + gated cross-cut</text>
+
+  <!-- big ring -->
+  <path d="M 240 430 L 240 150 Q 240 110 290 110 L 660 110 Q 710 110 710 160 L 710 390 Q 710 430 660 430 Z"
+        fill="none" stroke="#2e3a46" stroke-width="26" stroke-linejoin="round"/>
+  <!-- medium ring -->
+  <path d="M 240 430 L 240 220 Q 240 180 290 180 L 540 180 Q 580 180 580 220 L 580 390 Q 580 430 540 430 Z"
+        fill="none" stroke="#3c3c44" stroke-width="26" stroke-linejoin="round"/>
+  <!-- small ring (starter) -->
+  <path d="M 240 430 L 240 290 Q 240 250 290 250 L 420 250 Q 460 250 460 290 L 460 390 Q 460 430 420 430 Z"
+        fill="none" stroke="#4a4a52" stroke-width="26" stroke-linejoin="round"/>
+  <!-- shared start straight emphasized -->
+  <path d="M 240 430 L 710 430" fill="none" stroke="#55555e" stroke-width="26" stroke-linecap="round"/>
+  <!-- cross cut -->
+  <path d="M 460 250 L 580 180" fill="none" stroke="#2e3a46" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- start line -->
+  <rect x="330" y="416" width="12" height="28" fill="#ffffff"/>
+  <text x="300" y="470" fill="#ffffff" font-size="12">START · shared straight = ghost river</text>
+
+  <!-- gates at peel-offs -->
+  <g stroke="#e6b43c" stroke-width="8">
+    <line x1="446" y1="238" x2="474" y2="252"/>
+    <line x1="566" y1="168" x2="594" y2="182"/>
+    <line x1="504" y1="204" x2="524" y2="222"/>
+  </g>
+  <g fill="#e6b43c" font-size="12">
+    <text x="478" y="240">G1 ring 2</text>
+    <text x="600" y="172">G2 ring 3</text>
+    <text x="528" y="234">G3 cross-cut</text>
+  </g>
+
+  <!-- decision points -->
+  <g fill="#57c8ff">
+    <circle cx="240" cy="290" r="7"/><circle cx="240" cy="220" r="7"/><circle cx="460" cy="250" r="7"/>
+  </g>
+
+  <g fill="#9aa0a8" font-size="13">
+    <text x="30" y="540">decision points 3 · gates 3 · authored routes 7–9 (theoretical ~12)</text>
+    <text x="30" y="560">+ strongest single image: every fleet shares the start straight, forever thickening</text>
+    <text x="30" y="580">− least variety per gate · long rings make income normalization critical</text>
+  </g>
+  <g font-size="11" fill="#9aa0a8">
+    <circle cx="612" cy="536" r="6" fill="#57c8ff"/><text x="624" y="540">decision point</text>
+    <line x1="604" y1="556" x2="620" y2="556" stroke="#e6b43c" stroke-width="6"/><text x="624" y="560">purchasable gate</text>
+    <line x1="604" y1="576" x2="620" y2="576" stroke="#55555e" stroke-width="6"/><text x="624" y="580">shared straight</text>
+  </g>
+</svg>

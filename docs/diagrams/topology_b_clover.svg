@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="Menlo, monospace">
+  <rect width="800" height="600" fill="#17191d"/>
+  <text x="30" y="42" fill="#e8e8ea" font-size="22" font-weight="bold">B · Clover  (recommended)</text>
+  <text x="30" y="66" fill="#9aa0a8" font-size="13">hub ring + 3 annexed petals sharing hub segments + petal-linker</text>
+
+  <!-- petals (share an arc with the hub) -->
+  <circle cx="270" cy="210" r="110" fill="none" stroke="#3c3c44" stroke-width="26"/>
+  <circle cx="530" cy="210" r="110" fill="none" stroke="#3c3c44" stroke-width="26"/>
+  <circle cx="400" cy="430" r="105" fill="none" stroke="#3c3c44" stroke-width="26"/>
+  <!-- petal linker (knowledge route enabler) -->
+  <path d="M 270 100 C 340 40 460 40 530 100" fill="none" stroke="#2e3a46" stroke-width="26" stroke-linecap="round"/>
+  <!-- hub ring drawn last: overlap reads as shared asphalt -->
+  <circle cx="400" cy="300" r="120" fill="none" stroke="#4a4a52" stroke-width="26"/>
+
+  <!-- start line on hub -->
+  <rect x="394" y="406" width="12" height="28" fill="#ffffff"/>
+  <text x="418" y="452" fill="#ffffff" font-size="12">START</text>
+
+  <!-- gates at petal mouths -->
+  <g stroke="#e6b43c" stroke-width="8">
+    <line x1="306" y1="222" x2="330" y2="240"/>
+    <line x1="494" y1="222" x2="470" y2="240"/>
+    <line x1="330" y1="382" x2="352" y2="366"/>
+    <line x1="286" y1="96" x2="306" y2="112"/>
+  </g>
+  <g fill="#e6b43c" font-size="12">
+    <text x="216" y="252">G1 sand petal</text>
+    <text x="500" y="252">G2 night petal</text>
+    <text x="238" y="392">G3 cliff petal</text>
+    <text x="312" y="94">G4 ridge linker (knowledge route)</text>
+  </g>
+
+  <!-- decision points where petals meet hub -->
+  <g fill="#57c8ff">
+    <circle cx="318" cy="232" r="7"/><circle cx="482" cy="232" r="7"/>
+    <circle cx="341" cy="373" r="7"/><circle cx="459" cy="373" r="7"/>
+  </g>
+
+  <g fill="#9aa0a8" font-size="13">
+    <text x="30" y="540">decision points 4 · gates 4+1 · authored routes 12–14 (theoretical ~28)</text>
+    <text x="30" y="560">+ purest map-growth fantasy · themed petals · hub = ghost-overlap showcase</text>
+    <text x="30" y="580">+ scales by adding petals · linker gate is the built-in knowledge route</text>
+  </g>
+  <g font-size="11" fill="#9aa0a8">
+    <circle cx="612" cy="536" r="6" fill="#57c8ff"/><text x="624" y="540">decision point</text>
+    <line x1="604" y1="556" x2="620" y2="556" stroke="#e6b43c" stroke-width="6"/><text x="624" y="560">purchasable gate</text>
+    <line x1="604" y1="576" x2="620" y2="576" stroke="#2e3a46" stroke-width="6"/><text x="624" y="580">late-game link</text>
+  </g>
+</svg>

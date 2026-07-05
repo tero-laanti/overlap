@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="Menlo, monospace">
+  <rect width="800" height="600" fill="#17191d"/>
+  <text x="30" y="42" fill="#e8e8ea" font-size="22" font-weight="bold">A · Pretzel Ring</text>
+  <text x="30" y="66" fill="#9aa0a8" font-size="13">track01 ring + 2 gated chords + gated outer bulge</text>
+
+  <!-- outer bulge (right side detour) -->
+  <path d="M 620 180 C 740 180 740 420 620 420" fill="none" stroke="#3c3c44" stroke-width="26" stroke-linecap="round"/>
+  <!-- main ring -->
+  <rect x="180" y="140" width="440" height="320" rx="90" fill="none" stroke="#4a4a52" stroke-width="26"/>
+  <!-- chord: vertical through island -->
+  <path d="M 400 140 L 400 460" fill="none" stroke="#3c3c44" stroke-width="26" stroke-linecap="round"/>
+  <!-- chord: horizontal through island -->
+  <path d="M 180 300 L 620 300" fill="none" stroke="#3c3c44" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- start line -->
+  <rect x="284" y="446" width="10" height="28" fill="#ffffff"/>
+  <text x="262" y="502" fill="#ffffff" font-size="12">START</text>
+
+  <!-- gates -->
+  <g stroke="#e6b43c" stroke-width="8">
+    <line x1="386" y1="168" x2="414" y2="168"/>
+    <line x1="208" y1="286" x2="208" y2="314"/>
+    <line x1="612" y1="196" x2="640" y2="212"/>
+  </g>
+  <g fill="#e6b43c" font-size="12">
+    <text x="422" y="176">G1 chord·jump ramp</text>
+    <text x="220" y="284">G2 chord·gravel</text>
+    <text x="648" y="206">G3 bulge·highspeed</text>
+  </g>
+
+  <!-- decision points -->
+  <g fill="#57c8ff">
+    <circle cx="400" cy="153" r="7"/><circle cx="193" cy="300" r="7"/><circle cx="620" cy="186" r="7"/>
+  </g>
+
+  <g fill="#9aa0a8" font-size="13">
+    <text x="30" y="540">decision points 3 · gates 3 · authored routes 8 (theoretical 12)</text>
+    <text x="30" y="560">+ fastest to ship (extends track01) · figure-8 ghost crossovers at center</text>
+    <text x="30" y="580">− smallest ceiling; chords must differ hard (ramp vs gravel) to justify identity</text>
+  </g>
+  <g font-size="11" fill="#9aa0a8">
+    <circle cx="612" cy="536" r="6" fill="#57c8ff"/><text x="624" y="540">decision point</text>
+    <line x1="604" y1="556" x2="620" y2="556" stroke="#e6b43c" stroke-width="6"/><text x="624" y="560">purchasable gate</text>
+    <line x1="604" y1="576" x2="620" y2="576" stroke="#3c3c44" stroke-width="6"/><text x="624" y="580">gated road</text>
+  </g>
+</svg>
