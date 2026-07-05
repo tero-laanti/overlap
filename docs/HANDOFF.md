@@ -44,8 +44,13 @@ zero script errors.
    parallel to it and never cross. Probe now covers the whole flow
    (BUY_GATE/DRIVE_CUT/WATCH_CUT phases). Human feel pass on the cut
    route + gate UX still pending.
-4. Next, in order: route log UI, then the Path2D road pipeline
-   (research doc has the exact recipe), then Clover petal 1.
+4. ~~Route log UI~~ DONE 2026-07-05 (R key; cards/clues/counter; gate
+   also hardened — wider bar + chord_mouth line in the cut's edges so
+   grass-flanking validates nothing). Next, in order: the Path2D road
+   pipeline (research doc has the exact recipe; NOTE — preserve the
+   current drivable geometry exactly on the first pass, sharp mitered
+   corners, so car feel doesn't change; curves arrive with the petals),
+   then Clover petal 1 (theme + risk grammar + mastery medals).
 
 ## Verification workflow (mandatory before any commit)
 

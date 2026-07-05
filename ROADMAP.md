@@ -78,7 +78,9 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 
 ## Slice 6 — Idle game shape
 - [x] Offline earnings on launch ("While you were away…")
-- [ ] More ghost slots, cost curves from data/
+- [x] More ghost slots, cost curves from data/ (already live since slice 5:
+      unlimited slots, cost = ghost_base_cost × growth^n from economy.tres;
+      slots apply per route fleet since slice 7)
 - [x] ~~Second track (TrackDef unlock)~~ SUBSUMED by the gate network
       (slice 7): new asphalt arrives as gated routes on one growing
       network, not separate track scenes.
@@ -94,7 +96,10 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       route detection (RouteTracker, no Area2D checkpoints), per-route
       PB/recording/ghost fleet in Bank (save v3 + v2 migration),
       route-discovery toast, par-normalized payouts.
-- [ ] Route log UI (cards, silhouettes, X/N counter)
+- [x] Route log UI (R key): full cards (name/PB/income) for discovered,
+      ??? + authored clue for hinted (gates owned, undriven), X/N counter.
+      Gate hardened: 700 px bar + chord_mouth line required in the cut's
+      edge sequence, so flanking the gate over grass validates nothing.
 - [ ] Path2D road pipeline (curved segments; needed before petals)
 - [ ] Clover petal 1 (theme + risk grammar + mastery medals)
 - **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
