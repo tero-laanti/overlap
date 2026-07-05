@@ -60,7 +60,16 @@ zero script errors.
    it. Human feel pass on the petal curve pending. A debug save wipe
    lives in the GARAGE (debug builds only) and DevProbe resets through
    it every run.
-7. Next: petals 2-3 with themes/risk grammar, the Jump Kit gateway
+7. Mastery/pacing pass DONE 2026-07-05 (human-directed): medals are a
+   per-route purchase (GARAGE "Mastery:" rows), pars authored from
+   DevCalibrate maxed-car runs (user://calibrate.flag — never together
+   with autopilot.flag; rerun + re-author pars after ANY handling or
+   catalog change), Top Speed capped Lv 3 so racing lines beat
+   reflexes, GARAGE evolves via ShopPacing (upgrades by total levels,
+   one gate at a time, mastery per discovered route), crossing lines
+   extended over grass aprons so wide racing lines register. DevDriver
+   (shared autopilot) brakes into sharp turns.
+8. Next: petals 2-3 with themes/risk grammar, the Jump Kit gateway
    moment, knowledge route, gate-exhausted badges. Border/curb
    rendering (two-layer overdraw, borders below all surfaces — beware
    z_index vs drift-trail draw order) can land with petal 2's theme.

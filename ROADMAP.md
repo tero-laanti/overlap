@@ -108,8 +108,15 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       the ring; routes Dune Bend + Twin Cut (two-gate combo, hinted until
       driven); mastery medals from PB vs par (data/economy.tres knobs)
       multiply that route's fleet income. Probe-verified; pars set so
-      autopilot-clean laps land silver. Human feel pass on the curve +
-      Twin Cut par (never driven) still pending.
+      autopilot-clean laps land silver. Human feel pass on the curve
+      still pending.
+- [x] Mastery is purchasable per route (RouteDef.medal_unlock_cost) and
+      the GARAGE evolves (ShopPacing: upgrades reveal by total levels,
+      one gate at a time, mastery rows per discovered route). Pars are
+      authored from DevCalibrate maxed-car runs (user://calibrate.flag —
+      rerun after any handling/catalog change); Top Speed capped at Lv 3
+      to keep racing lines beating reflexes. Maxed bot = silver on all
+      four routes; gold = beat the bot.
 - [ ] Petals 2-3, Jump Kit gateway upgrade, knowledge route,
       gate-exhausted badges (see design §2 rules 7-10)
 - **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
