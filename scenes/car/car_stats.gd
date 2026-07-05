@@ -23,9 +23,13 @@ extends Resource
 @export var steering_floor_min_speed := 20.0
 ## Minimum vehicle speed before held drift draws tire trails.
 @export var drift_trail_min_speed := 140.0
-## Minimum sideways speed that also qualifies as visible tire scrub.
-@export var drift_trail_min_lateral_speed := 35.0
+## Minimum sideways speed that draws tire scrub even without the drift key.
+@export var drift_trail_min_lateral_speed := 120.0
 ## World-space distance between trail points.
 @export var drift_trail_spacing := 8.0
 @export var drift_trail_max_points := 180
 @export var drift_trail_width := 7.0
+## Seconds a finished trail stays at full strength before fading.
+@export var drift_trail_fade_delay := 4.0
+## Seconds the fade-out itself takes.
+@export var drift_trail_fade_time := 1.5

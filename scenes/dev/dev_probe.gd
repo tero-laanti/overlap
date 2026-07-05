@@ -116,10 +116,10 @@ func _process(delta: float) -> void:
 	if _elapsed >= _next_telemetry:
 		_next_telemetry += TELEMETRY_INTERVAL
 		var ghosts := get_tree().get_nodes_in_group("ghost")
-		print("[PROBE] t=%.1f phase=%s pos=(%.0f, %.0f) speed=%.0f money=%.0f ghosts=%d" % [
+		print("[PROBE] t=%.1f phase=%s pos=(%.0f, %.0f) speed=%.0f money=%.0f ghosts=%d trails=%d" % [
 			_elapsed, Phase.keys()[_phase], _car.global_position.x,
 			_car.global_position.y, _car.velocity.length(), Bank.currency,
-			ghosts.size(),
+			ghosts.size(), _trail_count(),
 		])
 
 	if _elapsed >= _next_screenshot:
@@ -192,6 +192,19 @@ func _hold(wanted: Array[String]) -> void:
 		if action not in _held:
 			Input.action_press(action)
 			_held.append(action)
+
+
+## Drift trail Line2Ds live as siblings of the car; the count rising in
+## corners and falling again proves per-stint spawn + fade-out cleanup.
+func _trail_count() -> int:
+	var container := _car.get_parent()
+	if container == null:
+		return 0
+	var count := 0
+	for child in container.get_children():
+		if child is Line2D:
+			count += 1
+	return count
 
 
 func _release_all() -> void:

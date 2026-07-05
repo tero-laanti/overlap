@@ -22,7 +22,6 @@ var _trails_active := false
 
 func _ready() -> void:
 	_refresh_stats()
-	_setup_drift_trails()
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
 
@@ -91,27 +90,9 @@ func _apply_throttle(throttle: float, forward_speed: float, delta: float) -> flo
 	return move_toward(forward_speed, 0.0, _fx.rolling_drag * delta)
 
 
-func _setup_drift_trails() -> void:
-	_left_trail = _make_trail("DriftTrailLeft")
-	_right_trail = _make_trail("DriftTrailRight")
-	call_deferred("_attach_drift_trails")
-
-
-func _attach_drift_trails() -> void:
-	var container := get_parent()
-	if container == null:
-		add_child(_left_trail)
-		add_child(_right_trail)
-		return
-	container.add_child(_left_trail)
-	container.move_child(_left_trail, get_index())
-	container.add_child(_right_trail)
-	container.move_child(_right_trail, get_index())
-
-
-func _make_trail(node_name: String) -> Line2D:
+func _make_trail() -> Line2D:
 	var line := Line2D.new()
-	line.name = node_name
+	line.name = "DriftTrail"
 	line.top_level = true
 	line.global_position = Vector2.ZERO
 	line.width = _fx.drift_trail_width
@@ -119,24 +100,48 @@ func _make_trail(node_name: String) -> Line2D:
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	var container := get_parent()
+	container.add_child(line)
+	container.move_child(line, get_index())
 	return line
 
 
+## A finished trail stays behind at full strength, then fades and frees
+## itself. Each drift stint gets fresh Line2D nodes — reusing one would
+## draw a connecting segment from wherever the previous stint ended.
+func _retire_trail(line: Line2D) -> void:
+	if line == null:
+		return
+	if line.get_point_count() < 2:
+		line.queue_free()
+		return
+	var tween := line.create_tween()
+	tween.tween_interval(_fx.drift_trail_fade_delay)
+	tween.tween_property(line, "modulate:a", 0.0, _fx.drift_trail_fade_time)
+	tween.tween_callback(line.queue_free)
+
+
 func _update_drift_trails(drifting: bool, lateral_speed: float, speed: float) -> void:
-	if _left_trail == null or _right_trail == null or _left_trail.get_parent() == null:
-		return
-	var enough_scrub := lateral_speed >= _fx.drift_trail_min_lateral_speed \
-			or speed >= _fx.drift_trail_min_speed
-	var should_draw := drifting and enough_scrub
+	var sliding := lateral_speed >= _fx.drift_trail_min_lateral_speed
+	var should_draw := sliding or (drifting and speed >= _fx.drift_trail_min_speed)
 	if not should_draw:
-		_trails_active = false
+		if _trails_active:
+			_retire_trail(_left_trail)
+			_retire_trail(_right_trail)
+			_left_trail = null
+			_right_trail = null
+			_trails_active = false
 		return
+	if not _trails_active:
+		if get_parent() == null:
+			return
+		_left_trail = _make_trail()
+		_right_trail = _make_trail()
+		_left_trail_last = to_global(REAR_LEFT_TIRE)
+		_right_trail_last = to_global(REAR_RIGHT_TIRE)
+		_trails_active = true
 	var left := to_global(REAR_LEFT_TIRE)
 	var right := to_global(REAR_RIGHT_TIRE)
-	if not _trails_active:
-		_left_trail_last = left
-		_right_trail_last = right
-		_trails_active = true
 	if _add_trail_point(_left_trail, left, _left_trail_last):
 		_left_trail_last = left
 	if _add_trail_point(_right_trail, right, _right_trail_last):
