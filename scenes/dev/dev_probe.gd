@@ -1,20 +1,22 @@
 extends Node
 ## Dev-only verification probe. Dormant unless user://autopilot.flag exists
-## (created by tooling before a run). When active it drives the car around
-## the circuit with a waypoint-following autopilot, prints telemetry and
-## race events, and saves periodic screenshots to user://dev/ so an agent
-## can verify behavior without a human at the wheel. Never active in
-## release builds.
+## (created by tooling before a run). Runs a phased full-loop test with a
+## waypoint autopilot: drive PB laps, idle to earn, buy a ghost slot and an
+## upgrade through the real Bank APIs, re-drive with the upgraded car, then
+## watch fleet income. Prints telemetry and saves screenshots to user://dev/.
+## Never active in release builds.
+
+enum Phase { DRIVE, EARN, SPEND, REDRIVE, WATCH, DONE }
 
 const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 60.0
-const TARGET_LAPS := 3
-const IDLE_TAIL := 16.0
+const TIMEOUT := 150.0
+const DRIVE_LAPS := 2
+const EARN_TARGET := 65.0
+const WATCH_SECONDS := 16.0
 
-## Corner apex targets at road center, clockwise from the spawn point.
 const WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1050, -550),
 	Vector2(1050, -550), Vector2(1050, 550),
@@ -24,6 +26,7 @@ const STEER_DEADZONE := 0.06
 const COAST_ANGLE := 1.3
 const COAST_MIN_SPEED := 550.0
 
+var _phase := Phase.DRIVE
 var _elapsed := 0.0
 var _next_telemetry := 0.0
 var _next_screenshot := 0.0
@@ -32,7 +35,8 @@ var _held: Array[String] = []
 var _car: Car
 var _waypoint_index := 0
 var _laps_done := 0
-var _idle_until := 0.0
+var _redrive_target := 0
+var _watch_until := 0.0
 
 
 func _ready() -> void:
@@ -43,20 +47,18 @@ func _ready() -> void:
 	_car = get_tree().get_first_node_in_group("player_car")
 	Events.lap_completed.connect(_on_lap_completed)
 	Events.best_lap_recorded.connect(func(rec: LapRecording) -> void:
-		print("[PROBE] best_lap_recorded samples=%d dt=%.4f lap_time=%.2f" % [
-			rec.positions.size(), rec.sample_dt, rec.lap_time]))
+		print("[PROBE] best_lap_recorded samples=%d lap_time=%.2f" % [
+			rec.positions.size(), rec.lap_time]))
 	Events.ghost_lap_completed.connect(func() -> void:
 		print("[PROBE] ghost_lap_completed money=%.0f" % Bank.currency))
-	print("[PROBE] loaded money=%.0f best=%.2f" % [
-		Bank.currency,
-		Bank.best_recording.lap_time if Bank.best_recording else 0.0,
-	])
 	var track: Track = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
-		track.checkpoint_crossed.connect(func(i: int, n: int) -> void:
-			print("[PROBE] checkpoint %d/%d" % [i + 1, n]))
-	print("[PROBE] active, car=%s track=%s" % [_car, track])
+	print("[PROBE] loaded money=%.0f best=%.2f slots=%d" % [
+		Bank.currency,
+		Bank.best_recording.lap_time if Bank.best_recording else 0.0,
+		Bank.ghost_slots,
+	])
 
 
 func _process(delta: float) -> void:
@@ -64,33 +66,73 @@ func _process(delta: float) -> void:
 	if _car == null:
 		return
 
-	var driving := _laps_done < TARGET_LAPS and _elapsed < TIMEOUT
-	if driving:
-		_drive()
-	elif _idle_until == 0.0:
+	match _phase:
+		Phase.DRIVE:
+			_drive()
+			if _laps_done >= DRIVE_LAPS:
+				_release_all()
+				_enter(Phase.EARN, "idling until $%d" % int(EARN_TARGET))
+		Phase.EARN:
+			if Bank.currency >= EARN_TARGET:
+				_spend()
+		Phase.SPEND:
+			pass  # transitions inside _spend()
+		Phase.REDRIVE:
+			_drive()
+			if _laps_done >= _redrive_target:
+				_release_all()
+				_watch_until = _elapsed + WATCH_SECONDS
+				var shop := get_node_or_null("/root/Main/Shop")
+				if shop:
+					shop.visible = true  # show shop for screenshots
+				_enter(Phase.WATCH, "watching fleet income")
+		Phase.WATCH:
+			if _elapsed >= _watch_until:
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d" % [
+					_elapsed, Bank.currency, Bank.income_per_second(),
+					Bank.ghost_slots, _laps_done,
+				])
+				_enter(Phase.DONE, "finished")
+				set_process(false)
+				return
+		Phase.DONE:
+			return
+
+	if _elapsed >= TIMEOUT and _phase != Phase.DONE:
 		_release_all()
-		_idle_until = _elapsed + IDLE_TAIL
-		print("[PROBE] driving done, idling to watch ghost income")
+		print("[PROBE] TIMEOUT at phase %s money=%.0f" % [Phase.keys()[_phase], Bank.currency])
+		set_process(false)
+		return
 
 	if _elapsed >= _next_telemetry:
 		_next_telemetry += TELEMETRY_INTERVAL
-		var line := "[PROBE] t=%.1f pos=(%.0f, %.0f) speed=%.0f money=%.0f" % [
-			_elapsed, _car.global_position.x, _car.global_position.y,
-			_car.velocity.length(), Bank.currency,
-		]
-		var ghost: Ghost = get_tree().get_first_node_in_group("ghost")
-		if ghost != null:
-			line += " ghost=(%.0f, %.0f)" % [ghost.global_position.x, ghost.global_position.y]
-		print(line)
+		var ghosts := get_tree().get_nodes_in_group("ghost")
+		print("[PROBE] t=%.1f phase=%s pos=(%.0f, %.0f) speed=%.0f money=%.0f ghosts=%d" % [
+			_elapsed, Phase.keys()[_phase], _car.global_position.x,
+			_car.global_position.y, _car.velocity.length(), Bank.currency,
+			ghosts.size(),
+		])
 
 	if _elapsed >= _next_screenshot:
 		_next_screenshot += SCREENSHOT_INTERVAL
 		_save_screenshot()
 
-	if (_idle_until > 0.0 and _elapsed >= _idle_until) or _elapsed >= TIMEOUT:
-		print("[PROBE] done laps=%d t=%.1f money=%.0f income=%.2f/s" % [
-			_laps_done, _elapsed, Bank.currency, Bank.income_per_second()])
-		set_process(false)
+
+func _spend() -> void:
+	_enter(Phase.SPEND, "buying")
+	var slot_ok := Bank.try_buy_ghost_slot()
+	var upgrade_ok := Bank.try_buy_upgrade("top_speed")
+	print("[PROBE] bought ghost_slot=%s top_speed=%s money=%.0f slots=%d max_speed=%.0f" % [
+		slot_ok, upgrade_ok, Bank.currency, Bank.ghost_slots,
+		_car.effective_stats().max_speed,
+	])
+	_redrive_target = _laps_done + 1
+	_enter(Phase.REDRIVE, "one lap with upgraded car")
+
+
+func _enter(phase: Phase, note: String) -> void:
+	_phase = phase
+	print("[PROBE] phase=%s — %s" % [Phase.keys()[phase], note])
 
 
 func _drive() -> void:

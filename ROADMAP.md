@@ -52,11 +52,20 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   slice 5.
 
 ## Slice 5 — Spend it
-- [ ] UpgradeDef resources + shop UI (3 upgrades: top speed, grip, accel)
-- [ ] Upgrades change CarStats → faster laps possible → re-record ghost
-- [ ] Second ghost slot purchasable
-- **Accept:** full loop closes — earn, buy speed, set faster lap, replace
-      ghost, income visibly increases.
+- [x] UpgradeDef + UpgradeCatalog resources (top speed / accel / grip,
+      1.15 cost growth, multiplicative effects) + Tab-toggled GARAGE shop
+- [x] Car computes effective stats (base resource × upgrade multipliers,
+      base .tres never mutated); refreshes on purchase and from save
+- [x] Ghost slots at 10 × 1.08^owned; fleet grows and staggers clones
+      evenly around the lap
+- [x] **Accept:** full loop closes — earn, buy speed, set faster lap,
+      fleet re-arms, income visibly increases.
+- Notes: verified 2026-07-05 across two runs — income 1.42/s → 4.61/s
+  (3 ghosts × $10 / 6.51 s PB); saved upgrade levels applied to physics on
+  relaunch (974 px/s straight from load); GARAGE prices confirmed on
+  screen ($66 = 50×1.15², $11 = 10×1.08²). Known quirk: car parked
+  nose-to-wall takes long to escape (steering authority scales with
+  speed, autopilot never reverses) — car-feel item for later.
 
 ## Slice 6 — Idle game shape
 - [ ] Offline earnings on launch ("While you were away…")

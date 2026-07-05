@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/track/track01/track.tscn" id="2_track"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scenes/main/race_state.gd" id="5_race"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
 [ext_resource type="Script" path="res://scenes/ghost/ghost_fleet.gd" id="7_fleet"]
+[ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="8_shop"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -24,6 +25,8 @@ rotation = -1.5707964
 script = ExtResource("5_race")
 
 [node name="HUD" parent="." instance=ExtResource("6_hud")]
+
+[node name="Shop" parent="." instance=ExtResource("8_shop")]
 
 [node name="DevProbe" type="Node" parent="."]
 script = ExtResource("4_probe")

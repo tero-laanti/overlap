@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="UpgradeCatalog" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/car/upgrade_catalog.gd" id="1"]
+[ext_resource type="Resource" path="res://data/upgrades/top_speed.tres" id="2"]
+[ext_resource type="Resource" path="res://data/upgrades/acceleration.tres" id="3"]
+[ext_resource type="Resource" path="res://data/upgrades/grip.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+upgrades = [ExtResource("2"), ExtResource("3"), ExtResource("4")]

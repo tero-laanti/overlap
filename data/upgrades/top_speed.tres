@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/car/upgrade_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "top_speed"
+display_name = "Top Speed"
+stat = "max_speed"
+effect_multiplier = 1.05
+base_cost = 50.0
+cost_growth = 1.15
+max_level = 15

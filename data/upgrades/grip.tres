@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/car/upgrade_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "grip"
+display_name = "Grip"
+stat = "grip"
+effect_multiplier = 1.06
+base_cost = 40.0
+cost_growth = 1.15
+max_level = 15
