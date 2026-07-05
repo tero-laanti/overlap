@@ -24,6 +24,7 @@ var _toast_tween: Tween
 @onready var _toast_label: Label = %Toast
 @onready var _money_label: Label = %Money
 @onready var _income_label: Label = %IncomeRate
+@onready var _next_label: Label = %NextHint
 
 
 func _ready() -> void:
@@ -42,6 +43,28 @@ func _process(_delta: float) -> void:
 		_speed_label.text = "%d" % int(car.velocity.length() / 10.0)
 	_money_label.text = "$ %s" % format_money(Bank.currency)
 	_income_label.text = "+%.1f/s" % Bank.income_per_second()
+	_next_label.text = _next_purchase_hint()
+
+
+## Cheapest thing still buyable in the garage: a ghost slot or any
+## non-maxed upgrade. Read-only against Bank — no purchase logic here.
+func _next_purchase_hint() -> String:
+	var next_name := "Hire Ghost"
+	var next_cost := Bank.ghost_slot_cost()
+	for def in Bank.CATALOG.upgrades:
+		if Bank.upgrade_level(def.id) >= def.max_level:
+			continue
+		var cost := Bank.upgrade_cost(def.id)
+		if cost < next_cost:
+			next_cost = cost
+			next_name = def.display_name
+	if Bank.currency >= next_cost:
+		return "TAB: %s ready!" % next_name
+	var income := Bank.income_per_second()
+	if income <= 0.0:
+		return ""
+	var eta := ceili((next_cost - Bank.currency) / income)
+	return "next: %s in ~%ds" % [next_name, eta]
 
 
 func on_lap_started() -> void:
