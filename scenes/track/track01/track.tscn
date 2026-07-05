@@ -1,25 +1,47 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
 [ext_resource type="Resource" path="res://data/tracks/track01_network.tres" id="3_network"]
 [ext_resource type="Script" path="res://scenes/track/route_tracker.gd" id="4_tracker"]
 [ext_resource type="Script" path="res://scenes/track/gate.gd" id="5_gate"]
+[ext_resource type="PackedScene" path="res://scenes/track/road_segment.tscn" id="6_segment"]
+
+[sub_resource type="Curve2D" id="Curve2D_top"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -1050, -550, 0, 0, 0, 0, 1050, -550)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_bottom"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -1050, 550, 0, 0, 0, 0, 1050, 550)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_left"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -1050, -550, 0, 0, 0, 0, -1050, 550)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_right"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 1050, -550, 0, 0, 0, 0, 1050, 550)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_chord"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 300, -400, 0, 0, 0, 0, 300, 400)
+}
+point_count = 2
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
 size = Vector2(3580, 60)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v_wall"]
 size = Vector2(60, 2400)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_road_h"]
-size = Vector2(2400, 300)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_road_v"]
-size = Vector2(300, 1400)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_road_chord"]
-size = Vector2(300, 800)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_bar"]
 size = Vector2(700, 24)
@@ -33,60 +55,30 @@ network = ExtResource("3_network")
 color = Color(0.2, 0.42, 0.18, 1)
 polygon = PackedVector2Array(-2400, -1900, 2400, -1900, 2400, 1900, -2400, 1900)
 
-[node name="Road" type="Node2D" parent="."]
-
-[node name="Top" type="Polygon2D" parent="Road"]
-color = Color(0.25, 0.25, 0.27, 1)
-polygon = PackedVector2Array(-1200, -700, 1200, -700, 1200, -400, -1200, -400)
-
-[node name="Bottom" type="Polygon2D" parent="Road"]
-color = Color(0.25, 0.25, 0.27, 1)
-polygon = PackedVector2Array(-1200, 400, 1200, 400, 1200, 700, -1200, 700)
-
-[node name="Left" type="Polygon2D" parent="Road"]
-color = Color(0.25, 0.25, 0.27, 1)
-polygon = PackedVector2Array(-1200, -700, -900, -700, -900, 700, -1200, 700)
-
-[node name="Right" type="Polygon2D" parent="Road"]
-color = Color(0.25, 0.25, 0.27, 1)
-polygon = PackedVector2Array(900, -700, 1200, -700, 1200, 700, 900, 700)
-
 [node name="IslandVisual" type="Polygon2D" parent="."]
 color = Color(0.16, 0.34, 0.15, 1)
 polygon = PackedVector2Array(-900, -400, 900, -400, 900, 400, -900, 400)
 
-[node name="ChordRoad" type="Polygon2D" parent="."]
-color = Color(0.25, 0.25, 0.27, 1)
-polygon = PackedVector2Array(150, -400, 450, -400, 450, 400, 150, 400)
+[node name="Road" type="Node2D" parent="."]
+
+[node name="SegTop" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_top")
+
+[node name="SegBottom" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_bottom")
+
+[node name="SegLeft" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_left")
+
+[node name="SegRight" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_right")
+
+[node name="SegChord" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_chord")
 
 [node name="StartLine" type="Polygon2D" parent="."]
 color = Color(0.92, 0.92, 0.92, 1)
 polygon = PackedVector2Array(-8, 400, 8, 400, 8, 700, -8, 700)
-
-[node name="RoadSurface" type="Area2D" parent="."]
-collision_layer = 2
-collision_mask = 0
-monitoring = false
-
-[node name="TopRoad" type="CollisionShape2D" parent="RoadSurface"]
-position = Vector2(0, -550)
-shape = SubResource("RectangleShape2D_road_h")
-
-[node name="BottomRoad" type="CollisionShape2D" parent="RoadSurface"]
-position = Vector2(0, 550)
-shape = SubResource("RectangleShape2D_road_h")
-
-[node name="LeftRoad" type="CollisionShape2D" parent="RoadSurface"]
-position = Vector2(-1050, 0)
-shape = SubResource("RectangleShape2D_road_v")
-
-[node name="RightRoad" type="CollisionShape2D" parent="RoadSurface"]
-position = Vector2(1050, 0)
-shape = SubResource("RectangleShape2D_road_v")
-
-[node name="ChordRoad" type="CollisionShape2D" parent="RoadSurface"]
-position = Vector2(300, 0)
-shape = SubResource("RectangleShape2D_road_chord")
 
 [node name="RouteTracker" type="Node" parent="."]
 script = ExtResource("4_tracker")
