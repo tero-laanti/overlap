@@ -1,10 +1,14 @@
 extends CanvasLayer
 ## Shop UI. Presentation and purchase intents only: reads Bank's catalog
 ## and prices, calls Bank.try_buy_*. All pricing and effects live in Bank
-## and the def resources. Toggled with the toggle_shop action.
+## and the def resources; which rows exist comes from ShopPacing — the
+## GARAGE grows as the run progresses. Toggled with the toggle_shop action.
+
+const ShopPacingScript = preload("res://scenes/ui/shop_pacing.gd")
 
 var _upgrade_rows := {}
 var _gate_rows := {}
+var _medal_rows := {}
 var _ghost_label: Label
 var _ghost_button: Button
 
@@ -15,13 +19,13 @@ var _ghost_button: Button
 func _ready() -> void:
 	visible = false
 	Events.currency_changed.connect(func(_amount: float) -> void: _refresh())
-	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void: _refresh())
+	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void: _rebuild())
 	Events.ghost_hired.connect(func(_count: int) -> void: _refresh())
-	Events.gate_purchased.connect(func(_id: String) -> void: _refresh())
-	_build_rows()
+	Events.gate_purchased.connect(func(_id: String) -> void: _rebuild())
+	Events.route_discovered.connect(func(_id: String, _name: String) -> void: _rebuild())
+	Events.medal_unlocked.connect(func(_id: String) -> void: _rebuild())
 	# Bank learns the active network in Main._ready, after this ready runs.
-	_build_gate_rows.call_deferred()
-	_refresh()
+	_rebuild.call_deferred()
 
 
 func _process(_delta: float) -> void:
@@ -31,8 +35,15 @@ func _process(_delta: float) -> void:
 			_refresh()
 
 
-func _build_rows() -> void:
-	for def in Bank.CATALOG.upgrades:
+func _rebuild() -> void:
+	if not is_node_ready():
+		return
+	for child in _rows.get_children():
+		child.queue_free()
+	_upgrade_rows.clear()
+	_gate_rows.clear()
+	_medal_rows.clear()
+	for def in ShopPacingScript.visible_upgrades(Bank):
 		var row := _make_row("%s" % def.display_name)
 		row.button.pressed.connect(Bank.try_buy_upgrade.bind(def.id))
 		_upgrade_rows[def.id] = row
@@ -40,19 +51,21 @@ func _build_rows() -> void:
 	ghost_row.button.pressed.connect(Bank.try_buy_ghost_slot)
 	_ghost_label = ghost_row.label
 	_ghost_button = ghost_row.button
+	var gate := ShopPacingScript.next_gate(Bank)
+	if gate != null:
+		var row := _make_row(gate.display_name)
+		row.button.pressed.connect(Bank.try_buy_gate.bind(gate.id))
+		_gate_rows[gate.id] = row
+	for route in ShopPacingScript.medal_offers(Bank):
+		var row := _make_row("Mastery: %s" % route.display_name)
+		row.button.pressed.connect(Bank.try_buy_medal_unlock.bind(route.id))
+		_medal_rows[route.id] = row
 	if OS.is_debug_build():
 		var reset_row := _make_row("DEBUG · wipe save")
 		(reset_row.button as Button).text = "RESET"
 		reset_row.button.pressed.connect(func() -> void:
 			Bank.reset_profile()
 			get_tree().reload_current_scene.call_deferred())
-
-
-func _build_gate_rows() -> void:
-	for gate in Bank.unpurchased_gates():
-		var row := _make_row(gate.display_name)
-		row.button.pressed.connect(Bank.try_buy_gate.bind(gate.id))
-		_gate_rows[gate.id] = row
 	_refresh()
 
 
@@ -72,7 +85,7 @@ func _make_row(title: String) -> Dictionary:
 
 
 func _refresh() -> void:
-	if not is_node_ready():
+	if not is_node_ready() or _ghost_label == null:
 		return
 	for id: String in _upgrade_rows:
 		var def := Bank.CATALOG.find(id)
@@ -84,14 +97,13 @@ func _refresh() -> void:
 		button.text = "MAX" if maxed else "$ %d" % int(Bank.upgrade_cost(id))
 		button.disabled = maxed or Bank.currency < Bank.upgrade_cost(id)
 	for id: String in _gate_rows:
-		var row: Dictionary = _gate_rows[id]
-		var button := row.button as Button
-		if Bank.is_gate_purchased(id):
-			button.text = "OPEN"
-			button.disabled = true
-		else:
-			button.text = "$ %d" % int(Bank.gate_cost(id))
-			button.disabled = Bank.currency < Bank.gate_cost(id)
+		var button: Button = _gate_rows[id].button
+		button.text = "$ %d" % int(Bank.gate_cost(id))
+		button.disabled = Bank.currency < Bank.gate_cost(id)
+	for id: String in _medal_rows:
+		var button: Button = _medal_rows[id].button
+		button.text = "$ %d" % int(Bank.medal_unlock_cost(id))
+		button.disabled = Bank.currency < Bank.medal_unlock_cost(id)
 	_ghost_label.text = "Hire Ghost  ×%d" % Bank.ghost_slots
 	_ghost_button.text = "$ %d" % int(Bank.ghost_slot_cost())
 	_ghost_button.disabled = Bank.currency < Bank.ghost_slot_cost()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/track/track01/track.tscn" id="2_track"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scenes/ghost/ghost_fleet.gd" id="7_fleet"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="8_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/route_log.tscn" id="9_routelog"]
+[ext_resource type="Script" path="res://scenes/dev/dev_calibrate.gd" id="10_calibrate"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -33,3 +34,6 @@ script = ExtResource("5_race")
 
 [node name="DevProbe" type="Node" parent="."]
 script = ExtResource("4_probe")
+
+[node name="DevCalibrate" type="Node" parent="."]
+script = ExtResource("10_calibrate")

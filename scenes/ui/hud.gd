@@ -8,6 +8,7 @@ const PIP_FULL := "●"
 const TOAST_SECONDS := 2.2
 const CarScript = preload("res://scenes/car/car.gd")
 const RaceStateScript = preload("res://scenes/main/race_state.gd")
+const ShopPacingScript = preload("res://scenes/ui/shop_pacing.gd")
 
 var race_state: RaceStateScript
 var car: CarScript
@@ -48,22 +49,26 @@ func _process(_delta: float) -> void:
 	_next_label.text = _next_purchase_hint()
 
 
-## Cheapest thing still buyable in the garage: a ghost slot, a gate, or
-## any non-maxed upgrade. Read-only against Bank — no purchase logic here.
+## Cheapest offer currently in the garage (same pacing rules the shop
+## renders). Read-only against Bank — no purchase logic here.
 func _next_purchase_hint() -> String:
 	var next_name := "Hire Ghost"
 	var next_cost := Bank.ghost_slot_cost()
-	for def in Bank.CATALOG.upgrades:
+	for def in ShopPacingScript.visible_upgrades(Bank):
 		if Bank.upgrade_level(def.id) >= def.max_level:
 			continue
 		var cost := Bank.upgrade_cost(def.id)
 		if cost < next_cost:
 			next_cost = cost
 			next_name = def.display_name
-	for gate in Bank.unpurchased_gates():
-		if gate.price < next_cost:
-			next_cost = gate.price
-			next_name = gate.display_name
+	var gate := ShopPacingScript.next_gate(Bank)
+	if gate != null and gate.price < next_cost:
+		next_cost = gate.price
+		next_name = gate.display_name
+	for route in ShopPacingScript.medal_offers(Bank):
+		if route.medal_unlock_cost < next_cost:
+			next_cost = route.medal_unlock_cost
+			next_name = "Mastery: %s" % route.display_name
 	if Bank.currency >= next_cost:
 		return "TAB: %s ready!" % next_name
 	var income := Bank.income_per_second()

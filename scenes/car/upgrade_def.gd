@@ -12,6 +12,9 @@ extends Resource
 @export var base_cost := 50.0
 @export var cost_growth := 1.15
 @export var max_level := 15
+## The GARAGE reveals this upgrade once the player owns this many
+## upgrade levels in total — the shop evolves during a run.
+@export var unlock_total_levels := 0
 
 
 func cost_at(level: int) -> float:

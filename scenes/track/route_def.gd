@@ -9,8 +9,13 @@ extends Resource
 @export var id := ""
 @export var display_name := "Route"
 @export var edges := PackedStringArray()
+## Maxed-car autopilot benchmark lap (user://calibrate.flag run) — the
+## medal yardstick only. Payouts are authored separately; par never
+## prices income.
 @export var par_time := 10.0
 @export var payout_per_lap := 10.0
+## Buying this route's mastery timing in the GARAGE enables its medals.
+@export var medal_unlock_cost := 200.0
 ## One-line clue shown in the route log while the route is only hinted.
 @export var clue := ""
 ## Gates that must all be owned before this route is drivable; owning

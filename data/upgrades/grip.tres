@@ -11,3 +11,4 @@ effect_multiplier = 1.06
 base_cost = 50.0
 cost_growth = 1.5
 max_level = 8
+unlock_total_levels = 5

@@ -9,81 +9,85 @@
 script = ExtResource("2")
 id = "start"
 a = Vector2(0, 400)
-b = Vector2(0, 700)
+b = Vector2(0, 1200)
 
 [sub_resource type="Resource" id="Resource_line_west"]
 script = ExtResource("2")
 id = "west"
 a = Vector2(-900, 0)
-b = Vector2(-1200, 0)
+b = Vector2(-1340, 0)
 
 [sub_resource type="Resource" id="Resource_line_east"]
 script = ExtResource("2")
 id = "east"
 a = Vector2(900, 0)
-b = Vector2(1200, 0)
+b = Vector2(1650, 0)
 
 [sub_resource type="Resource" id="Resource_line_chord_mouth"]
 script = ExtResource("2")
 id = "chord_mouth"
-a = Vector2(150, -360)
-b = Vector2(450, -360)
+a = Vector2(100, -360)
+b = Vector2(550, -360)
 
 [sub_resource type="Resource" id="Resource_line_chord"]
 script = ExtResource("2")
 id = "chord"
-a = Vector2(150, 0)
-b = Vector2(450, 0)
+a = Vector2(100, 0)
+b = Vector2(550, 0)
 
 [sub_resource type="Resource" id="Resource_line_petal_mouth"]
 script = ExtResource("2")
 id = "petal_mouth"
-a = Vector2(-1260, 150)
-b = Vector2(-1260, 450)
+a = Vector2(-1260, 100)
+b = Vector2(-1260, 500)
 
 [sub_resource type="Resource" id="Resource_line_petal"]
 script = ExtResource("2")
 id = "petal"
 a = Vector2(-1350, 0)
-b = Vector2(-1650, 0)
+b = Vector2(-1720, 0)
 
 [sub_resource type="Resource" id="Resource_route_ring"]
 script = ExtResource("3")
 id = "ring"
 display_name = "Grand Ring"
 edges = PackedStringArray("west", "east")
-par_time = 6.2
+par_time = 5.9
 payout_per_lap = 10.0
+medal_unlock_cost = 200.0
 
 [sub_resource type="Resource" id="Resource_route_cut"]
 script = ExtResource("3")
 id = "cut"
 display_name = "Island Cut"
 edges = PackedStringArray("west", "chord_mouth", "chord")
-par_time = 4.9
+par_time = 4.5
 payout_per_lap = 6.5
 clue = "The island hides a faster line."
 required_gates = PackedStringArray("island_chord")
+medal_unlock_cost = 220.0
 
 [sub_resource type="Resource" id="Resource_route_petal"]
 script = ExtResource("3")
 id = "petal"
 display_name = "Dune Bend"
 edges = PackedStringArray("petal_mouth", "petal", "east")
-par_time = 6.6
+par_time = 6.15
 payout_per_lap = 10.2
 clue = "A sandy arc sweeps past the west road."
 required_gates = PackedStringArray("west_petal")
+medal_unlock_cost = 300.0
 
 [sub_resource type="Resource" id="Resource_route_twin"]
 script = ExtResource("3")
 id = "twin"
 display_name = "Twin Cut"
 edges = PackedStringArray("petal_mouth", "petal", "chord_mouth", "chord")
-par_time = 5.8
+par_time = 4.7
 payout_per_lap = 9.5
 clue = "Two gates, one breath."
 required_gates = PackedStringArray("west_petal", "island_chord")
+medal_unlock_cost = 350.0
 
 [sub_resource type="Resource" id="Resource_gate_chord"]
 script = ExtResource("4")

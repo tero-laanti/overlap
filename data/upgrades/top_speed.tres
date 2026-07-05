@@ -10,4 +10,4 @@ stat = "max_speed"
 effect_multiplier = 1.05
 base_cost = 75.0
 cost_growth = 1.5
-max_level = 8
+max_level = 3

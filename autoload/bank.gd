@@ -15,6 +15,7 @@ const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
 const GateDefScript = preload("res://scenes/track/gate_def.gd")
 const RouteDefScript = preload("res://scenes/track/route_def.gd")
 const BankSaveScript = preload("res://autoload/bank_save.gd")
+const BankMedalsScript = preload("res://autoload/bank_medals.gd")
 const CATALOG: UpgradeCatalogScript = preload("res://data/upgrades/catalog.tres")
 const ECONOMY: EconomyDefScript = preload("res://data/economy.tres")
 
@@ -23,6 +24,7 @@ var currency := 0.0
 var route_records := {}
 var discovered_routes: Array[String] = []
 var purchased_gates: Array[String] = []
+var medal_unlocked_routes: Array[String] = []
 var upgrade_levels := {}
 var ghost_slots := 1
 
@@ -98,32 +100,30 @@ func milestone_multiplier() -> float:
 
 
 ## Mastery medal for a route — "", "bronze", "silver" or "gold" —
-## derived from the PB vs the authored par, never stored.
+## derived, never stored, and only active once mastery is bought.
 func route_medal(route_id: String) -> String:
-	var pb := route_pb(route_id)
-	if pb <= 0.0 or _network == null:
-		return ""
-	var route := _network.find_route(route_id)
-	if route == null or route.par_time <= 0.0:
-		return ""
-	if pb <= route.par_time:
-		return "gold"
-	if pb <= route.par_time * ECONOMY.medal_silver_factor:
-		return "silver"
-	if pb <= route.par_time * ECONOMY.medal_bronze_factor:
-		return "bronze"
-	return ""
+	return BankMedalsScript.tier(self, route_id)
 
 
 func medal_multiplier(route_id: String) -> float:
-	match route_medal(route_id):
-		"gold":
-			return ECONOMY.medal_gold_multiplier
-		"silver":
-			return ECONOMY.medal_silver_multiplier
-		"bronze":
-			return ECONOMY.medal_bronze_multiplier
-	return 1.0
+	return BankMedalsScript.multiplier(self, route_id)
+
+
+func is_medal_unlocked(route_id: String) -> bool:
+	return route_id in medal_unlocked_routes
+
+
+func medal_unlock_cost(route_id: String) -> float:
+	return BankMedalsScript.unlock_cost(self, route_id)
+
+
+func try_buy_medal_unlock(route_id: String) -> bool:
+	if not BankMedalsScript.try_buy_unlock(self, route_id):
+		return false
+	save_profile()
+	Events.currency_changed.emit(currency)
+	Events.medal_unlocked.emit(route_id)
+	return true
 
 
 func route_income_per_second(route_id: String) -> float:
@@ -264,6 +264,7 @@ func reset_profile() -> void:
 	route_records.clear()
 	discovered_routes.clear()
 	purchased_gates.clear()
+	medal_unlocked_routes.clear()
 	upgrade_levels.clear()
 	ghost_slots = 1
 	_loaded_save_unix = 0.0
