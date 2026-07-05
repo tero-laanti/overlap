@@ -17,3 +17,13 @@ extends Resource
 @export var steering_rate := 200.0
 ## Forward speed at which steering reaches full authority.
 @export var steering_full_speed := 250.0
+## Minimum steering authority when throttle/brake is held, even at low speed.
+@export_range(0.0, 1.0) var steering_authority_floor := 0.35
+## Speed above which the steering authority floor applies without throttle.
+@export var steering_floor_min_speed := 20.0
+## Minimum sideways speed before drift trails draw.
+@export var drift_trail_min_lateral_speed := 90.0
+## World-space distance between trail points.
+@export var drift_trail_spacing := 14.0
+@export var drift_trail_max_points := 120
+@export var drift_trail_width := 5.0

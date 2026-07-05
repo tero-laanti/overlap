@@ -15,6 +15,10 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   scripted drive, telemetry, screenshots to user://dev/; activate by
   creating user://autopilot.flag). Accel 0→920 px/s, cornering, drift and
   wall collisions all behave. Feel tuning: data/cars/starter_car.tres.
+  Follow-up playtest chose the drift-heavy candidate over kart/GT; main now
+  biases slightly more drifty and adds tire trails while drifting. Rejected
+  driving-style branches/worktrees were removed after folding the chosen feel
+  into main.
 
 ## Slice 2 — Laps exist
 - [x] Start line + 3 checkpoints on Track; ordered lap validation
@@ -53,37 +57,42 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 
 ## Slice 5 — Spend it
 - [x] UpgradeDef + UpgradeCatalog resources (top speed / accel / grip,
-      1.15 cost growth, multiplicative effects) + Tab-toggled GARAGE shop
+      data-authored cost growth, multiplicative effects) + Tab-toggled GARAGE shop
 - [x] Car computes effective stats (base resource × upgrade multipliers,
       base .tres never mutated); refreshes on purchase and from save
-- [x] Ghost slots at 10 × 1.08^owned; fleet grows and staggers clones
+- [x] Ghost slots from data/economy.tres; fleet grows and staggers clones
       evenly around the lap
 - [x] **Accept:** full loop closes — earn, buy speed, set faster lap,
       fleet re-arms, income visibly increases.
 - Notes: verified 2026-07-05 across two runs — income 1.42/s → 4.61/s
   (3 ghosts × $10 / 6.51 s PB); saved upgrade levels applied to physics on
-  relaunch (974 px/s straight from load); GARAGE prices confirmed on
-  screen ($66 = 50×1.15², $11 = 10×1.08²). Known quirk: car parked
-  nose-to-wall takes long to escape (steering authority scales with
-  speed, autopilot never reverses) — car-feel item for later.
+  relaunch (974 px/s straight from load). Re-verified 2026-07-05 after
+  steering-floor, drift tuning, trails, and DevProbe hardening: upgraded
+  clean lap improved 6.90 s PB → 6.61 s, fleet income rose to 3.02/s with
+  2 ghosts.
 
 ## Slice 6 — Idle game shape
-- [ ] Offline earnings on launch ("While you were away…")
+- [x] Offline earnings on launch ("While you were away…")
 - [ ] More ghost slots, cost curves from data/
 - [ ] Second track (TrackDef unlock)
 - **Accept:** relaunching after time away grants income; buying track 2 and
       racing it with its own ghosts works.
+- Notes: verified 2026-07-05 via temporary save/load run — 2 ghosts, $10
+  payout, 10.0 s PB, and ~1 h elapsed launched from $100 to ~$7300 and
+  rewrote the save timestamp. Offline cap lives in data/economy.tres.
 
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:
   Clover topology, Pretzel-lite prototype first.
 - `proto/gate-network` — Pretzel-lite prototype (1 gate, 2 routes,
-  per-route PBs and fleets, analytic route detection). In progress.
-- `feel/drift-heavy`, `feel/grippy-kart`, `feel/heavy-momentum` — three
-  car-feel candidates to test-drive; pick one or mix values.
+  per-route PBs and fleets, analytic route detection). Not started yet:
+  branch currently points at the same design-only commit as
+  `design/gate-network`.
 - `polish/quality-pass` — low-speed steering floor, ghost crowd variety,
-  milestone + next-purchase UI hints.
+  milestone + next-purchase UI hints. Steering floor and headless DevProbe
+  screenshot hardening were folded into main; UI hints and ghost tint variety
+  remain branch-only.
 
 ## Later (unordered)
 - Prestige/reset layer; more cars (CarStats variants); track hazards that

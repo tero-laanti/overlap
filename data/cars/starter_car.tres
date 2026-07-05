@@ -4,12 +4,18 @@
 
 [resource]
 script = ExtResource("1")
-max_speed = 900.0
+max_speed = 950.0
 reverse_speed = 280.0
-acceleration = 800.0
+acceleration = 850.0
 braking = 1600.0
-rolling_drag = 300.0
-grip = 9.0
-drift_grip = 2.2
-steering_rate = 200.0
-steering_full_speed = 250.0
+rolling_drag = 210.0
+grip = 6.0
+drift_grip = 0.65
+steering_rate = 240.0
+steering_full_speed = 220.0
+steering_authority_floor = 0.35
+steering_floor_min_speed = 20.0
+drift_trail_min_lateral_speed = 90.0
+drift_trail_spacing = 14.0
+drift_trail_max_points = 120
+drift_trail_width = 5.0

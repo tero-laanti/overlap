@@ -6,9 +6,11 @@ extends Node
 ## "no lap set yet". Main injects the car reference.
 
 const SAMPLE_EVERY_TICKS := 2
+const CarScript = preload("res://scenes/car/car.gd")
+const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 
-var car: Car
-var best_recording: LapRecording
+var car: CarScript
+var best_recording: LapRecordingScript
 
 var current_lap_time := 0.0
 var last_lap_time := 0.0
@@ -39,7 +41,7 @@ func _physics_process(_delta: float) -> void:
 
 ## Adopt a persisted best lap (loaded by Bank) so PB comparisons and the
 ## HUD survive restarts.
-func adopt_best(recording: LapRecording) -> void:
+func adopt_best(recording: LapRecordingScript) -> void:
 	best_recording = recording
 	best_lap_time = recording.lap_time
 
@@ -63,7 +65,7 @@ func on_lap_completed() -> void:
 		best_lap_time = last_lap_time
 	lap_count += 1
 	if is_best and _positions.size() > 2:
-		best_recording = LapRecording.new()
+		best_recording = LapRecordingScript.new()
 		best_recording.sample_dt = float(SAMPLE_EVERY_TICKS) / Engine.physics_ticks_per_second
 		best_recording.positions = _positions.duplicate()
 		best_recording.rotations = _rotations.duplicate()

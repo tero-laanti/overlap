@@ -9,7 +9,9 @@ signal lap_started
 signal lap_completed
 signal checkpoint_crossed(index: int, total: int)
 
-@export var def: TrackDef
+const TrackDefScript = preload("res://scenes/track/track_def.gd")
+
+@export var def: TrackDefScript
 
 var _checkpoints: Array[Area2D] = []
 var _next_checkpoint := 0

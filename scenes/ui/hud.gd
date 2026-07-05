@@ -6,9 +6,11 @@ extends CanvasLayer
 const PIP_EMPTY := "○"
 const PIP_FULL := "●"
 const TOAST_SECONDS := 2.2
+const CarScript = preload("res://scenes/car/car.gd")
+const RaceStateScript = preload("res://scenes/main/race_state.gd")
 
-var race_state: RaceState
-var car: Car
+var race_state: RaceStateScript
+var car: CarScript
 
 var _pips_filled := 0
 var _pips_total := 3
@@ -26,6 +28,7 @@ var _toast_tween: Tween
 
 func _ready() -> void:
 	Events.lap_completed.connect(_on_lap_completed)
+	Events.offline_earnings_granted.connect(_on_offline_earnings_granted)
 	_toast_label.modulate.a = 0.0
 	_refresh_pips()
 
@@ -62,6 +65,13 @@ func _on_lap_completed(lap_time: float, is_best: bool) -> void:
 	)
 
 
+func _on_offline_earnings_granted(amount: float, elapsed_seconds: float) -> void:
+	_show_toast(
+		"Away %s  +$%s" % [_format_duration(elapsed_seconds), format_money(amount)],
+		true,
+	)
+
+
 func _show_toast(message: String, highlight: bool) -> void:
 	_toast_label.text = message
 	_toast_label.self_modulate = Color(1.0, 0.85, 0.3) if highlight else Color.WHITE
@@ -92,3 +102,11 @@ static func format_time(seconds: float) -> String:
 	if seconds <= 0.0:
 		return "-:--.--"
 	return "%d:%05.2f" % [int(seconds / 60.0), fmod(seconds, 60.0)]
+
+
+static func _format_duration(seconds: float) -> String:
+	if seconds >= 3600.0:
+		return "%dh %02dm" % [int(seconds / 3600.0), int(fmod(seconds, 3600.0) / 60.0)]
+	if seconds >= 60.0:
+		return "%dm %02ds" % [int(seconds / 60.0), int(fmod(seconds, 60.0))]
+	return "%ds" % int(seconds)

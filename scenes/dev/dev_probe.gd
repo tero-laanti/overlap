@@ -14,6 +14,7 @@ const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
 const TIMEOUT := 150.0
 const DRIVE_LAPS := 2
+const REDRIVE_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
 const WATCH_SECONDS := 16.0
 
@@ -26,13 +27,17 @@ const STEER_DEADZONE := 0.06
 const COAST_ANGLE := 1.3
 const COAST_MIN_SPEED := 550.0
 
+const CarScript = preload("res://scenes/car/car.gd")
+const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
+const TrackScript = preload("res://scenes/track/track.gd")
+
 var _phase := Phase.DRIVE
 var _elapsed := 0.0
 var _next_telemetry := 0.0
 var _next_screenshot := 0.0
 var _shot_index := 0
 var _held: Array[String] = []
-var _car: Car
+var _car: CarScript
 var _waypoint_index := 0
 var _laps_done := 0
 var _redrive_target := 0
@@ -48,12 +53,12 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_car = get_tree().get_first_node_in_group("player_car")
 	Events.lap_completed.connect(_on_lap_completed)
-	Events.best_lap_recorded.connect(func(rec: LapRecording) -> void:
+	Events.best_lap_recorded.connect(func(rec: LapRecordingScript) -> void:
 		print("[PROBE] best_lap_recorded samples=%d lap_time=%.2f" % [
 			rec.positions.size(), rec.lap_time]))
 	Events.ghost_lap_completed.connect(func() -> void:
 		print("[PROBE] ghost_lap_completed money=%.0f" % Bank.currency))
-	var track: Track = get_tree().get_first_node_in_group("track")
+	var track: TrackScript = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
 	print("[PROBE] loaded money=%.0f best=%.2f slots=%d" % [
@@ -130,8 +135,8 @@ func _spend() -> void:
 		slot_ok, upgrade_ok, Bank.currency, Bank.ghost_slots,
 		_car.effective_stats().max_speed,
 	])
-	_redrive_target = _laps_done + 1
-	_enter(Phase.REDRIVE, "one lap with upgraded car")
+	_redrive_target = _laps_done + REDRIVE_LAPS
+	_enter(Phase.REDRIVE, "clearing stale lap, then one upgraded lap")
 
 
 func _enter(phase: Phase, note: String) -> void:
@@ -196,6 +201,8 @@ func _release_all() -> void:
 
 
 func _save_screenshot() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	var image := get_viewport().get_texture().get_image()
 	if image == null:
 		return

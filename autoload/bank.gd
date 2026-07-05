@@ -7,17 +7,22 @@ extends Node
 
 const SAVE_PATH := "user://save.dat"
 const SAVE_INTERVAL := 5.0
-const CATALOG: UpgradeCatalog = preload("res://data/upgrades/catalog.tres")
-const ECONOMY: EconomyDef = preload("res://data/economy.tres")
+const EconomyDefScript = preload("res://autoload/economy_def.gd")
+const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
+const UpgradeCatalogScript = preload("res://scenes/car/upgrade_catalog.gd")
+const CATALOG: UpgradeCatalogScript = preload("res://data/upgrades/catalog.tres")
+const ECONOMY: EconomyDefScript = preload("res://data/economy.tres")
 
 var currency := 0.0
-var best_recording: LapRecording
+var best_recording: LapRecordingScript
 var active_track_payout := 0.0
 var upgrade_levels := {}
 var ghost_slots := 1
 
 var _save_timer := 0.0
 var _dirty := false
+var _loaded_save_unix := 0.0
+var _offline_granted := false
 
 
 func _ready() -> void:
@@ -51,7 +56,12 @@ func income_per_second() -> float:
 	if best_recording == null or best_recording.lap_time <= 0.0:
 		return 0.0
 	return ghost_slots * active_track_payout * milestone_multiplier() \
-			/ best_recording.lap_time
+				/ best_recording.lap_time
+
+
+func set_active_track_payout(payout: float) -> void:
+	active_track_payout = payout
+	_apply_pending_offline_earnings()
 
 
 func upgrade_level(id: String) -> int:
@@ -112,7 +122,7 @@ func _on_player_lap_completed(_lap_time: float, _is_best: bool) -> void:
 	Events.currency_changed.emit(currency)
 
 
-func _on_best_lap_recorded(recording: LapRecording) -> void:
+func _on_best_lap_recorded(recording: LapRecordingScript) -> void:
 	best_recording = recording
 	save_profile()
 
@@ -123,10 +133,11 @@ func save_profile() -> void:
 		push_error("Bank: cannot write save file: %s" % FileAccess.get_open_error())
 		return
 	var data := {
-		"version": 1,
+		"version": 2,
 		"currency": currency,
 		"upgrade_levels": upgrade_levels,
 		"ghost_slots": ghost_slots,
+		"saved_at_unix": Time.get_unix_time_from_system(),
 	}
 	if best_recording != null:
 		data["best_lap"] = {
@@ -152,11 +163,28 @@ func load_profile() -> void:
 	currency = data.get("currency", 0.0)
 	upgrade_levels = data.get("upgrade_levels", {})
 	ghost_slots = data.get("ghost_slots", 1)
+	_loaded_save_unix = data.get("saved_at_unix", 0.0)
 	var lap: Variant = data.get("best_lap")
 	if lap is Dictionary:
-		best_recording = LapRecording.new()
+		best_recording = LapRecordingScript.new()
 		best_recording.sample_dt = lap.get("sample_dt", 1.0 / 30.0)
 		best_recording.positions = lap.get("positions", PackedVector2Array())
 		best_recording.rotations = lap.get("rotations", PackedFloat32Array())
 		best_recording.lap_time = lap.get("lap_time", 0.0)
 	Events.currency_changed.emit(currency)
+
+
+func _apply_pending_offline_earnings() -> void:
+	if _offline_granted or _loaded_save_unix <= 0.0:
+		return
+	_offline_granted = true
+	var elapsed := maxf(0.0, Time.get_unix_time_from_system() - _loaded_save_unix)
+	var capped_elapsed := minf(elapsed, ECONOMY.offline_cap_seconds)
+	var earned := income_per_second() * capped_elapsed
+	if earned <= 0.0:
+		return
+	currency += earned
+	_dirty = true
+	Events.currency_changed.emit(currency)
+	Events.offline_earnings_granted.emit(earned, capped_elapsed)
+	save_profile()

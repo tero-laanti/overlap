@@ -6,13 +6,15 @@ extends Node2D
 
 signal lap_finished
 
+const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
+
 var playback_offset := 0.0
 
-var _recording: LapRecording
+var _recording: LapRecordingScript
 var _elapsed := 0.0
 
 
-func set_recording(recording: LapRecording) -> void:
+func set_recording(recording: LapRecordingScript) -> void:
 	_recording = recording
 	_elapsed = 0.0
 	visible = recording != null
