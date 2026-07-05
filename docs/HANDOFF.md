@@ -24,18 +24,16 @@ zero script errors.
    signed off the feel as-is. Follow-up fixes landed on main: drift
    trails are per-stint Line2Ds (fade after 4 s; fixes the
    stint-connecting streak) and also draw from keyless sideways scrub
-   (threshold drift_trail_min_lateral_speed = 120); road-edge walls and
+   (threshold drift_trail_min_lateral_speed = 250); road-edge walls and
    island collision were replaced by slowing grass (car queries the
    RoadSurface Area2D, physics layer 2; grass knobs in
    starter_car.tres). Sand/real-wall track elements are a wanted
    follow-up. Walls remain at the world edge only.
-2. **Cherry-pick the surviving polish work.** Branch
-   `polish/quality-pass` (worktree .worktrees/polish, 4 commits) — its
-   steering-floor commit is SUPERSEDED by main's data-backed version;
-   the other three are wanted and pending: per-index ghost tint variety,
-   GARAGE milestone progress label, HUD next-purchase hint. Expect small
-   conflicts in car.gd/hud.gd against the trail changes. Verify with the
-   probe loop, then fold into main and delete the branch + worktree.
+2. ~~Cherry-pick the surviving polish work.~~ DONE 2026-07-05: ghost
+   tint variety, garage milestone label, and HUD next-purchase hint
+   cherry-picked onto main (one trivial conflict in ghost_fleet.gd);
+   probe loop green. Branch `polish/quality-pass` and its worktree
+   deleted.
 3. **Build the gate-network prototype.** THE big one. Branch
    `proto/gate-network` is an EMPTY stub (points at the design commit —
    the original prototype agent died before starting; delete or reuse

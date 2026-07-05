@@ -94,10 +94,9 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   per-route PBs and fleets, analytic route detection). Not started yet:
   branch currently points at the same design-only commit as
   `design/gate-network`.
-- `polish/quality-pass` — low-speed steering floor, ghost crowd variety,
-  milestone + next-purchase UI hints. Steering floor and headless DevProbe
-  screenshot hardening were folded into main; UI hints and ghost tint variety
-  remain branch-only.
+- `polish/quality-pass` — FOLDED into main 2026-07-05 (ghost tint variety,
+  garage milestone label, HUD next-purchase hint cherry-picked; superseded
+  steering-floor commit dropped). Branch and worktree deleted.
 
 ## Later (unordered)
 - Prestige/reset layer; more cars (CarStats variants); track hazards that
