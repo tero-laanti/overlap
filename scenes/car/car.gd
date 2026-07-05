@@ -111,11 +111,13 @@ func _apply_grass(forward_speed: float, delta: float) -> float:
 	return move_toward(forward_speed, signf(forward_speed) * cap, _fx.grass_deceleration * delta)
 
 
+## The line lives in the car's parent (world space, identity transform),
+## inserted at the car's index: tree order draws it above the track but
+## below the car. No top_level — that would detach it from the canvas
+## tree and render it on top of the whole scene.
 func _make_trail() -> Line2D:
 	var line := Line2D.new()
 	line.name = "DriftTrail"
-	line.top_level = true
-	line.global_position = Vector2.ZERO
 	line.width = _fx.drift_trail_width
 	line.default_color = Color(0.01, 0.012, 0.014, 0.9)
 	line.joint_mode = Line2D.LINE_JOINT_ROUND

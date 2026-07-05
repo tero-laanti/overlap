@@ -24,7 +24,7 @@ extends Resource
 ## Minimum vehicle speed before held drift draws tire trails.
 @export var drift_trail_min_speed := 140.0
 ## Minimum sideways speed that draws tire scrub even without the drift key.
-@export var drift_trail_min_lateral_speed := 120.0
+@export var drift_trail_min_lateral_speed := 250.0
 ## World-space distance between trail points.
 @export var drift_trail_spacing := 8.0
 @export var drift_trail_max_points := 180
