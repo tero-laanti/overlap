@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
+[ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
 size = Vector2(2640, 60)
@@ -19,6 +20,7 @@ size = Vector2(300, 40)
 
 [node name="Track" type="Node2D" groups=["track"]]
 script = ExtResource("1_track")
+def = ExtResource("2_def")
 
 [node name="Grass" type="Polygon2D" parent="."]
 color = Color(0.2, 0.42, 0.18, 1)

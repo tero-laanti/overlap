@@ -20,6 +20,8 @@ var _toast_tween: Tween
 @onready var _pips_label: Label = %CheckpointPips
 @onready var _speed_label: Label = %Speed
 @onready var _toast_label: Label = %Toast
+@onready var _money_label: Label = %Money
+@onready var _income_label: Label = %IncomeRate
 
 
 func _ready() -> void:
@@ -35,6 +37,8 @@ func _process(_delta: float) -> void:
 		_last_label.text = "LAST %s" % format_time(race_state.last_lap_time)
 	if car != null:
 		_speed_label.text = "%d" % int(car.velocity.length() / 10.0)
+	_money_label.text = "$ %s" % format_money(Bank.currency)
+	_income_label.text = "+%.1f/s" % Bank.income_per_second()
 
 
 func on_lap_started() -> void:
@@ -74,6 +78,14 @@ func _refresh_pips() -> void:
 	for i in _pips_total:
 		pips += PIP_FULL if i < _pips_filled else PIP_EMPTY
 	_pips_label.text = pips
+
+
+static func format_money(amount: float) -> String:
+	if amount >= 1_000_000.0:
+		return "%.2fM" % (amount / 1_000_000.0)
+	if amount >= 10_000.0:
+		return "%.1fk" % (amount / 1_000.0)
+	return "%d" % int(amount)
 
 
 static func format_time(seconds: float) -> String:

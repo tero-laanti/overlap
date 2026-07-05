@@ -9,6 +9,8 @@ signal lap_started
 signal lap_completed
 signal checkpoint_crossed(index: int, total: int)
 
+@export var def: TrackDef
+
 var _checkpoints: Array[Area2D] = []
 var _next_checkpoint := 0
 var _lap_active := false

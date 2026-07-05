@@ -10,6 +10,10 @@ func _ready() -> void:
 	_race_state.car = $Car
 	_track.lap_started.connect(_race_state.on_lap_started)
 	_track.lap_completed.connect(_race_state.on_lap_completed)
+	Bank.active_track_payout = _track.def.base_payout
+	if Bank.best_recording != null:
+		_race_state.adopt_best(Bank.best_recording)
+		Events.best_lap_recorded.emit(Bank.best_recording)
 	var hud := $HUD
 	hud.race_state = _race_state
 	hud.car = $Car

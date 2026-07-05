@@ -38,11 +38,18 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   time. Ghost has no physics and no collision (hard rule 5 holds).
 
 ## Slice 4 — Ghosts pay
-- [ ] Bank autoload (currency, income = track_value / lap_time per ghost)
-- [ ] Events bus; HUD money counter ticking up per ghost lap
-- [ ] Save/load (Bank state + best LapRecordings)
-- **Accept:** hire ghost → money rises each ghost lap → quit and relaunch →
-      state intact.
+- [x] Bank autoload (currency; each ghost lap pays TrackDef.base_payout,
+      so income/s = payout / lap_time)
+- [x] HUD money counter + income rate, ticking per ghost lap
+- [x] Save/load (currency + best LapRecording via store_var; 5 s autosave
+      and save-on-PB and on close)
+- [x] **Accept:** ghost earns → money rises each ghost lap → quit and
+      relaunch → state intact.
+- Notes: verified 2026-07-05 — parked car, ghost paid $10 exactly every
+  7.03 s (income 1.42/s = 10/7.03); relaunch restored money + PB, spawned
+  the ghost at t=0, and correctly flagged 7.10 as not-a-best against the
+  persisted 7.03. Ghost auto-hires on first PB; purchasable slots are
+  slice 5.
 
 ## Slice 5 — Spend it
 - [ ] UpgradeDef resources + shop UI (3 upgrades: top speed, grip, accel)

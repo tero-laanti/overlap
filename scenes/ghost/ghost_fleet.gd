@@ -12,6 +12,8 @@ func _ready() -> void:
 
 func _on_best_lap_recorded(recording: LapRecording) -> void:
 	if get_child_count() == 0:
-		add_child(GHOST_SCENE.instantiate())
+		var ghost: Ghost = GHOST_SCENE.instantiate()
+		ghost.lap_finished.connect(Events.ghost_lap_completed.emit)
+		add_child(ghost)
 	for ghost: Ghost in get_children():
 		ghost.set_recording(recording)

@@ -37,6 +37,13 @@ func _physics_process(_delta: float) -> void:
 	_rotations.append(car.rotation)
 
 
+## Adopt a persisted best lap (loaded by Bank) so PB comparisons and the
+## HUD survive restarts.
+func adopt_best(recording: LapRecording) -> void:
+	best_recording = recording
+	best_lap_time = recording.lap_time
+
+
 func on_lap_started() -> void:
 	_running = true
 	current_lap_time = 0.0

@@ -12,6 +12,7 @@ const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
 const TIMEOUT := 60.0
 const TARGET_LAPS := 3
+const IDLE_TAIL := 16.0
 
 ## Corner apex targets at road center, clockwise from the spawn point.
 const WAYPOINTS: Array[Vector2] = [
@@ -31,6 +32,7 @@ var _held: Array[String] = []
 var _car: Car
 var _waypoint_index := 0
 var _laps_done := 0
+var _idle_until := 0.0
 
 
 func _ready() -> void:
@@ -43,6 +45,12 @@ func _ready() -> void:
 	Events.best_lap_recorded.connect(func(rec: LapRecording) -> void:
 		print("[PROBE] best_lap_recorded samples=%d dt=%.4f lap_time=%.2f" % [
 			rec.positions.size(), rec.sample_dt, rec.lap_time]))
+	Events.ghost_lap_completed.connect(func() -> void:
+		print("[PROBE] ghost_lap_completed money=%.0f" % Bank.currency))
+	print("[PROBE] loaded money=%.0f best=%.2f" % [
+		Bank.currency,
+		Bank.best_recording.lap_time if Bank.best_recording else 0.0,
+	])
 	var track: Track = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
@@ -56,13 +64,19 @@ func _process(delta: float) -> void:
 	if _car == null:
 		return
 
-	_drive()
+	var driving := _laps_done < TARGET_LAPS and _elapsed < TIMEOUT
+	if driving:
+		_drive()
+	elif _idle_until == 0.0:
+		_release_all()
+		_idle_until = _elapsed + IDLE_TAIL
+		print("[PROBE] driving done, idling to watch ghost income")
 
 	if _elapsed >= _next_telemetry:
 		_next_telemetry += TELEMETRY_INTERVAL
-		var line := "[PROBE] t=%.1f pos=(%.0f, %.0f) speed=%.0f wp=%d" % [
+		var line := "[PROBE] t=%.1f pos=(%.0f, %.0f) speed=%.0f money=%.0f" % [
 			_elapsed, _car.global_position.x, _car.global_position.y,
-			_car.velocity.length(), _waypoint_index,
+			_car.velocity.length(), Bank.currency,
 		]
 		var ghost: Ghost = get_tree().get_first_node_in_group("ghost")
 		if ghost != null:
@@ -73,9 +87,9 @@ func _process(delta: float) -> void:
 		_next_screenshot += SCREENSHOT_INTERVAL
 		_save_screenshot()
 
-	if _laps_done >= TARGET_LAPS or _elapsed >= TIMEOUT:
-		_release_all()
-		print("[PROBE] done laps=%d t=%.1f" % [_laps_done, _elapsed])
+	if (_idle_until > 0.0 and _elapsed >= _idle_until) or _elapsed >= TIMEOUT:
+		print("[PROBE] done laps=%d t=%.1f money=%.0f income=%.2f/s" % [
+			_laps_done, _elapsed, Bank.currency, Bank.income_per_second()])
 		set_process(false)
 
 
