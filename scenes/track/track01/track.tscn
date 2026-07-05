@@ -1,4 +1,6 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
 size = Vector2(2640, 60)
@@ -9,7 +11,14 @@ size = Vector2(1800, 800)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v_wall"]
 size = Vector2(60, 1400)
 
-[node name="Track" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_line_v"]
+size = Vector2(40, 300)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_line_h"]
+size = Vector2(300, 40)
+
+[node name="Track" type="Node2D" groups=["track"]]
+script = ExtResource("1_track")
 
 [node name="Grass" type="Polygon2D" parent="."]
 color = Color(0.2, 0.42, 0.18, 1)
@@ -36,6 +45,36 @@ polygon = PackedVector2Array(900, -700, 1200, -700, 1200, 700, 900, 700)
 [node name="StartLine" type="Polygon2D" parent="."]
 color = Color(0.92, 0.92, 0.92, 1)
 polygon = PackedVector2Array(-8, 400, 8, 400, 8, 700, -8, 700)
+
+[node name="StartLineArea" type="Area2D" parent="."]
+position = Vector2(0, 550)
+collision_layer = 0
+
+[node name="Shape" type="CollisionShape2D" parent="StartLineArea"]
+shape = SubResource("RectangleShape2D_line_v")
+
+[node name="Checkpoints" type="Node2D" parent="."]
+
+[node name="CP0" type="Area2D" parent="Checkpoints"]
+position = Vector2(-1050, 0)
+collision_layer = 0
+
+[node name="Shape" type="CollisionShape2D" parent="Checkpoints/CP0"]
+shape = SubResource("RectangleShape2D_line_h")
+
+[node name="CP1" type="Area2D" parent="Checkpoints"]
+position = Vector2(0, -550)
+collision_layer = 0
+
+[node name="Shape" type="CollisionShape2D" parent="Checkpoints/CP1"]
+shape = SubResource("RectangleShape2D_line_v")
+
+[node name="CP2" type="Area2D" parent="Checkpoints"]
+position = Vector2(1050, 0)
+collision_layer = 0
+
+[node name="Shape" type="CollisionShape2D" parent="Checkpoints/CP2"]
+shape = SubResource("RectangleShape2D_line_h")
 
 [node name="OuterWalls" type="StaticBody2D" parent="."]
 

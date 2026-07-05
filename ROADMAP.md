@@ -17,10 +17,14 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   wall collisions all behave. Feel tuning: data/cars/starter_car.tres.
 
 ## Slice 2 — Laps exist
-- [ ] Start line + 2–3 checkpoints on Track; lap validation
-- [ ] RaceState: lap timer, best lap, HUD showing current/best
-- **Accept:** crossing the line after all checkpoints logs a lap time;
+- [x] Start line + 3 checkpoints on Track; ordered lap validation
+- [x] RaceState: lap timer, best lap, HUD showing current/best/last
+- [x] **Accept:** crossing the line after all checkpoints logs a lap time;
       cutting the track does not.
+- Notes: verified 2026-07-05 — DevProbe waypoint autopilot completed two
+  clean laps (7.10s, 7.04s); checkpoints fired in order; first start-line
+  crossing started the clock without logging a lap; HUD confirmed via
+  screenshot. Track owns validity, RaceState owns time, HUD reads only.
 
 ## Slice 3 — Your ghost drives
 - [ ] LapRecording resource; RaceState records during each lap

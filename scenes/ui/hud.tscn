@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Margin" type="MarginContainer" parent="."]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 360.0
+offset_bottom = 140.0
+
+[node name="Panel" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="CurrentLap" type="Label" parent="Margin/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "LAP  -:--.--"
+
+[node name="BestLap" type="Label" parent="Margin/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "BEST -:--.--"
+
+[node name="LastLap" type="Label" parent="Margin/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "LAST -:--.--"

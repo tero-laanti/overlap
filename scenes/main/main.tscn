@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/track/track01/track.tscn" id="2_track"]
 [ext_resource type="PackedScene" path="res://scenes/car/car.tscn" id="3_car"]
 [ext_resource type="Script" path="res://scenes/dev/dev_probe.gd" id="4_probe"]
+[ext_resource type="Script" path="res://scenes/main/race_state.gd" id="5_race"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -11,8 +13,13 @@ script = ExtResource("1_main")
 [node name="Track" parent="." instance=ExtResource("2_track")]
 
 [node name="Car" parent="." instance=ExtResource("3_car")]
-position = Vector2(-200, 550)
+position = Vector2(250, 550)
 rotation = -1.5707964
+
+[node name="RaceState" type="Node" parent="."]
+script = ExtResource("5_race")
+
+[node name="HUD" parent="." instance=ExtResource("6_hud")]
 
 [node name="DevProbe" type="Node" parent="."]
 script = ExtResource("4_probe")
