@@ -33,3 +33,7 @@ extends Resource
 @export var drift_trail_fade_delay := 4.0
 ## Seconds the fade-out itself takes.
 @export var drift_trail_fade_time := 1.5
+## Fraction of max_speed the car can sustain off the road.
+@export_range(0.05, 1.0) var grass_speed_multiplier := 0.5
+## How fast excess speed bleeds off on grass, in px/s².
+@export var grass_deceleration := 1100.0

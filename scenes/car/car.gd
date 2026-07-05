@@ -9,6 +9,8 @@ extends CharacterBody2D
 const CarStatsScript = preload("res://scenes/car/car_stats.gd")
 const REAR_LEFT_TIRE := Vector2(-14.0, 24.0)
 const REAR_RIGHT_TIRE := Vector2(14.0, 24.0)
+## Physics layer 2 ("road_surface") — Area2Ds marking drivable asphalt.
+const ROAD_SURFACE_MASK := 1 << 1
 
 @export var stats: CarStatsScript
 
@@ -18,10 +20,15 @@ var _right_trail: Line2D
 var _left_trail_last := Vector2.ZERO
 var _right_trail_last := Vector2.ZERO
 var _trails_active := false
+var _road_query: PhysicsPointQueryParameters2D
 
 
 func _ready() -> void:
 	_refresh_stats()
+	_road_query = PhysicsPointQueryParameters2D.new()
+	_road_query.collide_with_areas = true
+	_road_query.collide_with_bodies = false
+	_road_query.collision_mask = ROAD_SURFACE_MASK
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
 
@@ -57,6 +64,8 @@ func _physics_process(delta: float) -> void:
 
 	forward_speed = _apply_throttle(throttle, forward_speed, delta)
 	forward_speed = clampf(forward_speed, -_fx.reverse_speed, _fx.max_speed)
+	if not _is_on_road():
+		forward_speed = _apply_grass(forward_speed, delta)
 
 	var grip := _fx.drift_grip if drifting else _fx.grip
 	var lateral_speed := lateral.length()
@@ -88,6 +97,18 @@ func _apply_throttle(throttle: float, forward_speed: float, delta: float) -> flo
 		var rate := _fx.braking if forward_speed > 0.0 else _fx.acceleration
 		return forward_speed + rate * throttle * delta
 	return move_toward(forward_speed, 0.0, _fx.rolling_drag * delta)
+
+
+func _is_on_road() -> bool:
+	_road_query.position = global_position
+	return not get_world_2d().direct_space_state.intersect_point(_road_query, 1).is_empty()
+
+
+func _apply_grass(forward_speed: float, delta: float) -> float:
+	var cap := _fx.max_speed * _fx.grass_speed_multiplier
+	if absf(forward_speed) <= cap:
+		return forward_speed
+	return move_toward(forward_speed, signf(forward_speed) * cap, _fx.grass_deceleration * delta)
 
 
 func _make_trail() -> Line2D:

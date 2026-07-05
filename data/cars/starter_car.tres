@@ -22,3 +22,5 @@ drift_trail_max_points = 180
 drift_trail_width = 7.0
 drift_trail_fade_delay = 4.0
 drift_trail_fade_time = 1.5
+grass_speed_multiplier = 0.5
+grass_deceleration = 1100.0

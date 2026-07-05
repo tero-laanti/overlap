@@ -67,6 +67,11 @@ steer_right={
 ]
 }
 
+[layer_names]
+
+2d_physics/layer_1="world"
+2d_physics/layer_2="road_surface"
+
 [physics]
 
 common/physics_interpolation=true
