@@ -37,6 +37,10 @@ These exist because Overlap 1 died from a 1244-line main.gd orchestrator.
 7. Typed GDScript, `class_name` on shared classes, snake_case files,
    PascalCase node names, past-tense signal names for facts
    (`lap_completed`), no debug prints left behind.
+8. **Cross-script type references use `const XScript = preload(...)`**
+   (not bare class_name types) in annotations, so fresh worktrees pass
+   `godot --headless --path . --quit` before any import builds the class
+   cache. Keep the `class_name` declarations themselves.
 
 ## Workflow
 
