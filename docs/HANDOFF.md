@@ -51,13 +51,19 @@ zero script errors.
    bakes surface + grass hitbox from Curve2D centerlines; track01
    rebuilt drivable-area-identical (probe laps byte-identical). Curves
    are now just curvier centerlines.
-6. **Next: Clover petal 1** (docs/GATE_NETWORK.md §4B + §8 step 4):
-   a themed curved loop grafted onto the ring via a purchasable gate,
-   risk grammar (screen-right = richer), mastery medals. This is the
-   first real feel-relevant geometry — playtest curves with the human
-   early. Border/curb rendering (two-layer overdraw, borders below all
-   surfaces — beware z_index vs drift-trail draw order) can land with
-   the petal theme.
+6. ~~Clover petal 1~~ DONE 2026-07-05: sand petal + Dune Gate + Dune
+   Bend/Twin Cut routes + mastery medals (economy.tres knobs; derived
+   from PB vs par, never stored). NOTE: adding a petal widens the
+   junction area, which sped up ring laps (~6.4s vs 6.9) — pars were
+   recalibrated so probe-clean laps land silver. Twin Cut has never
+   been driven; its par (5.8) is a guess — verify when someone drives
+   it. Human feel pass on the petal curve pending. A debug save wipe
+   lives in the GARAGE (debug builds only) and DevProbe resets through
+   it every run.
+7. Next: petals 2-3 with themes/risk grammar, the Jump Kit gateway
+   moment, knowledge route, gate-exhausted badges. Border/curb
+   rendering (two-layer overdraw, borders below all surfaces — beware
+   z_index vs drift-trail draw order) can land with petal 2's theme.
 
 ## Verification workflow (mandatory before any commit)
 

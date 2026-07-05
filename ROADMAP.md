@@ -104,7 +104,14 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       hitbox from a Curve2D centerline (tessellate + offset_polyline,
       square caps seal junctions). track01 rebuilt from 5 centerlines,
       byte-for-byte drivable-area equivalent — probe lap times identical.
-- [ ] Clover petal 1 (theme + risk grammar + mastery medals)
+- [x] Clover petal 1: sand-themed curved petal (Dune Gate $250) west of
+      the ring; routes Dune Bend + Twin Cut (two-gate combo, hinted until
+      driven); mastery medals from PB vs par (data/economy.tres knobs)
+      multiply that route's fleet income. Probe-verified; pars set so
+      autopilot-clean laps land silver. Human feel pass on the curve +
+      Twin Cut par (never driven) still pending.
+- [ ] Petals 2-3, Jump Kit gateway upgrade, knowledge route,
+      gate-exhausted badges (see design §2 rules 7-10)
 - **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
       PB and fleet, income adds up across routes.
 - Notes: prototype verified headless 2026-07-05 — gate bought, Island Cut
