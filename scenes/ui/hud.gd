@@ -33,6 +33,10 @@ func _ready() -> void:
 	Events.lap_completed.connect(_on_lap_completed)
 	Events.offline_earnings_granted.connect(_on_offline_earnings_granted)
 	Events.route_discovered.connect(_on_route_discovered)
+	Events.car_reset_to_road.connect(func() -> void:
+		_show_toast("SPLASH — lap void", false))
+	Events.secret_unlocked.connect(func(_id: String) -> void:
+		_show_toast("A hidden road reveals itself…", true))
 	_toast_label.modulate.a = 0.0
 	_refresh_pips()
 

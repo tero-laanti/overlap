@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scenes/track/route_tracker.gd" id="4_tracker"]
 [ext_resource type="Script" path="res://scenes/track/gate.gd" id="5_gate"]
 [ext_resource type="PackedScene" path="res://scenes/track/road_segment.tscn" id="6_segment"]
+[ext_resource type="PackedScene" path="res://scenes/track/tree.tscn" id="7_tree"]
+[ext_resource type="Script" path="res://scenes/track/secret_road.gd" id="8_secret"]
 
 [sub_resource type="Curve2D" id="Curve2D_top"]
 _data = {
@@ -43,11 +45,11 @@ _data = {
 }
 point_count = 3
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
-size = Vector2(3580, 60)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_v_wall"]
-size = Vector2(60, 2400)
+[sub_resource type="Curve2D" id="Curve2D_forest"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, -300, -660, -550, 250, 300, -250, -300, -1500, -1400, -350, 0, 350, 0, -900, -2100, -300, -100, 300, 100, 300, -1900, 0, -300, 0, 300, 900, -1200, 50, -250, 0, 0, 700, -550)
+}
+point_count = 6
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_bar"]
 size = Vector2(700, 24)
@@ -55,20 +57,43 @@ size = Vector2(700, 24)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_petal_gate_bar"]
 size = Vector2(24, 460)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_water_h"]
+size = Vector2(16000, 6500)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_water_v"]
+size = Vector2(5100, 16000)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gold_trunk"]
+radius = 18.0
+
 [node name="Track" type="Node2D" groups=["track"]]
 script = ExtResource("1_track")
 def = ExtResource("2_def")
 network = ExtResource("3_network")
 
+[node name="WaterVisual" type="Polygon2D" parent="."]
+color = Color(0.13, 0.3, 0.42, 1)
+polygon = PackedVector2Array(-8000, -8000, 8000, -8000, 8000, 8000, -8000, 8000)
+
 [node name="Grass" type="Polygon2D" parent="."]
 color = Color(0.2, 0.42, 0.18, 1)
-polygon = PackedVector2Array(-2400, -1900, 2400, -1900, 2400, 1900, -2400, 1900)
+polygon = PackedVector2Array(-2900, -2700, 2900, -2700, 2900, 1500, -2900, 1500)
 
 [node name="IslandVisual" type="Polygon2D" parent="."]
 color = Color(0.16, 0.34, 0.15, 1)
 polygon = PackedVector2Array(-900, -400, 900, -400, 900, 400, -900, 400)
 
 [node name="Road" type="Node2D" parent="."]
+
+[node name="ForestRoad" type="Node2D" parent="Road"]
+script = ExtResource("8_secret")
+secret_id = "forest_run"
+trigger_line_id = "forest_gap"
+
+[node name="Segment" parent="Road/ForestRoad" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_forest")
+half_width = 140.0
+color = Color(0.23, 0.27, 0.23, 1)
 
 [node name="SegPetal" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_petal")
@@ -92,6 +117,84 @@ curve = SubResource("Curve2D_chord")
 [node name="StartLine" type="Polygon2D" parent="."]
 color = Color(0.92, 0.92, 0.92, 1)
 polygon = PackedVector2Array(-8, 400, 8, 400, 8, 700, -8, 700)
+
+[node name="Trees" type="Node2D" parent="."]
+
+[node name="GoldTreeWest" type="StaticBody2D" parent="Trees"]
+position = Vector2(-840, -780)
+
+[node name="Shape" type="CollisionShape2D" parent="Trees/GoldTreeWest"]
+shape = SubResource("CircleShape2D_gold_trunk")
+
+[node name="Canopy" type="Polygon2D" parent="Trees/GoldTreeWest"]
+color = Color(0.62, 0.45, 0.1, 1)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="Crown" type="Polygon2D" parent="Trees/GoldTreeWest"]
+color = Color(0.85, 0.65, 0.2, 1)
+polygon = PackedVector2Array(0, -26, 19, -13, 19, 13, 0, 26, -19, 13, -19, -13)
+
+[node name="GoldTreeEast" type="StaticBody2D" parent="Trees"]
+position = Vector2(-480, -780)
+
+[node name="Shape" type="CollisionShape2D" parent="Trees/GoldTreeEast"]
+shape = SubResource("CircleShape2D_gold_trunk")
+
+[node name="Canopy" type="Polygon2D" parent="Trees/GoldTreeEast"]
+color = Color(0.62, 0.45, 0.1, 1)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="Crown" type="Polygon2D" parent="Trees/GoldTreeEast"]
+color = Color(0.85, 0.65, 0.2, 1)
+polygon = PackedVector2Array(0, -26, 19, -13, 19, 13, 0, 26, -19, 13, -19, -13)
+
+[node name="Tree1" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-300, -1000)
+
+[node name="Tree2" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-1050, -950)
+
+[node name="Tree3" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-1900, -1050)
+
+[node name="Tree4" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-2100, -1800)
+
+[node name="Tree5" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-1450, -2350)
+
+[node name="Tree6" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-350, -2250)
+
+[node name="Tree7" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-150, -1500)
+
+[node name="Tree8" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(450, -2350)
+
+[node name="Tree9" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(1300, -1800)
+
+[node name="Tree10" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(1350, -950)
+
+[node name="Tree11" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(150, -1150)
+
+[node name="Tree12" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-2350, -800)
+
+[node name="Tree13" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-500, -1700)
+
+[node name="Tree14" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(-2300, 600)
+
+[node name="Tree15" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(1900, -100)
+
+[node name="Tree16" parent="Trees" instance=ExtResource("7_tree")]
+position = Vector2(2300, 900)
 
 [node name="RouteTracker" type="Node" parent="."]
 script = ExtResource("4_tracker")
@@ -148,20 +251,23 @@ polygon = PackedVector2Array(-12, -20, 12, -20, 12, 20, -12, 20)
 color = Color(0.15, 0.13, 0.1, 1)
 polygon = PackedVector2Array(-12, 150, 12, 150, 12, 190, -12, 190)
 
-[node name="OuterWalls" type="StaticBody2D" parent="."]
+[node name="Water" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+monitoring = false
 
-[node name="TopWall" type="CollisionShape2D" parent="OuterWalls"]
-position = Vector2(0, -1230)
-shape = SubResource("RectangleShape2D_h_wall")
+[node name="North" type="CollisionShape2D" parent="Water"]
+position = Vector2(0, -5950)
+shape = SubResource("RectangleShape2D_water_h")
 
-[node name="BottomWall" type="CollisionShape2D" parent="OuterWalls"]
-position = Vector2(0, 1230)
-shape = SubResource("RectangleShape2D_h_wall")
+[node name="South" type="CollisionShape2D" parent="Water"]
+position = Vector2(0, 4750)
+shape = SubResource("RectangleShape2D_water_h")
 
-[node name="LeftWall" type="CollisionShape2D" parent="OuterWalls"]
-position = Vector2(-1730, 0)
-shape = SubResource("RectangleShape2D_v_wall")
+[node name="West" type="CollisionShape2D" parent="Water"]
+position = Vector2(-5450, 0)
+shape = SubResource("RectangleShape2D_water_v")
 
-[node name="RightWall" type="CollisionShape2D" parent="OuterWalls"]
-position = Vector2(1730, 0)
-shape = SubResource("RectangleShape2D_v_wall")
+[node name="East" type="CollisionShape2D" parent="Water"]
+position = Vector2(5450, 0)
+shape = SubResource("RectangleShape2D_water_v")

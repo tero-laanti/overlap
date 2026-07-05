@@ -13,6 +13,7 @@ const CarScript = preload("res://scenes/car/car.gd")
 
 var car: CarScript
 var waypoints: Array[Vector2] = []
+var reach := WAYPOINT_REACHED_DISTANCE
 
 var _index := 0
 var _held: Array[String] = []
@@ -21,8 +22,11 @@ var _stuck_time := 0.0
 var _reverse_until := 0.0
 
 
-func set_route(points: Array[Vector2]) -> void:
+## A tighter reach threads narrow mouths (tree gaps) at the cost of
+## more correction steering.
+func set_route(points: Array[Vector2], reach_distance := WAYPOINT_REACHED_DISTANCE) -> void:
 	waypoints = points
+	reach = reach_distance
 	_index = 0
 
 
@@ -44,7 +48,7 @@ func drive(delta: float) -> void:
 		_stuck_time = 0.0
 
 	var target := waypoints[_index]
-	if car.global_position.distance_to(target) < WAYPOINT_REACHED_DISTANCE:
+	if car.global_position.distance_to(target) < reach:
 		_index = (_index + 1) % waypoints.size()
 		target = waypoints[_index]
 

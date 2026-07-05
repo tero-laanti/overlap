@@ -76,6 +76,7 @@ steer_right={
 
 2d_physics/layer_1="world"
 2d_physics/layer_2="road_surface"
+2d_physics/layer_3="water"
 
 [physics]
 

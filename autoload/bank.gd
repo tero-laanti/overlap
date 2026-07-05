@@ -25,6 +25,7 @@ var route_records := {}
 var discovered_routes: Array[String] = []
 var purchased_gates: Array[String] = []
 var medal_unlocked_routes: Array[String] = []
+var unlocked_secrets: Array[String] = []
 var upgrade_levels := {}
 var ghost_slots := 1
 
@@ -78,11 +79,12 @@ func authored_routes() -> Array[RouteDefScript]:
 
 
 ## Undriven but no longer unknown: every gate the route needs is owned.
+## Secret routes are never hinted — they live only in the counter.
 func is_route_hinted(route_id: String) -> bool:
 	if route_id in discovered_routes or _network == null:
 		return false
 	var route := _network.find_route(route_id)
-	if route == null:
+	if route == null or route.secret:
 		return false
 	for gate_id in route.required_gates:
 		if not is_gate_purchased(gate_id):
@@ -111,6 +113,18 @@ func medal_multiplier(route_id: String) -> float:
 
 func is_medal_unlocked(route_id: String) -> bool:
 	return route_id in medal_unlocked_routes
+
+
+func is_secret_unlocked(secret_id: String) -> bool:
+	return secret_id in unlocked_secrets
+
+
+func unlock_secret(secret_id: String) -> void:
+	if secret_id in unlocked_secrets:
+		return
+	unlocked_secrets.append(secret_id)
+	save_profile()
+	Events.secret_unlocked.emit(secret_id)
 
 
 func medal_unlock_cost(route_id: String) -> float:
@@ -265,6 +279,7 @@ func reset_profile() -> void:
 	discovered_routes.clear()
 	purchased_gates.clear()
 	medal_unlocked_routes.clear()
+	unlocked_secrets.clear()
 	upgrade_levels.clear()
 	ghost_slots = 1
 	_loaded_save_unix = 0.0

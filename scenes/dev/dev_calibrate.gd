@@ -10,7 +10,7 @@ extends Node
 
 const FLAG_PATH := "user://calibrate.flag"
 const LAPS_PER_ROUTE := 3
-const TIMEOUT := 220.0
+const TIMEOUT := 300.0
 const GRANT := 100000.0
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -22,14 +22,26 @@ const TWIN_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1260, -300), Vector2(-1050, -550),
 	Vector2(300, -550), Vector2(300, -100), Vector2(300, 550),
 ]
+## Through the golden tree gap — the first crossing also proves the
+## secret unlock trigger fires from real driving.
+const FOREST_WAYPOINTS: Array[Vector2] = [
+	Vector2(-1050, 550), Vector2(-1050, -550), Vector2(-660, -430),
+	Vector2(-660, -1000), Vector2(-1500, -1400), Vector2(-900, -2100),
+	Vector2(300, -1900), Vector2(900, -1200), Vector2(700, -550),
+	Vector2(1050, -550), Vector2(1050, 550),
+]
+## The tree gap is 240 px wide — the default reach radius corner-cuts
+## straight past it.
+const FOREST_REACH := 120.0
 
 var _driver: DevDriverScript = DevDriverScript.new()
-var _route_ids: Array[String] = ["ring", "cut", "petal", "twin"]
+var _route_ids: Array[String] = ["ring", "cut", "petal", "twin", "forest"]
 var _route_points := {
 	"ring": ProbeScript.RING_WAYPOINTS,
 	"cut": ProbeScript.CUT_WAYPOINTS,
 	"petal": ProbeScript.PETAL_WAYPOINTS,
 	"twin": TWIN_WAYPOINTS,
+	"forest": FOREST_WAYPOINTS,
 }
 var _stage := -1
 var _stage_laps := 0
@@ -90,7 +102,8 @@ func _next_stage() -> void:
 		_report()
 		return
 	var route_id := _route_ids[_stage]
-	_driver.set_route(_route_points[route_id])
+	_driver.set_route(_route_points[route_id],
+			FOREST_REACH if route_id == "forest" else DevDriverScript.WAYPOINT_REACHED_DISTANCE)
 	print("[CAL] driving %s" % route_id)
 
 

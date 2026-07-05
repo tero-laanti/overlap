@@ -34,6 +34,7 @@ static func write(path: String, bank: Node) -> void:
 		"discovered_routes": bank.discovered_routes,
 		"purchased_gates": bank.purchased_gates,
 		"medal_unlocked_routes": bank.medal_unlocked_routes,
+		"unlocked_secrets": bank.unlocked_secrets,
 	})
 
 
@@ -58,6 +59,7 @@ static func read_into(path: String, bank: Node) -> float:
 		bank.discovered_routes.assign(data.get("discovered_routes", []))
 		bank.purchased_gates.assign(data.get("purchased_gates", []))
 		bank.medal_unlocked_routes.assign(data.get("medal_unlocked_routes", []))
+		bank.unlocked_secrets.assign(data.get("unlocked_secrets", []))
 	return data.get("saved_at_unix", 0.0)
 
 

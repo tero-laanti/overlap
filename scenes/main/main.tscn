@@ -1,39 +1,39 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene format=3 uid="uid://pp8338uc35sm"]
 
-[ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://cj46gv6p6j5l3" path="res://scenes/main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/track/track01/track.tscn" id="2_track"]
 [ext_resource type="PackedScene" path="res://scenes/car/car.tscn" id="3_car"]
-[ext_resource type="Script" path="res://scenes/dev/dev_probe.gd" id="4_probe"]
-[ext_resource type="Script" path="res://scenes/main/race_state.gd" id="5_race"]
+[ext_resource type="Script" uid="uid://b8fl0kv1hl8tg" path="res://scenes/dev/dev_probe.gd" id="4_probe"]
+[ext_resource type="Script" uid="uid://bmd6oycf0lryp" path="res://scenes/main/race_state.gd" id="5_race"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
-[ext_resource type="Script" path="res://scenes/ghost/ghost_fleet.gd" id="7_fleet"]
+[ext_resource type="Script" uid="uid://bnpgnsmrsgy6e" path="res://scenes/ghost/ghost_fleet.gd" id="7_fleet"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="8_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/route_log.tscn" id="9_routelog"]
-[ext_resource type="Script" path="res://scenes/dev/dev_calibrate.gd" id="10_calibrate"]
+[ext_resource type="Script" uid="uid://dcal8wjcu7eva" path="res://scenes/dev/dev_calibrate.gd" id="10_calibrate"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")
 
-[node name="Track" parent="." instance=ExtResource("2_track")]
+[node name="Track" parent="." unique_id=797709083 instance=ExtResource("2_track")]
 
-[node name="GhostFleet" type="Node2D" parent="."]
+[node name="GhostFleet" type="Node2D" parent="." unique_id=361418478]
 script = ExtResource("7_fleet")
 
-[node name="Car" parent="." instance=ExtResource("3_car")]
+[node name="Car" parent="." unique_id=381192272 instance=ExtResource("3_car")]
 position = Vector2(250, 550)
 rotation = -1.5707964
 
-[node name="RaceState" type="Node" parent="."]
+[node name="RaceState" type="Node" parent="." unique_id=1190303084]
 script = ExtResource("5_race")
 
-[node name="HUD" parent="." instance=ExtResource("6_hud")]
+[node name="HUD" parent="." unique_id=148299819 instance=ExtResource("6_hud")]
 
-[node name="Shop" parent="." instance=ExtResource("8_shop")]
+[node name="Shop" parent="." unique_id=1594345435 instance=ExtResource("8_shop")]
 
-[node name="RouteLog" parent="." instance=ExtResource("9_routelog")]
+[node name="RouteLog" parent="." unique_id=1581962153 instance=ExtResource("9_routelog")]
 
-[node name="DevProbe" type="Node" parent="."]
+[node name="DevProbe" type="Node" parent="." unique_id=1780207203]
 script = ExtResource("4_probe")
 
-[node name="DevCalibrate" type="Node" parent="."]
+[node name="DevCalibrate" type="Node" parent="." unique_id=1293606145]
 script = ExtResource("10_calibrate")

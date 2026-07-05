@@ -89,6 +89,11 @@ func _ready() -> void:
 		print("[PROBE] gate_purchased id=%s money=%.0f" % [gate_id, Bank.currency]))
 	Events.medal_unlocked.connect(func(route_id: String) -> void:
 		print("[PROBE] medal_unlocked route=%s money=%.0f" % [route_id, Bank.currency]))
+	Events.car_reset_to_road.connect(func() -> void:
+		print("[PROBE] splash reset pos=(%.0f, %.0f)" % [
+			_car.global_position.x, _car.global_position.y]))
+	Events.secret_unlocked.connect(func(secret_id: String) -> void:
+		print("[PROBE] secret_unlocked id=%s" % secret_id))
 	var track: TrackScript = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))

@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_trunk"]
+radius = 18.0
+
+[node name="Tree" type="StaticBody2D"]
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_trunk")
+
+[node name="Canopy" type="Polygon2D" parent="."]
+color = Color(0.12, 0.28, 0.12, 1)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="Crown" type="Polygon2D" parent="."]
+color = Color(0.18, 0.38, 0.16, 1)
+polygon = PackedVector2Array(0, -26, 19, -13, 19, 13, 0, 26, -19, 13, -19, -13)

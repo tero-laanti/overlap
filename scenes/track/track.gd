@@ -12,6 +12,7 @@ signal checkpoint_crossed(index: int, total: int)
 const TrackDefScript = preload("res://scenes/track/track_def.gd")
 const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
 const RouteTrackerScript = preload("res://scenes/track/route_tracker.gd")
+const SecretRoadScript = preload("res://scenes/track/secret_road.gd")
 
 @export var def: TrackDefScript
 @export var network: TrackNetworkDefScript
@@ -25,6 +26,9 @@ func _ready() -> void:
 	_tracker.route_lap_completed.connect(lap_completed.emit)
 	_tracker.edge_crossed.connect(func(count: int) -> void:
 		checkpoint_crossed.emit(count - 1, _longest_route_edges()))
+	for child in $Road.get_children():
+		if child is SecretRoadScript:
+			_tracker.line_crossed.connect(child.on_line_crossed)
 
 
 func _longest_route_edges() -> int:

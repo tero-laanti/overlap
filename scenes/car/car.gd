@@ -11,6 +11,8 @@ const REAR_LEFT_TIRE := Vector2(-14.0, 24.0)
 const REAR_RIGHT_TIRE := Vector2(14.0, 24.0)
 ## Physics layer 2 ("road_surface") — Area2Ds marking drivable asphalt.
 const ROAD_SURFACE_MASK := 1 << 1
+## Physics layer 3 ("water") — Area2Ds marking the sea around the island.
+const WATER_MASK := 1 << 2
 
 @export var stats: CarStatsScript
 
@@ -21,16 +23,25 @@ var _left_trail_last := Vector2.ZERO
 var _right_trail_last := Vector2.ZERO
 var _trails_active := false
 var _road_query: PhysicsPointQueryParameters2D
+var _water_query: PhysicsPointQueryParameters2D
+var _last_road_pos := Vector2.ZERO
 
 
 func _ready() -> void:
 	_refresh_stats()
-	_road_query = PhysicsPointQueryParameters2D.new()
-	_road_query.collide_with_areas = true
-	_road_query.collide_with_bodies = false
-	_road_query.collision_mask = ROAD_SURFACE_MASK
+	_road_query = _make_point_query(ROAD_SURFACE_MASK)
+	_water_query = _make_point_query(WATER_MASK)
+	_last_road_pos = global_position
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
+
+
+func _make_point_query(mask: int) -> PhysicsPointQueryParameters2D:
+	var query := PhysicsPointQueryParameters2D.new()
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	query.collision_mask = mask
+	return query
 
 
 func effective_stats() -> CarStatsScript:
@@ -73,6 +84,10 @@ func _physics_process(delta: float) -> void:
 
 	velocity = forward * forward_speed + lateral
 	move_and_slide()
+	if _is_on_road():
+		_last_road_pos = global_position
+	elif _query_hit(_water_query):
+		_reset_to_road()
 	_update_drift_trails(drifting, lateral_speed, velocity.length())
 
 
@@ -100,15 +115,30 @@ func _apply_throttle(throttle: float, forward_speed: float, delta: float) -> flo
 
 
 func _is_on_road() -> bool:
-	_road_query.position = global_position
-	return not get_world_2d().direct_space_state.intersect_point(_road_query, 1).is_empty()
+	return _query_hit(_road_query)
 
 
+func _query_hit(query: PhysicsPointQueryParameters2D) -> bool:
+	query.position = global_position
+	return not get_world_2d().direct_space_state.intersect_point(query, 1).is_empty()
+
+
+## Splash: back to the last spot of asphalt under the wheels, dead stop.
+## The route tracker listens and voids the running lap.
+func _reset_to_road() -> void:
+	global_position = _last_road_pos
+	velocity = Vector2.ZERO
+	Events.car_reset_to_road.emit()
+
+
+## Off-road drag outpulls the throttle by the authored margin, so no
+## amount of engine upgrades turns grass back into road.
 func _apply_grass(forward_speed: float, delta: float) -> float:
 	var cap := _fx.max_speed * _fx.grass_speed_multiplier
 	if absf(forward_speed) <= cap:
 		return forward_speed
-	return move_toward(forward_speed, signf(forward_speed) * cap, _fx.grass_deceleration * delta)
+	var rate := _fx.grass_deceleration + _fx.acceleration
+	return move_toward(forward_speed, signf(forward_speed) * cap, rate * delta)
 
 
 ## The line lives in the car's parent (world space, identity transform),

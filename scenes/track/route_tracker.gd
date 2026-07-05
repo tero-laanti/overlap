@@ -11,6 +11,8 @@ extends Node
 signal lap_started
 signal route_lap_completed(route_id: String)
 signal edge_crossed(count: int)
+## Every crossing, raw — secrets and other listeners key off line ids.
+signal line_crossed(line_id: String, forward: bool)
 
 const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
 const CrossingLineDefScript = preload("res://scenes/track/crossing_line_def.gd")
@@ -28,6 +30,14 @@ var _edges := PackedStringArray()
 var _lap_active := false
 var _dirty := false
 var _disarmed := {}
+
+
+func _ready() -> void:
+	# A water reset teleports the car; the jump must not read as a
+	# crossing, and a dunked lap is void.
+	Events.car_reset_to_road.connect(func() -> void:
+		_have_prev = false
+		_dirty = true)
 
 
 func _physics_process(_delta: float) -> void:
@@ -62,6 +72,7 @@ func _test_line(line: CrossingLineDefScript, from: Vector2, to: Vector2) -> void
 
 
 func _on_crossing(line_id: String, forward: bool) -> void:
+	line_crossed.emit(line_id, forward)
 	if line_id == network.start_line_id:
 		if forward:
 			_close_or_start_lap()

@@ -16,6 +16,8 @@ extends Resource
 @export var payout_per_lap := 10.0
 ## Buying this route's mastery timing in the GARAGE enables its medals.
 @export var medal_unlock_cost := 200.0
+## Knowledge routes: never hinted in the log, only counted, until driven.
+@export var secret := false
 ## One-line clue shown in the route log while the route is only hinted.
 @export var clue := ""
 ## Gates that must all be owned before this route is drivable; owning
