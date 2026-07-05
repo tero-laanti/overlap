@@ -97,11 +97,41 @@ func milestone_multiplier() -> float:
 	return m
 
 
+## Mastery medal for a route — "", "bronze", "silver" or "gold" —
+## derived from the PB vs the authored par, never stored.
+func route_medal(route_id: String) -> String:
+	var pb := route_pb(route_id)
+	if pb <= 0.0 or _network == null:
+		return ""
+	var route := _network.find_route(route_id)
+	if route == null or route.par_time <= 0.0:
+		return ""
+	if pb <= route.par_time:
+		return "gold"
+	if pb <= route.par_time * ECONOMY.medal_silver_factor:
+		return "silver"
+	if pb <= route.par_time * ECONOMY.medal_bronze_factor:
+		return "bronze"
+	return ""
+
+
+func medal_multiplier(route_id: String) -> float:
+	match route_medal(route_id):
+		"gold":
+			return ECONOMY.medal_gold_multiplier
+		"silver":
+			return ECONOMY.medal_silver_multiplier
+		"bronze":
+			return ECONOMY.medal_bronze_multiplier
+	return 1.0
+
+
 func route_income_per_second(route_id: String) -> float:
 	var pb := route_pb(route_id)
 	if pb <= 0.0:
 		return 0.0
-	return ghost_slots * route_payout(route_id) * milestone_multiplier() / pb
+	return ghost_slots * route_payout(route_id) * milestone_multiplier() \
+			* medal_multiplier(route_id) / pb
 
 
 func income_per_second() -> float:
@@ -190,7 +220,8 @@ func try_buy_gate(gate_id: String) -> bool:
 
 
 func _on_ghost_lap_completed(route_id: String) -> void:
-	currency += route_payout(route_id) * milestone_multiplier()
+	currency += route_payout(route_id) * milestone_multiplier() \
+			* medal_multiplier(route_id)
 	_dirty = true
 	Events.currency_changed.emit(currency)
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
@@ -37,6 +37,12 @@ _data = {
 }
 point_count = 2
 
+[sub_resource type="Curve2D" id="Curve2D_petal"]
+_data = {
+"points": PackedVector2Array(0, 0, -220, -80, -1050, 300, 0, 180, 0, -180, -1500, 0, -220, 80, 0, 0, -1050, -300)
+}
+point_count = 3
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
 size = Vector2(3580, 60)
 
@@ -45,6 +51,9 @@ size = Vector2(60, 2400)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_bar"]
 size = Vector2(700, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_petal_gate_bar"]
+size = Vector2(24, 460)
 
 [node name="Track" type="Node2D" groups=["track"]]
 script = ExtResource("1_track")
@@ -60,6 +69,10 @@ color = Color(0.16, 0.34, 0.15, 1)
 polygon = PackedVector2Array(-900, -400, 900, -400, 900, 400, -900, 400)
 
 [node name="Road" type="Node2D" parent="."]
+
+[node name="SegPetal" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_petal")
+color = Color(0.72, 0.63, 0.42, 1)
 
 [node name="SegTop" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_top")
@@ -110,6 +123,30 @@ polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
 [node name="Stripe4" type="Polygon2D" parent="IslandGate"]
 color = Color(0.15, 0.13, 0.1, 1)
 polygon = PackedVector2Array(310, -12, 350, -12, 350, 12, 310, 12)
+
+[node name="PetalGate" type="StaticBody2D" parent="."]
+position = Vector2(-1216, 300)
+script = ExtResource("5_gate")
+gate_id = "west_petal"
+
+[node name="Shape" type="CollisionShape2D" parent="PetalGate"]
+shape = SubResource("RectangleShape2D_petal_gate_bar")
+
+[node name="Bar" type="Polygon2D" parent="PetalGate"]
+color = Color(0.95, 0.55, 0.1, 1)
+polygon = PackedVector2Array(-12, -230, 12, -230, 12, 230, -12, 230)
+
+[node name="Stripe1" type="Polygon2D" parent="PetalGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-12, -190, 12, -190, 12, -150, -12, -150)
+
+[node name="Stripe2" type="Polygon2D" parent="PetalGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-12, -20, 12, -20, 12, 20, -12, 20)
+
+[node name="Stripe3" type="Polygon2D" parent="PetalGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-12, 150, 12, 150, 12, 190, -12, 190)
 
 [node name="OuterWalls" type="StaticBody2D" parent="."]
 

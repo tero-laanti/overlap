@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TrackNetworkDef" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="TrackNetworkDef" load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track_network_def.gd" id="1"]
 [ext_resource type="Script" path="res://scenes/track/crossing_line_def.gd" id="2"]
@@ -35,12 +35,24 @@ id = "chord"
 a = Vector2(150, 0)
 b = Vector2(450, 0)
 
+[sub_resource type="Resource" id="Resource_line_petal_mouth"]
+script = ExtResource("2")
+id = "petal_mouth"
+a = Vector2(-1260, 150)
+b = Vector2(-1260, 450)
+
+[sub_resource type="Resource" id="Resource_line_petal"]
+script = ExtResource("2")
+id = "petal"
+a = Vector2(-1350, 0)
+b = Vector2(-1650, 0)
+
 [sub_resource type="Resource" id="Resource_route_ring"]
 script = ExtResource("3")
 id = "ring"
 display_name = "Grand Ring"
 edges = PackedStringArray("west", "east")
-par_time = 7.0
+par_time = 6.2
 payout_per_lap = 10.0
 
 [sub_resource type="Resource" id="Resource_route_cut"]
@@ -48,10 +60,30 @@ script = ExtResource("3")
 id = "cut"
 display_name = "Island Cut"
 edges = PackedStringArray("west", "chord_mouth", "chord")
-par_time = 4.6
+par_time = 4.9
 payout_per_lap = 6.5
 clue = "The island hides a faster line."
 required_gates = PackedStringArray("island_chord")
+
+[sub_resource type="Resource" id="Resource_route_petal"]
+script = ExtResource("3")
+id = "petal"
+display_name = "Dune Bend"
+edges = PackedStringArray("petal_mouth", "petal", "east")
+par_time = 6.6
+payout_per_lap = 10.2
+clue = "A sandy arc sweeps past the west road."
+required_gates = PackedStringArray("west_petal")
+
+[sub_resource type="Resource" id="Resource_route_twin"]
+script = ExtResource("3")
+id = "twin"
+display_name = "Twin Cut"
+edges = PackedStringArray("petal_mouth", "petal", "chord_mouth", "chord")
+par_time = 5.8
+payout_per_lap = 9.5
+clue = "Two gates, one breath."
+required_gates = PackedStringArray("west_petal", "island_chord")
 
 [sub_resource type="Resource" id="Resource_gate_chord"]
 script = ExtResource("4")
@@ -59,9 +91,15 @@ id = "island_chord"
 display_name = "Island Gate"
 price = 120.0
 
+[sub_resource type="Resource" id="Resource_gate_petal"]
+script = ExtResource("4")
+id = "west_petal"
+display_name = "Dune Gate"
+price = 250.0
+
 [resource]
 script = ExtResource("1")
 start_line_id = "start"
-crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord")])
-routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut")])
-gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord")])
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_petal_mouth"), SubResource("Resource_line_petal")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_petal"), SubResource("Resource_route_twin")])
+gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_petal")])

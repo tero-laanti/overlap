@@ -37,9 +37,11 @@ func entries_text() -> Array[String]:
 	var lines: Array[String] = ["%d/%d discovered" % [discovered, routes.size()]]
 	for route in routes:
 		if route.id in Bank.discovered_routes:
-			lines.append("%s — PB %s  +%.1f/s" % [
+			var medal := Bank.route_medal(route.id)
+			lines.append("%s — PB %s%s  +%.1f/s" % [
 				route.display_name,
 				HudScript.format_time(Bank.route_pb(route.id)),
+				" · " + medal if medal != "" else "",
 				Bank.route_income_per_second(route.id),
 			])
 		elif Bank.is_route_hinted(route.id):

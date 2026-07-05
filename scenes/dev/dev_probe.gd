@@ -7,20 +7,29 @@ extends Node
 ## Prints telemetry and saves screenshots to user://dev/. Never active in
 ## release builds.
 
-enum Phase { DRIVE, EARN, SPEND, REDRIVE, WATCH, BUY_GATE, DRIVE_CUT, WATCH_CUT, DONE }
+enum Phase {
+	DRIVE, EARN, SPEND, REDRIVE, WATCH,
+	BUY_GATE, DRIVE_CUT, WATCH_CUT,
+	EARN_PETAL, BUY_PETAL, DRIVE_PETAL, WATCH_FINAL,
+	DONE,
+}
 
 const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 180.0
+const TIMEOUT := 240.0
 const DRIVE_LAPS := 2
 const REDRIVE_LAPS := 2
 const CUT_LAPS := 2
+const PETAL_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
+const PETAL_EARN_TARGET := 260.0  # Dune Gate (250) + slack
 const WATCH_SECONDS := 16.0
 const WATCH_CUT_SECONDS := 12.0
+const WATCH_FINAL_SECONDS := 12.0
 const GATE_ID := "island_chord"
+const PETAL_GATE_ID := "west_petal"
 
 const RING_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1050, -550),
@@ -29,6 +38,11 @@ const RING_WAYPOINTS: Array[Vector2] = [
 const CUT_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1050, -550),
 	Vector2(300, -550), Vector2(300, -100), Vector2(300, 550),
+]
+const PETAL_WAYPOINTS: Array[Vector2] = [
+	Vector2(-1050, 550), Vector2(-1260, 300), Vector2(-1520, 0),
+	Vector2(-1260, -300), Vector2(-1050, -550),
+	Vector2(1050, -550), Vector2(1050, 550),
 ]
 const WAYPOINT_REACHED_DISTANCE := 240.0
 const STEER_DEADZONE := 0.06
@@ -126,11 +140,29 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH_CUT, "watching both fleets")
 		Phase.WATCH_CUT:
 			if _elapsed >= _watch_until:
+				print("[PROBE] cut done money=%.0f income=%.2f/s cut_pb=%.2f" % [
+					Bank.currency, Bank.income_per_second(), Bank.route_pb("cut"),
+				])
+				_enter(Phase.EARN_PETAL, "idling until $%d" % int(PETAL_EARN_TARGET))
+		Phase.EARN_PETAL:
+			if Bank.currency >= PETAL_EARN_TARGET:
+				_buy_petal_gate()
+		Phase.BUY_PETAL:
+			pass  # transitions inside _buy_petal_gate()
+		Phase.DRIVE_PETAL:
+			_drive()
+			if _laps_done >= _lap_target:
+				_release_all()
+				_watch_until = _elapsed + WATCH_FINAL_SECONDS
+				_enter(Phase.WATCH_FINAL, "watching all fleets")
+		Phase.WATCH_FINAL:
+			if _elapsed >= _watch_until:
 				_dump_route_log()
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f ghosts=%d" % [
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f petal_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
-					Bank.route_pb("cut"), get_tree().get_nodes_in_group("ghost").size(),
+					Bank.route_pb("cut"), Bank.route_pb("petal"),
+					get_tree().get_nodes_in_group("ghost").size(),
 				])
 				_enter(Phase.DONE, "finished")
 				set_process(false)
@@ -181,6 +213,17 @@ func _buy_gate() -> void:
 	_waypoint_index = 0
 	_lap_target = _laps_done + CUT_LAPS
 	_enter(Phase.DRIVE_CUT, "driving the island cut")
+
+
+func _buy_petal_gate() -> void:
+	_enter(Phase.BUY_PETAL, "buying the dune gate")
+	var gate_ok := Bank.try_buy_gate(PETAL_GATE_ID)
+	print("[PROBE] bought petal_gate=%s money=%.0f" % [gate_ok, Bank.currency])
+	_dump_route_log()
+	_waypoints = PETAL_WAYPOINTS
+	_waypoint_index = 0
+	_lap_target = _laps_done + PETAL_LAPS
+	_enter(Phase.DRIVE_PETAL, "driving the dune bend")
 
 
 func _dump_route_log() -> void:
