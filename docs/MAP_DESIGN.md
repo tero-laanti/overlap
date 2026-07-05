@@ -227,9 +227,13 @@ feedback that the attempt is on course.
 
 ## 9. Open questions for the human
 
-- Water: hard stop with a reset-to-road, or just brutally slow? (Reset
-  feels arcadey but protects the 90 s grand-tour lap from one splash
-  ruining 80 s of driving.)
+- ~~Water: hard stop or reset?~~ DECIDED 2026-07-05: reset to the last
+  on-road position, velocity zeroed, lap voided. Implemented.
+- NEW ZONE (human idea, implemented 2026-07-05): **the Woods** (NW) —
+  scattered tree obstacles; two golden trees flank an invisible road
+  mouth; driving the gap permanently unlocks the hidden **Forest Run**
+  (the first knowledge route — counter-only until driven, then a full
+  card). Pattern generalizes: SecretRoad + trigger crossing line.
 - Should the X crossover have a visual bridge (cliff road passes OVER)
   instead of at-grade? At-grade is more chaotic/fun with dense ghost
   rivers; a bridge reads cleaner but kills the crossing-streams image.

@@ -117,8 +117,15 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       rerun after any handling/catalog change); Top Speed capped at Lv 3
       to keep racing lines beating reflexes. Maxed bot = silver on all
       four routes; gold = beat the bot.
-- [ ] Petals 2-3, Jump Kit gateway upgrade, knowledge route,
-      gate-exhausted badges (see design §2 rules 7-10)
+- [x] Island expansion 1 (docs/MAP_DESIGN.md): water boundary replaces
+      walls (splash = reset to last asphalt + lap void), bigger land,
+      tree obstacles, and the first knowledge route — Forest Run, a
+      hidden road unlocked forever by driving between the two golden
+      trees (SecretRoad + trigger crossing line; secret routes are
+      counter-only in the log until driven). Grass drag now always
+      beats engine upgrades (maxed cars could out-accelerate it).
+- [ ] Petals 2-3 (cliffs + harbor per MAP_DESIGN), Jump Kit gateway
+      upgrade, coast linker + grand tour, gate-exhausted badges
 - **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
       PB and fleet, income adds up across routes.
 - Notes: prototype verified headless 2026-07-05 — gate bought, Island Cut

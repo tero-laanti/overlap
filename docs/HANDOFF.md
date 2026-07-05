@@ -69,10 +69,23 @@ zero script errors.
    one gate at a time, mastery per discovered route), crossing lines
    extended over grass aprons so wide racing lines register. DevDriver
    (shared autopilot) brakes into sharp turns.
-8. Next: petals 2-3 with themes/risk grammar, the Jump Kit gateway
-   moment, knowledge route, gate-exhausted badges. Border/curb
-   rendering (two-layer overdraw, borders below all surfaces — beware
-   z_index vs drift-trail draw order) can land with petal 2's theme.
+8. Island expansion 1 DONE 2026-07-05 (human-directed; geography doc:
+   docs/MAP_DESIGN.md): water boundary with reset-to-road (lap void +
+   SPLASH toast; RouteTracker ignores the teleport), land grown to
+   ±2900 × -2700..1500, tree obstacles, and the Forest Run knowledge
+   route — hidden SecretRoad revealed forever by crossing the line
+   between the two golden trees at (-840/-480, -780). Secret RouteDefs
+   never hint; counter-only until driven. Calibrator drives the forest
+   THROUGH the gap (tests the trigger); DevDriver has per-route reach
+   (120 for the gap). Grass decel now adds the car's acceleration so
+   upgrades can't out-pull it. CAUTION: keep the Godot editor closed
+   while agents edit .tscn/.tres — an editor save moved the Track node
+   and null'd newer RouteDef fields this session (both fixed).
+9. Next: petals 2-3 (cliffs with the X crossover, harbor) per
+   docs/MAP_DESIGN.md §8, Jump Kit gateway moment, coast linker +
+   grand tour, gate-exhausted badges. Border/curb rendering (two-layer
+   overdraw, borders below all surfaces — beware z_index vs
+   drift-trail draw order) can land with petal 2's theme.
 
 ## Verification workflow (mandatory before any commit)
 
