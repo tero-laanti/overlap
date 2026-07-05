@@ -121,6 +121,7 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH_CUT, "watching both fleets")
 		Phase.WATCH_CUT:
 			if _elapsed >= _watch_until:
+				_dump_route_log()
 				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
@@ -170,10 +171,19 @@ func _buy_gate() -> void:
 	_enter(Phase.BUY_GATE, "buying the island gate")
 	var gate_ok := Bank.try_buy_gate(GATE_ID)
 	print("[PROBE] bought gate=%s money=%.0f" % [gate_ok, Bank.currency])
+	_dump_route_log()
 	_waypoints = CUT_WAYPOINTS
 	_waypoint_index = 0
 	_lap_target = _laps_done + CUT_LAPS
 	_enter(Phase.DRIVE_CUT, "driving the island cut")
+
+
+func _dump_route_log() -> void:
+	var route_log := get_node_or_null("/root/Main/RouteLog")
+	if route_log == null:
+		return
+	for line: String in route_log.entries_text():
+		print("[PROBE] routelog | %s" % line)
 
 
 func _enter(phase: Phase, note: String) -> void:

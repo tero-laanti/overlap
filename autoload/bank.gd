@@ -14,6 +14,7 @@ const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 const UpgradeCatalogScript = preload("res://scenes/car/upgrade_catalog.gd")
 const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
 const GateDefScript = preload("res://scenes/track/gate_def.gd")
+const RouteDefScript = preload("res://scenes/track/route_def.gd")
 const CATALOG: UpgradeCatalogScript = preload("res://data/upgrades/catalog.tres")
 const ECONOMY: EconomyDefScript = preload("res://data/economy.tres")
 ## The route id every pre-network save's single best lap belongs to.
@@ -69,6 +70,26 @@ func route_pb(route_id: String) -> float:
 	return recording.lap_time if recording else 0.0
 
 
+func authored_routes() -> Array[RouteDefScript]:
+	if _network == null:
+		var none: Array[RouteDefScript] = []
+		return none
+	return _network.routes
+
+
+## Undriven but no longer unknown: every gate the route needs is owned.
+func is_route_hinted(route_id: String) -> bool:
+	if route_id in discovered_routes or _network == null:
+		return false
+	var route := _network.find_route(route_id)
+	if route == null:
+		return false
+	for gate_id in route.required_gates:
+		if not is_gate_purchased(gate_id):
+			return false
+	return true
+
+
 ## ×2 for every fleet milestone reached (10/25/50 ghosts by default).
 func milestone_multiplier() -> float:
 	var m := 1.0
@@ -78,13 +99,18 @@ func milestone_multiplier() -> float:
 	return m
 
 
+func route_income_per_second(route_id: String) -> float:
+	var pb := route_pb(route_id)
+	if pb <= 0.0:
+		return 0.0
+	return ghost_slots * route_payout(route_id) * milestone_multiplier() / pb
+
+
 func income_per_second() -> float:
 	var total := 0.0
 	for route_id: String in route_records:
-		var pb := route_pb(route_id)
-		if pb > 0.0:
-			total += ghost_slots * route_payout(route_id) / pb
-	return total * milestone_multiplier()
+		total += route_income_per_second(route_id)
+	return total
 
 
 func upgrade_level(id: String) -> int:

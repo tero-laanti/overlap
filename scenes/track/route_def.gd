@@ -11,3 +11,8 @@ extends Resource
 @export var edges := PackedStringArray()
 @export var par_time := 10.0
 @export var payout_per_lap := 10.0
+## One-line clue shown in the route log while the route is only hinted.
+@export var clue := ""
+## Gates that must all be owned before this route is drivable; owning
+## them promotes the route from unknown to hinted in the log.
+@export var required_gates := PackedStringArray()

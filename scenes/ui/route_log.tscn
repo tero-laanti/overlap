@@ -1,8 +1,8 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scenes/ui/shop.gd" id="1_shop"]
+[ext_resource type="Script" path="res://scenes/ui/route_log.gd" id="1_routelog"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shop"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_routelog"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
@@ -13,23 +13,20 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[node name="Shop" type="CanvasLayer"]
+[node name="RouteLog" type="CanvasLayer"]
 layer = 2
-script = ExtResource("1_shop")
+script = ExtResource("1_routelog")
 
 [node name="Panel" type="PanelContainer" parent="."]
-anchors_preset = 6
-anchor_left = 1.0
+anchors_preset = 4
 anchor_top = 0.5
-anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -360.0
-offset_top = -160.0
-offset_right = -20.0
-offset_bottom = 160.0
-grow_horizontal = 0
+offset_left = 20.0
+offset_top = -140.0
+offset_right = 360.0
+offset_bottom = 140.0
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_shop")
+theme_override_styles/panel = SubResource("StyleBoxFlat_routelog")
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
@@ -38,22 +35,22 @@ theme_override_constants/separation = 10
 [node name="Title" type="Label" parent="Panel/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "GARAGE"
+text = "ROUTES"
 
-[node name="Rows" type="VBoxContainer" parent="Panel/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="Milestone" type="Label" parent="Panel/VBox"]
+[node name="Counter" type="Label" parent="Panel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
 text = ""
 
+[node name="Rows" type="VBoxContainer" parent="Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
 [node name="Hint" type="Label" parent="Panel/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.6, 0.63, 0.68, 1)
-text = "TAB to close · R: route log"
+text = "R to close"

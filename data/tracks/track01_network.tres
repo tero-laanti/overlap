@@ -50,6 +50,8 @@ display_name = "Island Cut"
 edges = PackedStringArray("west", "chord_mouth", "chord")
 par_time = 4.6
 payout_per_lap = 6.5
+clue = "The island hides a faster line."
+required_gates = PackedStringArray("island_chord")
 
 [sub_resource type="Resource" id="Resource_gate_chord"]
 script = ExtResource("4")
