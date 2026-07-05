@@ -93,9 +93,9 @@ func _drive() -> void:
 	_hold(wanted)
 
 
-func _on_lap_completed(lap_time: float) -> void:
+func _on_lap_completed(lap_time: float, is_best: bool) -> void:
 	_laps_done += 1
-	print("[PROBE] LAP %d completed in %.2fs" % [_laps_done, lap_time])
+	print("[PROBE] LAP %d completed in %.2fs best=%s" % [_laps_done, lap_time, is_best])
 
 
 func _hold(wanted: Array[String]) -> void:

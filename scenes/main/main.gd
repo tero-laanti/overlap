@@ -9,4 +9,8 @@ extends Node2D
 func _ready() -> void:
 	_track.lap_started.connect(_race_state.on_lap_started)
 	_track.lap_completed.connect(_race_state.on_lap_completed)
-	$HUD.race_state = _race_state
+	var hud := $HUD
+	hud.race_state = _race_state
+	hud.car = $Car
+	_track.lap_started.connect(hud.on_lap_started)
+	_track.checkpoint_crossed.connect(hud.on_checkpoint_crossed)

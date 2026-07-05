@@ -24,7 +24,8 @@ func on_lap_started() -> void:
 
 func on_lap_completed() -> void:
 	last_lap_time = current_lap_time
-	if best_lap_time == 0.0 or last_lap_time < best_lap_time:
+	var is_best := best_lap_time == 0.0 or last_lap_time < best_lap_time
+	if is_best:
 		best_lap_time = last_lap_time
 	lap_count += 1
-	Events.lap_completed.emit(last_lap_time)
+	Events.lap_completed.emit(last_lap_time, is_best)

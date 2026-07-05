@@ -1,34 +1,118 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.07, 0.08, 0.1, 0.78)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed"]
+content_margin_left = 16.0
+content_margin_top = 6.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.07, 0.08, 0.1, 0.78)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 
-[node name="Margin" type="MarginContainer" parent="."]
-anchors_preset = 0
-offset_left = 24.0
+[node name="TimerPanel" type="PanelContainer" parent="."]
+offset_left = 20.0
 offset_top = 16.0
-offset_right = 360.0
-offset_bottom = 140.0
+offset_right = 240.0
+offset_bottom = 130.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Panel" type="VBoxContainer" parent="Margin"]
+[node name="VBox" type="VBoxContainer" parent="TimerPanel"]
 layout_mode = 2
 
-[node name="CurrentLap" type="Label" parent="Margin/Panel"]
+[node name="CurrentLap" type="Label" parent="TimerPanel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "LAP  -:--.--"
+theme_override_font_sizes/font_size = 40
+text = "-:--.--"
 
-[node name="BestLap" type="Label" parent="Margin/Panel"]
+[node name="Rows" type="HBoxContainer" parent="TimerPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BestLap" type="Label" parent="TimerPanel/VBox/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 text = "BEST -:--.--"
 
-[node name="LastLap" type="Label" parent="Margin/Panel"]
+[node name="LastLap" type="Label" parent="TimerPanel/VBox/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.75, 0.78, 0.82, 1)
+text = "LAST -:--.--"
+
+[node name="CheckpointPips" type="Label" parent="TimerPanel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "LAST -:--.--"
+theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
+text = "○○○"
+
+[node name="SpeedPanel" type="PanelContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -170.0
+offset_top = -86.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_speed")
+
+[node name="HBox" type="HBoxContainer" parent="SpeedPanel"]
+layout_mode = 2
+alignment = 2
+
+[node name="Speed" type="Label" parent="SpeedPanel/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "0"
+horizontal_alignment = 2
+
+[node name="Unit" type="Label" parent="SpeedPanel/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.75, 0.78, 0.82, 1)
+text = " km/h"
+vertical_alignment = 2
+
+[node name="ToastAnchor" type="CenterContainer" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 90.0
+offset_right = 300.0
+offset_bottom = 150.0
+grow_horizontal = 2
+
+[node name="Toast" type="Label" parent="ToastAnchor"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = ""
+horizontal_alignment = 1
