@@ -65,7 +65,7 @@ func _physics_process(delta: float) -> void:
 
 	velocity = forward * forward_speed + lateral
 	move_and_slide()
-	_update_drift_trails(drifting, lateral_speed)
+	_update_drift_trails(drifting, lateral_speed, velocity.length())
 
 
 func _apply_steering(steer: float, throttle: float, forward_speed: float, delta: float) -> void:
@@ -92,28 +92,42 @@ func _apply_throttle(throttle: float, forward_speed: float, delta: float) -> flo
 
 
 func _setup_drift_trails() -> void:
-	_left_trail = _make_trail()
-	_right_trail = _make_trail()
-	add_child(_left_trail)
-	add_child(_right_trail)
+	_left_trail = _make_trail("DriftTrailLeft")
+	_right_trail = _make_trail("DriftTrailRight")
+	call_deferred("_attach_drift_trails")
 
 
-func _make_trail() -> Line2D:
+func _attach_drift_trails() -> void:
+	var container := get_parent()
+	if container == null:
+		add_child(_left_trail)
+		add_child(_right_trail)
+		return
+	container.add_child(_left_trail)
+	container.move_child(_left_trail, get_index())
+	container.add_child(_right_trail)
+	container.move_child(_right_trail, get_index())
+
+
+func _make_trail(node_name: String) -> Line2D:
 	var line := Line2D.new()
+	line.name = node_name
 	line.top_level = true
-	line.show_behind_parent = true
 	line.global_position = Vector2.ZERO
-	line.z_index = -1
 	line.width = _fx.drift_trail_width
-	line.default_color = Color(0.04, 0.045, 0.05, 0.62)
+	line.default_color = Color(0.01, 0.012, 0.014, 0.9)
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	return line
 
 
-func _update_drift_trails(drifting: bool, lateral_speed: float) -> void:
-	var should_draw := drifting and lateral_speed >= _fx.drift_trail_min_lateral_speed
+func _update_drift_trails(drifting: bool, lateral_speed: float, speed: float) -> void:
+	if _left_trail == null or _right_trail == null or _left_trail.get_parent() == null:
+		return
+	var enough_scrub := lateral_speed >= _fx.drift_trail_min_lateral_speed \
+			or speed >= _fx.drift_trail_min_speed
+	var should_draw := drifting and enough_scrub
 	if not should_draw:
 		_trails_active = false
 		return
@@ -123,15 +137,16 @@ func _update_drift_trails(drifting: bool, lateral_speed: float) -> void:
 		_left_trail_last = left
 		_right_trail_last = right
 		_trails_active = true
-	_add_trail_point(_left_trail, left, _left_trail_last)
-	_add_trail_point(_right_trail, right, _right_trail_last)
-	_left_trail_last = left
-	_right_trail_last = right
+	if _add_trail_point(_left_trail, left, _left_trail_last):
+		_left_trail_last = left
+	if _add_trail_point(_right_trail, right, _right_trail_last):
+		_right_trail_last = right
 
 
-func _add_trail_point(line: Line2D, point: Vector2, previous: Vector2) -> void:
+func _add_trail_point(line: Line2D, point: Vector2, previous: Vector2) -> bool:
 	if line.get_point_count() > 0 and point.distance_to(previous) < _fx.drift_trail_spacing:
-		return
+		return false
 	line.add_point(point)
 	while line.get_point_count() > _fx.drift_trail_max_points:
 		line.remove_point(0)
+	return true

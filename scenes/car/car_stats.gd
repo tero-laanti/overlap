@@ -21,9 +21,11 @@ extends Resource
 @export_range(0.0, 1.0) var steering_authority_floor := 0.35
 ## Speed above which the steering authority floor applies without throttle.
 @export var steering_floor_min_speed := 20.0
-## Minimum sideways speed before drift trails draw.
-@export var drift_trail_min_lateral_speed := 90.0
+## Minimum vehicle speed before held drift draws tire trails.
+@export var drift_trail_min_speed := 140.0
+## Minimum sideways speed that also qualifies as visible tire scrub.
+@export var drift_trail_min_lateral_speed := 35.0
 ## World-space distance between trail points.
-@export var drift_trail_spacing := 14.0
-@export var drift_trail_max_points := 120
-@export var drift_trail_width := 5.0
+@export var drift_trail_spacing := 8.0
+@export var drift_trail_max_points := 180
+@export var drift_trail_width := 7.0
