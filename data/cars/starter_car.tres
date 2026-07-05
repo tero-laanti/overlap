@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CarStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/car/car_stats.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_speed = 900.0
+reverse_speed = 280.0
+acceleration = 800.0
+braking = 1600.0
+rolling_drag = 300.0
+grip = 9.0
+drift_grip = 2.2
+steering_rate = 200.0
+steering_full_speed = 250.0

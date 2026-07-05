@@ -1,0 +1,65 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h_wall"]
+size = Vector2(2640, 60)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_island"]
+size = Vector2(1800, 800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_v_wall"]
+size = Vector2(60, 1400)
+
+[node name="Track" type="Node2D"]
+
+[node name="Grass" type="Polygon2D" parent="."]
+color = Color(0.2, 0.42, 0.18, 1)
+polygon = PackedVector2Array(-1700, -1200, 1700, -1200, 1700, 1200, -1700, 1200)
+
+[node name="Road" type="Node2D" parent="."]
+
+[node name="Top" type="Polygon2D" parent="Road"]
+color = Color(0.25, 0.25, 0.27, 1)
+polygon = PackedVector2Array(-1200, -700, 1200, -700, 1200, -400, -1200, -400)
+
+[node name="Bottom" type="Polygon2D" parent="Road"]
+color = Color(0.25, 0.25, 0.27, 1)
+polygon = PackedVector2Array(-1200, 400, 1200, 400, 1200, 700, -1200, 700)
+
+[node name="Left" type="Polygon2D" parent="Road"]
+color = Color(0.25, 0.25, 0.27, 1)
+polygon = PackedVector2Array(-1200, -700, -900, -700, -900, 700, -1200, 700)
+
+[node name="Right" type="Polygon2D" parent="Road"]
+color = Color(0.25, 0.25, 0.27, 1)
+polygon = PackedVector2Array(900, -700, 1200, -700, 1200, 700, 900, 700)
+
+[node name="StartLine" type="Polygon2D" parent="."]
+color = Color(0.92, 0.92, 0.92, 1)
+polygon = PackedVector2Array(-8, 400, 8, 400, 8, 700, -8, 700)
+
+[node name="OuterWalls" type="StaticBody2D" parent="."]
+
+[node name="TopWall" type="CollisionShape2D" parent="OuterWalls"]
+position = Vector2(0, -730)
+shape = SubResource("RectangleShape2D_h_wall")
+
+[node name="BottomWall" type="CollisionShape2D" parent="OuterWalls"]
+position = Vector2(0, 730)
+shape = SubResource("RectangleShape2D_h_wall")
+
+[node name="LeftWall" type="CollisionShape2D" parent="OuterWalls"]
+position = Vector2(-1230, 0)
+shape = SubResource("RectangleShape2D_v_wall")
+
+[node name="RightWall" type="CollisionShape2D" parent="OuterWalls"]
+position = Vector2(1230, 0)
+shape = SubResource("RectangleShape2D_v_wall")
+
+[node name="Island" type="StaticBody2D" parent="."]
+
+[node name="IslandShape" type="CollisionShape2D" parent="Island"]
+shape = SubResource("RectangleShape2D_island")
+
+[node name="IslandVisual" type="Polygon2D" parent="Island"]
+color = Color(0.16, 0.34, 0.15, 1)
+polygon = PackedVector2Array(-900, -400, 900, -400, 900, 400, -900, 400)
