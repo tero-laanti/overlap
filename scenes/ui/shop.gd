@@ -8,6 +8,7 @@ var _ghost_label: Label
 var _ghost_button: Button
 
 @onready var _rows: VBoxContainer = %Rows
+@onready var _milestone_label: Label = %Milestone
 
 
 func _ready() -> void:
@@ -67,3 +68,15 @@ func _refresh() -> void:
 	_ghost_label.text = "Hire Ghost  ×%d" % Bank.ghost_slots
 	_ghost_button.text = "$ %d" % int(Bank.ghost_slot_cost())
 	_ghost_button.disabled = Bank.currency < Bank.ghost_slot_cost()
+	_milestone_label.text = _milestone_text()
+
+
+func _milestone_text() -> String:
+	var passed := 0
+	for count: int in Bank.ECONOMY.milestone_counts:
+		if Bank.ghost_slots < count:
+			var bonus := roundi(pow(Bank.ECONOMY.milestone_multiplier, passed + 1))
+			return "Fleet bonus x%d at %d ghosts (%d/%d)" % [
+				bonus, count, Bank.ghost_slots, count]
+		passed += 1
+	return "All fleet bonuses active"
