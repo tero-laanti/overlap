@@ -1,4 +1,4 @@
-# Overlap2 — Vision
+# Overlap — Vision
 
 **One line:** IGTAP, but a racer. You drive laps by hand; every lap you're
 proud of becomes a ghost clone that drives it forever and earns you money.

@@ -1,4 +1,4 @@
-# Overlap2 — Roadmap
+# Overlap — Roadmap
 
 Vertical slices, in order. Each slice ends with the game playable and its
 acceptance line verified by running it (godot-mcp run + screenshot/output).

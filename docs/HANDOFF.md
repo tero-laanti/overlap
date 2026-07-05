@@ -68,7 +68,7 @@ zero script errors.
 ## Verification workflow (mandatory before any commit)
 
 - Boot: `godot --headless --path . --quit` → zero errors.
-- Full loop: `rm -f "$HOME/Library/Application Support/Godot/app_userdata/Overlap2/save.dat"`,
+- Full loop: `rm -f "$HOME/Library/Application Support/Godot/app_userdata/Overlap/save.dat"`,
   `touch .../autopilot.flag`, then `godot --headless --path .` (probe
   drives 2 laps → earns to $110 → buys ghost+upgrade → clean upgraded
   lap → watches income → auto-quits, ~80s). Grep the output for

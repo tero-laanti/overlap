@@ -1,4 +1,4 @@
-# Overlap2
+# Overlap
 
 Idle/incremental top-down 2D racer. You drive laps; your recorded laps become
 ghost cars that replay forever and earn passive income. Income buys upgrades,

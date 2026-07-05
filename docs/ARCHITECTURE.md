@@ -1,4 +1,4 @@
-# Overlap2 — Architecture
+# Overlap — Architecture
 
 ## Ownership map
 
