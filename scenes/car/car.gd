@@ -13,6 +13,8 @@ const REAR_RIGHT_TIRE := Vector2(14.0, 24.0)
 const ROAD_SURFACE_MASK := 1 << 1
 ## Physics layer 3 ("water") — Area2Ds marking the sea around the island.
 const WATER_MASK := 1 << 2
+## Physics layer 4 ("rubble") — Area2Ds marking near-stop off-road strips.
+const RUBBLE_MASK := 1 << 3
 
 @export var stats: CarStatsScript
 
@@ -24,6 +26,7 @@ var _right_trail_last := Vector2.ZERO
 var _trails_active := false
 var _road_query: PhysicsPointQueryParameters2D
 var _water_query: PhysicsPointQueryParameters2D
+var _rubble_query: PhysicsPointQueryParameters2D
 var _last_road_pos := Vector2.ZERO
 
 
@@ -31,6 +34,7 @@ func _ready() -> void:
 	_refresh_stats()
 	_road_query = _make_point_query(ROAD_SURFACE_MASK)
 	_water_query = _make_point_query(WATER_MASK)
+	_rubble_query = _make_point_query(RUBBLE_MASK)
 	_last_road_pos = global_position
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
@@ -76,7 +80,7 @@ func _physics_process(delta: float) -> void:
 	forward_speed = _apply_throttle(throttle, forward_speed, delta)
 	forward_speed = clampf(forward_speed, -_fx.reverse_speed, _fx.max_speed)
 	if not _is_on_road():
-		forward_speed = _apply_grass(forward_speed, delta)
+		forward_speed = _apply_offroad(forward_speed, delta)
 
 	var grip := _fx.drift_grip if drifting else _fx.grip
 	var lateral_speed := lateral.length()
@@ -132,12 +136,18 @@ func _reset_to_road() -> void:
 
 
 ## Off-road drag outpulls the throttle by the authored margin, so no
-## amount of engine upgrades turns grass back into road.
-func _apply_grass(forward_speed: float, delta: float) -> float:
-	var cap := _fx.max_speed * _fx.grass_speed_multiplier
+## amount of engine upgrades turns grass back into road. Rubble strips
+## (cliff shoulders, physics layer 4) are a much harsher near-stop.
+func _apply_offroad(forward_speed: float, delta: float) -> float:
+	var on_rubble := _query_hit(_rubble_query)
+	var multiplier := _fx.rubble_speed_multiplier if on_rubble \
+			else _fx.grass_speed_multiplier
+	var deceleration := _fx.rubble_deceleration if on_rubble \
+			else _fx.grass_deceleration
+	var cap := _fx.max_speed * multiplier
 	if absf(forward_speed) <= cap:
 		return forward_speed
-	var rate := _fx.grass_deceleration + _fx.acceleration
+	var rate := deceleration + _fx.acceleration
 	return move_toward(forward_speed, signf(forward_speed) * cap, rate * delta)
 
 

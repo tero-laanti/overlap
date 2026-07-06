@@ -37,3 +37,7 @@ extends Resource
 @export_range(0.05, 1.0) var grass_speed_multiplier := 0.5
 ## How fast excess speed bleeds off on grass, in px/s².
 @export var grass_deceleration := 1100.0
+## Fraction of max_speed the car can sustain on rubble strips (near-stop).
+@export_range(0.02, 1.0) var rubble_speed_multiplier := 0.12
+## How fast excess speed bleeds off on rubble, in px/s².
+@export var rubble_deceleration := 2600.0
