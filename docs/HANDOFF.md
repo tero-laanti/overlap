@@ -81,22 +81,48 @@ zero script errors.
    upgrades can't out-pull it. CAUTION: keep the Godot editor closed
    while agents edit .tscn/.tres — an editor save moved the Track node
    and null'd newer RouteDef fields this session (both fixed).
-9. Next: petals 2-3 (cliffs with the X crossover, harbor) per
-   docs/MAP_DESIGN.md §8, Jump Kit gateway moment, coast linker +
-   grand tour, gate-exhausted badges. Border/curb rendering (two-layer
-   overdraw, borders below all surfaces — beware z_index vs
-   drift-trail draw order) can land with petal 2's theme.
+9. ~~Petal 2 (cliffs) + border/curb pass.~~ DONE 2026-07-06 (written
+   by Claude Fable 5): the Cliffs live NE/N (the Woods squat the
+   planned north-center — see MAP_DESIGN §9 for the two documented
+   deviations). Cliff Gate ($900, rotated bar) forks off the ring's
+   NE corner; hairpin ladder → lighthouse hairpin → north-shore esses
+   → descent straight through the chord-mouth junction, which IS the
+   at-grade X crossover (no new mouth on the top road). New systems:
+   RoadSegment border layer (border polygon z=-1, ALL background
+   polys pushed to z -4/-3/-2 — drift trails are z=0 Main-level
+   siblings and stay above surfaces by tree order; do NOT raise any
+   surface above z 0), rubble shoulders (physics layer 4, near-stop;
+   `rubble = true` on a segment turns its border strip into the
+   hitbox; decel includes acceleration like grass), WallSegment
+   (@tool StaticBody2D ribbon — first real walls). Routes: climb
+   (par 16.0, payout 38) and high_ring (par 18.2, payout 41.5,
+   discovered by turning east at the X); maxed bot lands silver on
+   all 7 routes. Human feel pass on the hairpins/rubble PENDING —
+   flag any handling complaint before touching starter_car.tres.
+   Gotchas hit: (a) crossing lines between ladder rungs must NOT
+   span the full rubble apron — rungs are 340px apart and aprons
+   (±175) overlap between them, so a full-apron line would double-
+   fire from the neighboring rung (cliff_climb spans road+15px
+   only); (b) the descent ends at (300,-560) so its square cap
+   seals into the top-road/chord junction — move it and the X
+   asphalt gaps; (c) climb requires BOTH cliff_gate and island_chord
+   (descent exits through the chord; concertina pricing means the
+   chord is always owned first anyway).
+10. Next: petal 3 (harbor) per docs/MAP_DESIGN.md §8, Jump Kit
+   gateway moment (+ cliff washout jump spot), coast linker + grand
+   tour, gate-exhausted badges.
 
 ## Verification workflow (mandatory before any commit)
 
 - Boot: `godot --headless --path . --quit` → zero errors.
-- Full loop: `rm -f "$HOME/Library/Application Support/Godot/app_userdata/Overlap/save.dat"`,
-  `touch .../autopilot.flag`, then `godot --headless --path .` (probe
-  drives 2 laps → earns to $110 → buys ghost+upgrade → clean upgraded
-  lap → watches income → auto-quits, ~80s). Grep the output for
-  `[PROBE] LAP`, `bought ghost_slot=true`, `done`. Remove the flag file
-  after — if it lingers, the next human play session gets hijacked by
-  the autopilot.
+- Full loop: BACK UP the human's save first, `touch .../autopilot.flag`,
+  then `godot --headless --path .` (probe self-resets the profile,
+  drives PB laps, buys ghost+upgrade, then all three gates in
+  concertina order — island, dune, cliff — driving each new petal and
+  watching every fleet; auto-quits, ~275s). Grep the output for
+  `[PROBE] LAP`, `bought ghost_slot=true`, `bought cliff_gate=true`,
+  `done`. Remove the flag file after — if it lingers, the next human
+  play session gets hijacked by the autopilot — and RESTORE the save.
 - Extend scenes/dev/dev_probe.gd with new phases when you add systems
   (that's how every slice here got verified — its phased scenario is
   the project's de-facto integration test).

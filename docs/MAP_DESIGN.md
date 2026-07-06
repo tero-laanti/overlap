@@ -157,8 +157,8 @@ everything below annexes onto the existing network.
 | 4 | Twin Cut | petal 1 + chord | both above | 4.7 s | 1.15× | experiment |
 | 5 | Dune Circuit | outer dunes loop | outer_dunes | ~22 s | 1.2× | normal |
 | 6 | Sandline | outer dunes + chord | outer_dunes + chord | ~18 s | 1.25× | experiment |
-| 7 | Lighthouse Climb | cliffs → X → chord | cliff_gate | ~20 s | 1.4× (risk) | normal |
-| 8 | High Ring | cliffs → top E → hub E | cliff_gate | ~24 s | 1.35× | experiment |
+| 7 | Lighthouse Climb ✓ | cliffs → X → chord | cliff_gate | 16 s (par) | 1.4× (risk) | normal |
+| 8 | High Ring ✓ | cliffs → X, turn E → hub E | cliff_gate | 18.2 s (par) | 1.35× | experiment |
 | 9 | Container Run | harbor inner maze | harbor_gate | ~18 s | 1.25× | normal |
 | 10 | Dock Tour | harbor + dock straight | harbor_gate | ~26 s | 1.3× | normal |
 | 11 | Canal Runner | harbor w/ canal jump | harbor + Jump Kit | ~15 s | 1.5× (ability) | normal after kit |
@@ -234,9 +234,21 @@ feedback that the attempt is on course.
   mouth; driving the gap permanently unlocks the hidden **Forest Run**
   (the first knowledge route — counter-only until driven, then a full
   card). Pattern generalizes: SecretRoad + trigger crossing line.
-- Should the X crossover have a visual bridge (cliff road passes OVER)
-  instead of at-grade? At-grade is more chaotic/fun with dense ghost
-  rivers; a bridge reads cleaner but kills the crossing-streams image.
+- ~~Should the X crossover have a visual bridge?~~ BUILT at-grade
+  2026-07-06, with two deviations from §3 (both because the Woods now
+  occupy the planned north-center): (1) the cliffs live NE/N — the
+  approach forks off the ring's NE corner, the ladder climbs the east
+  side, the esses run the north shore above the woods; (2) the X is
+  the chord-mouth junction itself, upgraded to a 4-way crossroads —
+  the descent crosses the top road at grade straight into the chord,
+  so no new mouth was added to the top road (junction-spacing rule
+  respected by construction). Consequence: the descent also crosses
+  the (hidden) forest road once, at grade, near-perpendicular at
+  ≈(340,-1890) — topologically unavoidable, since the forest arc plus
+  the top road enclose the pocket the chord sits in. No crossing
+  lines are near it. The hub X stays the flagship overlap moment; the
+  woods crossing is a quiet bonus that only exists once Forest Run is
+  revealed.
 - Night/weather variants as route *variants* or as a prestige-layer
   reskin? (Reserve R2.)
 - Names: "The Island" needs a real name — it will be the save file's

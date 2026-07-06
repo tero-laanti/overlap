@@ -124,8 +124,31 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       trees (SecretRoad + trigger crossing line; secret routes are
       counter-only in the log until driven). Grass drag now always
       beats engine upgrades (maxed cars could out-accelerate it).
-- [ ] Petals 2-3 (cliffs + harbor per MAP_DESIGN), Jump Kit gateway
-      upgrade, coast linker + grand tour, gate-exhausted badges
+- [x] Petal 2 — THE CLIFFS (docs/MAP_DESIGN.md §3/§8, placed NE/N
+      because the Woods took the planned north-center): Cliff Gate
+      ($900) forks off the ring's NE corner; narrow slate road
+      (half_width 115) climbs a hairpin ladder to the lighthouse
+      hairpin, esses descend the north shore, and the descent dives
+      through the chord-mouth junction at grade — the X crossover,
+      where cliff traffic crosses hub traffic into the chord. First
+      real walls (WallSegment) + rubble near-stop shoulders (car layer
+      4; decel includes acceleration). Two-layer border/curb rendering
+      landed with it (borders z=-1 below all surfaces; backgrounds
+      pushed to -4/-3/-2 so drift trails stay above roads). Routes:
+      Lighthouse Climb (par 16.0) + High Ring (par 18.2, discovered by
+      turning east at the X).
+- Notes: verified headless 2026-07-06 — calibration drove all 7 routes
+  (maxed bot silver everywhere: climb 16.85 vs par 16.0, high_ring
+  19.13 vs 18.2; five old pars still silver, unchanged); full probe
+  loop green with new EARN/BUY/DRIVE/WATCH cliff phases (gate bought,
+  both routes hinted with clues, Lighthouse Climb discovered on first
+  lap, clean 20.30s lap on a low-upgrade car, income 13.11/s, 8
+  ghosts, zero errors). Human feel pass on the hairpins pending. The
+  descent crosses the hidden forest road once at grade (topologically
+  unavoidable — see MAP_DESIGN §9).
+- [ ] Petal 3 (harbor per MAP_DESIGN), Jump Kit gateway upgrade
+      (+ cliff washout jump spot), coast linker + grand tour,
+      gate-exhausted badges
 - **Accept (prototype):** buy gate → drive chord → NEW ROUTE toast, own
       PB and fleet, income adds up across routes.
 - Notes: prototype verified headless 2026-07-05 — gate bought, Island Cut
