@@ -39,6 +39,14 @@ const TESSELLATE_TOLERANCE_DEGREES := 4.0
 	set(value):
 		rubble = value
 		_bake()
+@export var dashes := true:
+	set(value):
+		dashes = value
+		_bake()
+@export var dash_color := Color(0.92, 0.92, 0.9, 0.28):
+	set(value):
+		dash_color = value
+		_bake()
 
 
 func _ready() -> void:
@@ -60,6 +68,9 @@ func _bake() -> void:
 	surface.polygon = _largest(polygons)
 	surface.color = color
 	hitbox.polygon = surface.polygon
+	var dash_node: Node2D = $Dashes
+	dash_node.dash_color = dash_color
+	dash_node.points = centerline if dashes else PackedVector2Array()
 	_bake_border(centerline)
 
 

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/road_segment.gd" id="1_segment"]
+[ext_resource type="Script" path="res://scenes/track/road_dashes.gd" id="2_dashes"]
 
 [node name="RoadSegment" type="Path2D"]
 script = ExtResource("1_segment")
@@ -11,6 +12,9 @@ color = Color(0.55, 0.56, 0.6, 1)
 
 [node name="Surface" type="Polygon2D" parent="."]
 color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="Dashes" type="Node2D" parent="."]
+script = ExtResource("2_dashes")
 
 [node name="SurfaceArea" type="Area2D" parent="."]
 collision_layer = 2

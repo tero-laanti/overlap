@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://scenes/track/wall_segment.tscn" id="9_wall"]
 [ext_resource type="Shader" path="res://assets/shaders/water.gdshader" id="10_water_shader"]
 [ext_resource type="Shader" path="res://assets/shaders/mottle.gdshader" id="11_mottle_shader"]
+[ext_resource type="Shader" path="res://assets/shaders/checker.gdshader" id="12_checker_shader"]
+[ext_resource type="Script" path="res://scenes/track/spinner.gd" id="13_spinner"]
 
 [sub_resource type="Curve2D" id="Curve2D_top"]
 _data = {
@@ -91,6 +93,9 @@ shader_parameter/base_color = Color(0.17, 0.36, 0.15, 1)
 shader_parameter/detail_color = Color(0.13, 0.3, 0.12, 1)
 shader_parameter/noise_scale = 0.009
 shader_parameter/detail_strength = 0.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_checker"]
+shader = ExtResource("12_checker_shader")
 
 [sub_resource type="Curve2D" id="Curve2D_cliff"]
 _data = {
@@ -217,8 +222,51 @@ curve = SubResource("Curve2D_right")
 curve = SubResource("Curve2D_chord")
 
 [node name="StartLine" type="Polygon2D" parent="."]
+material = SubResource("ShaderMaterial_checker")
 color = Color(0.92, 0.92, 0.92, 1)
-polygon = PackedVector2Array(-8, 400, 8, 400, 8, 700, -8, 700)
+polygon = PackedVector2Array(-24, 400, 24, 400, 24, 700, -24, 700)
+
+[node name="GantryPillarN" type="Polygon2D" parent="."]
+color = Color(0.16, 0.16, 0.18, 1)
+polygon = PackedVector2Array(-14, 376, 14, 376, 14, 402, -14, 402)
+
+[node name="GantryPillarS" type="Polygon2D" parent="."]
+color = Color(0.16, 0.16, 0.18, 1)
+polygon = PackedVector2Array(-14, 698, 14, 698, 14, 724, -14, 724)
+
+[node name="GantryBeam" type="Polygon2D" parent="."]
+z_index = 1
+color = Color(0.17, 0.17, 0.2, 1)
+polygon = PackedVector2Array(-8, 380, 8, 380, 8, 720, -8, 720)
+
+[node name="GantryBeamStripe" type="Polygon2D" parent="."]
+z_index = 1
+color = Color(0.85, 0.25, 0.2, 1)
+polygon = PackedVector2Array(-8, 380, 8, 380, 8, 396, -8, 396)
+
+[node name="PitWall" type="Polygon2D" parent="."]
+color = Color(0.62, 0.63, 0.66, 1)
+polygon = PackedVector2Array(-350, 716, 600, 716, 600, 736, -350, 736)
+
+[node name="PitWallStripe" type="Polygon2D" parent="."]
+color = Color(0.75, 0.2, 0.18, 1)
+polygon = PackedVector2Array(-350, 716, 600, 716, 600, 722, -350, 722)
+
+[node name="GarageBase" type="Polygon2D" parent="."]
+color = Color(0.2, 0.21, 0.24, 1)
+polygon = PackedVector2Array(140, 770, 510, 770, 510, 990, 140, 990)
+
+[node name="GarageRoof" type="Polygon2D" parent="."]
+color = Color(0.26, 0.28, 0.32, 1)
+polygon = PackedVector2Array(152, 782, 498, 782, 498, 978, 152, 978)
+
+[node name="GarageDoor" type="Polygon2D" parent="."]
+color = Color(0.5, 0.52, 0.55, 1)
+polygon = PackedVector2Array(200, 770, 450, 770, 450, 800, 200, 800)
+
+[node name="GarageLamp" type="Polygon2D" parent="."]
+color = Color(1, 0.85, 0.4, 1)
+polygon = PackedVector2Array(468, 776, 490, 776, 490, 794, 468, 794)
 
 [node name="Walls" type="Node2D" parent="."]
 
@@ -252,6 +300,14 @@ polygon = PackedVector2Array(15, 0, 11, 11, 0, 15, -11, 11, -15, 0, -11, -11, 0,
 [node name="Lamp" type="Polygon2D" parent="Lighthouse"]
 color = Color(1, 0.85, 0.4, 1)
 polygon = PackedVector2Array(7, 0, 5, 5, 0, 7, -5, 5, -7, 0, -5, -5, 0, -7, 5, -5)
+
+[node name="Beam" type="Node2D" parent="Lighthouse"]
+z_index = 1
+script = ExtResource("13_spinner")
+
+[node name="Fan" type="Polygon2D" parent="Lighthouse/Beam"]
+color = Color(1, 0.9, 0.5, 0.2)
+polygon = PackedVector2Array(0, -6, 340, -44, 340, 44, 0, 6)
 
 [node name="Trees" type="Node2D" parent="."]
 
