@@ -6,10 +6,34 @@
 modulate = Color(1, 1, 1, 0.45)
 script = ExtResource("1_ghost")
 
+[node name="WheelFL" type="Polygon2D" parent="."]
+color = Color(0.12, 0.28, 0.38, 1)
+polygon = PackedVector2Array(-21, -26, -13, -26, -13, -10, -21, -10)
+
+[node name="WheelFR" type="Polygon2D" parent="."]
+color = Color(0.12, 0.28, 0.38, 1)
+polygon = PackedVector2Array(13, -26, 21, -26, 21, -10, 13, -10)
+
+[node name="WheelRL" type="Polygon2D" parent="."]
+color = Color(0.12, 0.28, 0.38, 1)
+polygon = PackedVector2Array(-21, 14, -13, 14, -13, 30, -21, 30)
+
+[node name="WheelRR" type="Polygon2D" parent="."]
+color = Color(0.12, 0.28, 0.38, 1)
+polygon = PackedVector2Array(13, 14, 21, 14, 21, 30, 13, 30)
+
 [node name="Body" type="Polygon2D" parent="."]
 color = Color(0.35, 0.8, 1, 1)
-polygon = PackedVector2Array(-20, 35, 20, 35, 20, -15, 12, -35, -12, -35, -20, -15)
+polygon = PackedVector2Array(-18, 32, 18, 32, 19, 14, 18, -12, 13, -33, -13, -33, -18, -12, -19, 14)
+
+[node name="Stripe" type="Polygon2D" parent="."]
+color = Color(0.8, 0.95, 1, 0.9)
+polygon = PackedVector2Array(-4, 32, 4, 32, 3, -32, -3, -32)
 
 [node name="Windshield" type="Polygon2D" parent="."]
 color = Color(0.1, 0.25, 0.35, 1)
-polygon = PackedVector2Array(-14, -8, 14, -8, 10, -22, -10, -22)
+polygon = PackedVector2Array(-12, -6, 12, -6, 9, -20, -9, -20)
+
+[node name="Spoiler" type="Polygon2D" parent="."]
+color = Color(0.15, 0.35, 0.48, 1)
+polygon = PackedVector2Array(-19, 29, 19, 29, 19, 35, -19, 35)

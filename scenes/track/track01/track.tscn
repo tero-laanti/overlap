@@ -317,6 +317,11 @@ position = Vector2(-840, -780)
 [node name="Shape" type="CollisionShape2D" parent="Trees/GoldTreeWest"]
 shape = SubResource("CircleShape2D_gold_trunk")
 
+[node name="Shade" type="Polygon2D" parent="Trees/GoldTreeWest"]
+position = Vector2(5, 6)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
 [node name="Canopy" type="Polygon2D" parent="Trees/GoldTreeWest"]
 color = Color(0.62, 0.45, 0.1, 1)
 polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
@@ -330,6 +335,11 @@ position = Vector2(-480, -780)
 
 [node name="Shape" type="CollisionShape2D" parent="Trees/GoldTreeEast"]
 shape = SubResource("CircleShape2D_gold_trunk")
+
+[node name="Shade" type="Polygon2D" parent="Trees/GoldTreeEast"]
+position = Vector2(5, 6)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
 
 [node name="Canopy" type="Polygon2D" parent="Trees/GoldTreeEast"]
 color = Color(0.62, 0.45, 0.1, 1)

@@ -8,10 +8,21 @@ radius = 18.0
 [node name="Shape" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_trunk")
 
+[node name="Shade" type="Polygon2D" parent="."]
+position = Vector2(5, 6)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
 [node name="Canopy" type="Polygon2D" parent="."]
 color = Color(0.12, 0.28, 0.12, 1)
 polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
 
+[node name="Lobe" type="Polygon2D" parent="."]
+position = Vector2(-7, -6)
+color = Color(0.15, 0.33, 0.14, 1)
+polygon = PackedVector2Array(0, -30, 21, -15, 21, 15, 0, 30, -21, 15, -21, -15)
+
 [node name="Crown" type="Polygon2D" parent="."]
-color = Color(0.18, 0.38, 0.16, 1)
-polygon = PackedVector2Array(0, -26, 19, -13, 19, 13, 0, 26, -19, 13, -19, -13)
+position = Vector2(4, 4)
+color = Color(0.19, 0.4, 0.17, 1)
+polygon = PackedVector2Array(0, -22, 16, -11, 16, 11, 0, 22, -16, 11, -16, -11)

@@ -10,13 +10,46 @@ size = Vector2(40, 70)
 script = ExtResource("1_car")
 stats = ExtResource("2_stats")
 
+[node name="Shadow" type="Polygon2D" parent="."]
+position = Vector2(3, 4)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(-19, 34, 19, 34, 21, 14, 20, -12, 14, -34, -14, -34, -20, -12, -21, 14)
+
+[node name="WheelFL" type="Polygon2D" parent="."]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(-21, -26, -13, -26, -13, -10, -21, -10)
+
+[node name="WheelFR" type="Polygon2D" parent="."]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(13, -26, 21, -26, 21, -10, 13, -10)
+
+[node name="WheelRL" type="Polygon2D" parent="."]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(-21, 14, -13, 14, -13, 30, -21, 30)
+
+[node name="WheelRR" type="Polygon2D" parent="."]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(13, 14, 21, 14, 21, 30, 13, 30)
+
 [node name="Body" type="Polygon2D" parent="."]
-color = Color(0.9, 0.22, 0.2, 1)
-polygon = PackedVector2Array(-20, 35, 20, 35, 20, -15, 12, -35, -12, -35, -20, -15)
+color = Color(0.85, 0.2, 0.18, 1)
+polygon = PackedVector2Array(-18, 32, 18, 32, 19, 14, 18, -12, 13, -33, -13, -33, -18, -12, -19, 14)
+
+[node name="Roof" type="Polygon2D" parent="."]
+color = Color(0.93, 0.3, 0.26, 1)
+polygon = PackedVector2Array(-13, 12, 13, 12, 11, -4, -11, -4)
+
+[node name="Stripe" type="Polygon2D" parent="."]
+color = Color(0.96, 0.94, 0.9, 0.92)
+polygon = PackedVector2Array(-4, 32, 4, 32, 3, -32, -3, -32)
 
 [node name="Windshield" type="Polygon2D" parent="."]
-color = Color(0.15, 0.17, 0.2, 1)
-polygon = PackedVector2Array(-14, -8, 14, -8, 10, -22, -10, -22)
+color = Color(0.13, 0.15, 0.18, 1)
+polygon = PackedVector2Array(-12, -6, 12, -6, 9, -20, -9, -20)
+
+[node name="Spoiler" type="Polygon2D" parent="."]
+color = Color(0.12, 0.12, 0.14, 1)
+polygon = PackedVector2Array(-19, 29, 19, 29, 19, 35, -19, 35)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_body")
