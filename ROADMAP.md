@@ -156,6 +156,24 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   (exactly Σ slots × payout / pb), 4 ghosts in 2 fleets, v2 save migrated
   with offline earnings intact. Human feel pass on the cut still pending.
 
+## Visual identity pass (2026-07-06, human-directed)
+- [x] Flat-vector look leaned into (art-of-rally direction, no tile
+      packs — they'd fight the centerline-baked road pipeline): water
+      shader (swells, turquoise shelf, foamed wobbling waterline from
+      the land-rect SDF), shared mottle shader breaking up grass/sand/
+      rock fields, zone underlay polygons (dunes/cliff rock/woods),
+      centerline dashes baked per RoadSegment, checkered start +
+      gantry (beam over cars) + pit wall + GARAGE building, lighthouse
+      beam sweep, layered vector car/ghost/trees (same footprints and
+      collision), speed-reactive camera zoom, screenshake on splash/
+      wall hits, off-road dust + splash particles.
+- Notes: verified 2026-07-06 — boot clean, full probe loop green with
+  identical lap times pre/post juice (car handling untouched); every
+  pass eyeballed via the new photo-mode tool (user://photo.flag,
+  windowed; 12 authored viewpoints to user://dev/). Human feel pass
+  on camera zoom/shake amounts pending (knobs exported on
+  scenes/car/follow_camera.gd).
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:
@@ -170,7 +188,8 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 ## Later (unordered)
 - Prestige/reset layer; more cars (CarStats variants); track hazards that
   make YOUR lap risky but ghosts immune (risk = better recorded lines);
-  audio + drift trails + screenshake juice pass; web export.
+  audio pass (engine, drift screech, splash — drift trails and
+  screenshake landed 2026-07-06); minimap/map screen; web export.
 - Engine bump to Godot 4.7.x once 4.7.1 lands (brew has 4.7.0 now; shared
   binary also serves fieldbound/overlap — coordinate before upgrading).
 - GdUnit4 tests for Bank math once the economy stabilizes (slice 6+), not

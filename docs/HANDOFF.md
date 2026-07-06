@@ -108,9 +108,30 @@ zero script errors.
    asphalt gaps; (c) climb requires BOTH cliff_gate and island_chord
    (descent exits through the chord; concertina pricing means the
    chord is always owned first anyway).
-10. Next: petal 3 (harbor) per docs/MAP_DESIGN.md §8, Jump Kit
-   gateway moment (+ cliff washout jump spot), coast linker + grand
-   tour, gate-exhausted badges.
+10. Visual identity pass DONE 2026-07-06 (human-directed, "do it
+   all"): flat-vector direction, NO tile packs (they fight the
+   centerline-baked road pipeline). Water/mottle/checker shaders in
+   assets/shaders/ (world-space via MODEL_MATRIX varying), zone
+   underlays, RoadSegment dash bake, gantry/pit/garage dressing,
+   layered vector car/ghost/trees, FollowCamera (zoom + shake),
+   dust/splash CPUParticles. THE Z CONTRACT (don't break it):
+   water -4, grass -3, underlays/island -2, road borders -1,
+   surfaces/props/trails/cars 0 (tree order), gantry beam +
+   lighthouse fan +1. Drift trails are Main-level z0 siblings —
+   raising any surface above z0 hides them. NEW TOOL: photo mode
+   (touch user://photo.flag, run WINDOWED godot; flies a camera over
+   12 authored viewpoints, saves user://dev/photo_*.png, quits) —
+   this is how art passes get verified on macOS where headless can't
+   screenshot. Back up the human's save around photo runs too:
+   loading grants offline earnings and the 5s autosave rewrites the
+   file. Camera zoom/shake knobs await a human feel pass
+   (scenes/car/follow_camera.gd exports); car HANDLING untouched
+   (probe lap times identical pre/post).
+11. Next: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
+   foundation is in, so author it pretty from the start (navy/rust/
+   crane-yellow palette per MAP_DESIGN §7). Then Jump Kit gateway
+   moment (+ cliff washout jump spot), coast linker + grand tour,
+   gate-exhausted badges.
 
 ## Verification workflow (mandatory before any commit)
 
