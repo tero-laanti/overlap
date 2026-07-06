@@ -59,6 +59,18 @@ id = "forest"
 a = Vector2(-900, -1980)
 b = Vector2(-900, -2220)
 
+[sub_resource type="Resource" id="Resource_line_cliff_climb"]
+script = ExtResource("2")
+id = "cliff_climb"
+a = Vector2(1950, -1590)
+b = Vector2(1950, -1330)
+
+[sub_resource type="Resource" id="Resource_line_cliff_top"]
+script = ExtResource("2")
+id = "cliff_top"
+a = Vector2(1000, -2380)
+b = Vector2(1000, -2120)
+
 [sub_resource type="Resource" id="Resource_gate_chord"]
 script = ExtResource("4")
 id = "island_chord"
@@ -70,6 +82,12 @@ script = ExtResource("4")
 id = "west_petal"
 display_name = "Dune Gate"
 price = 250.0
+
+[sub_resource type="Resource" id="Resource_gate_cliff"]
+script = ExtResource("4")
+id = "cliff_gate"
+display_name = "Cliff Gate"
+price = 900.0
 
 [sub_resource type="Resource" id="Resource_route_ring"]
 script = ExtResource("3")
@@ -121,8 +139,30 @@ payout_per_lap = 24.0
 medal_unlock_cost = 400.0
 secret = true
 
+[sub_resource type="Resource" id="Resource_route_climb"]
+script = ExtResource("3")
+id = "climb"
+display_name = "Lighthouse Climb"
+edges = PackedStringArray("west", "cliff_climb", "cliff_top", "chord_mouth", "chord")
+par_time = 16.0
+payout_per_lap = 38.0
+medal_unlock_cost = 600.0
+clue = "Stone stairs climb to the white tower."
+required_gates = PackedStringArray("cliff_gate", "island_chord")
+
+[sub_resource type="Resource" id="Resource_route_high_ring"]
+script = ExtResource("3")
+id = "high_ring"
+display_name = "High Ring"
+edges = PackedStringArray("west", "cliff_climb", "cliff_top", "east")
+par_time = 18.2
+payout_per_lap = 41.5
+medal_unlock_cost = 650.0
+clue = "From the tower, the long way home."
+required_gates = PackedStringArray("cliff_gate")
+
 [resource]
 script = ExtResource("1")
-crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_petal_mouth"), SubResource("Resource_line_petal"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest")])
-routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_petal"), SubResource("Resource_route_twin"), SubResource("Resource_route_forest")])
-gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_petal")])
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_petal_mouth"), SubResource("Resource_line_petal"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest"), SubResource("Resource_line_cliff_climb"), SubResource("Resource_line_cliff_top")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_petal"), SubResource("Resource_route_twin"), SubResource("Resource_route_forest"), SubResource("Resource_route_climb"), SubResource("Resource_route_high_ring")])
+gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_petal"), SubResource("Resource_gate_cliff")])

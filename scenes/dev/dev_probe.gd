@@ -12,6 +12,7 @@ enum Phase {
 	DRIVE, EARN, SPEND, REDRIVE, WATCH,
 	BUY_GATE, DRIVE_CUT, WATCH_CUT,
 	EARN_PETAL, BUY_PETAL, DRIVE_PETAL, WATCH_FINAL,
+	EARN_CLIFF, BUY_CLIFF, DRIVE_CLIMB, WATCH_CLIFF,
 	DONE,
 }
 
@@ -19,19 +20,25 @@ const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 240.0
+const TIMEOUT := 420.0
 const DRIVE_LAPS := 2
 const REDRIVE_LAPS := 2
 const CUT_LAPS := 2
 const PETAL_LAPS := 2
+const CLIMB_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
 const PETAL_EARN_TARGET := 260.0  # Dune Gate (250) + slack
+const CLIFF_EARN_TARGET := 950.0  # Cliff Gate (900) + slack
 const WATCH_SECONDS := 16.0
 const WATCH_CUT_SECONDS := 12.0
 const WATCH_FINAL_SECONDS := 12.0
+const WATCH_CLIFF_SECONDS := 12.0
 const GATE_ID := "island_chord"
 const PETAL_GATE_ID := "west_petal"
+const CLIFF_GATE_ID := "cliff_gate"
 const MASTERY_ROUTE_ID := "ring"
+## Hairpin apex capture: the default reach radius corner-cuts the ladder.
+const CLIFF_REACH := 120.0
 
 const RING_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1050, -550),
@@ -45,6 +52,23 @@ const PETAL_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1260, 300), Vector2(-1520, 0),
 	Vector2(-1260, -300), Vector2(-1050, -550),
 	Vector2(1050, -550), Vector2(1050, 550),
+]
+## Up the NE approach, the hairpin ladder, the lighthouse hairpin, the
+## esses, then the descent straight through the X into the chord.
+const CLIMB_WAYPOINTS: Array[Vector2] = [
+	Vector2(-1050, 550), Vector2(-1050, -550),
+	Vector2(600, -550), Vector2(1100, -570),
+	Vector2(1400, -790), Vector2(1540, -1120),
+	Vector2(2250, -1120), Vector2(2400, -1180), Vector2(2420, -1290),
+	Vector2(2400, -1400), Vector2(2250, -1460),
+	Vector2(1650, -1460), Vector2(1500, -1520), Vector2(1480, -1630),
+	Vector2(1500, -1740), Vector2(1650, -1800),
+	Vector2(2250, -1800), Vector2(2440, -1880), Vector2(2470, -2010),
+	Vector2(2440, -2140), Vector2(2250, -2220),
+	Vector2(1720, -2280), Vector2(1280, -2160), Vector2(860, -2300),
+	Vector2(520, -2150),
+	Vector2(260, -1750), Vector2(230, -1350), Vector2(260, -950),
+	Vector2(300, -450), Vector2(300, 100), Vector2(300, 500),
 ]
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -161,13 +185,31 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH_FINAL, "watching all fleets")
 		Phase.WATCH_FINAL:
 			if _elapsed >= _watch_until:
+				print("[PROBE] petal done money=%.0f income=%.2f/s petal_pb=%.2f" % [
+					Bank.currency, Bank.income_per_second(), Bank.route_pb("petal"),
+				])
+				_enter(Phase.EARN_CLIFF, "idling until $%d" % int(CLIFF_EARN_TARGET))
+		Phase.EARN_CLIFF:
+			if Bank.currency >= CLIFF_EARN_TARGET:
+				_buy_cliff_gate()
+		Phase.BUY_CLIFF:
+			pass  # transitions inside _buy_cliff_gate()
+		Phase.DRIVE_CLIMB:
+			_driver.drive(delta)
+			if _laps_done >= _lap_target:
+				_driver.release_all()
+				_watch_until = _elapsed + WATCH_CLIFF_SECONDS
+				_enter(Phase.WATCH_CLIFF, "watching every fleet")
+		Phase.WATCH_CLIFF:
+			if _elapsed >= _watch_until:
 				var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
 				print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
 				_dump_route_log()
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f petal_pb=%.2f ghosts=%d" % [
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f petal_pb=%.2f climb_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
 					Bank.route_pb("cut"), Bank.route_pb("petal"),
+					Bank.route_pb("climb"),
 					get_tree().get_nodes_in_group("ghost").size(),
 				])
 				_enter(Phase.DONE, "finished")
@@ -228,6 +270,16 @@ func _buy_petal_gate() -> void:
 	_driver.set_route(PETAL_WAYPOINTS)
 	_lap_target = _laps_done + PETAL_LAPS
 	_enter(Phase.DRIVE_PETAL, "driving the dune bend")
+
+
+func _buy_cliff_gate() -> void:
+	_enter(Phase.BUY_CLIFF, "buying the cliff gate")
+	var gate_ok := Bank.try_buy_gate(CLIFF_GATE_ID)
+	print("[PROBE] bought cliff_gate=%s money=%.0f" % [gate_ok, Bank.currency])
+	_dump_route_log()
+	_driver.set_route(CLIMB_WAYPOINTS, CLIFF_REACH)
+	_lap_target = _laps_done + CLIMB_LAPS
+	_enter(Phase.DRIVE_CLIMB, "driving the lighthouse climb")
 
 
 func _dump_route_log() -> void:

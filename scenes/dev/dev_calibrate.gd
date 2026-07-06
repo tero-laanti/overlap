@@ -10,7 +10,7 @@ extends Node
 
 const FLAG_PATH := "user://calibrate.flag"
 const LAPS_PER_ROUTE := 3
-const TIMEOUT := 300.0
+const TIMEOUT := 600.0
 const GRANT := 100000.0
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -33,15 +33,43 @@ const FOREST_WAYPOINTS: Array[Vector2] = [
 ## The tree gap is 240 px wide — the default reach radius corner-cuts
 ## straight past it.
 const FOREST_REACH := 120.0
+## Same climb as the probe, but turning east at the X onto the top road
+## instead of diving into the chord — the High Ring discovery.
+const HIGH_RING_WAYPOINTS: Array[Vector2] = [
+	Vector2(-1050, 550), Vector2(-1050, -550),
+	Vector2(600, -550), Vector2(1100, -570),
+	Vector2(1400, -790), Vector2(1540, -1120),
+	Vector2(2250, -1120), Vector2(2400, -1180), Vector2(2420, -1290),
+	Vector2(2400, -1400), Vector2(2250, -1460),
+	Vector2(1650, -1460), Vector2(1500, -1520), Vector2(1480, -1630),
+	Vector2(1500, -1740), Vector2(1650, -1800),
+	Vector2(2250, -1800), Vector2(2440, -1880), Vector2(2470, -2010),
+	Vector2(2440, -2140), Vector2(2250, -2220),
+	Vector2(1720, -2280), Vector2(1280, -2160), Vector2(860, -2300),
+	Vector2(520, -2150),
+	Vector2(260, -1750), Vector2(230, -1350), Vector2(260, -950),
+	Vector2(300, -750), Vector2(600, -560), Vector2(1050, -550),
+	Vector2(1050, 0), Vector2(1050, 550),
+]
 
 var _driver: DevDriverScript = DevDriverScript.new()
-var _route_ids: Array[String] = ["ring", "cut", "petal", "twin", "forest"]
+var _route_ids: Array[String] = [
+	"ring", "cut", "petal", "twin", "forest", "climb", "high_ring",
+]
 var _route_points := {
 	"ring": ProbeScript.RING_WAYPOINTS,
 	"cut": ProbeScript.CUT_WAYPOINTS,
 	"petal": ProbeScript.PETAL_WAYPOINTS,
 	"twin": TWIN_WAYPOINTS,
 	"forest": FOREST_WAYPOINTS,
+	"climb": ProbeScript.CLIMB_WAYPOINTS,
+	"high_ring": HIGH_RING_WAYPOINTS,
+}
+## Routes whose mouths or hairpins need a tighter capture radius.
+var _route_reach := {
+	"forest": FOREST_REACH,
+	"climb": ProbeScript.CLIFF_REACH,
+	"high_ring": ProbeScript.CLIFF_REACH,
 }
 var _stage := -1
 var _stage_laps := 0
@@ -103,7 +131,7 @@ func _next_stage() -> void:
 		return
 	var route_id := _route_ids[_stage]
 	_driver.set_route(_route_points[route_id],
-			FOREST_REACH if route_id == "forest" else DevDriverScript.WAYPOINT_REACHED_DISTANCE)
+			_route_reach.get(route_id, DevDriverScript.WAYPOINT_REACHED_DISTANCE))
 	print("[CAL] driving %s" % route_id)
 
 
