@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/car/car.gd" id="1_car"]
 [ext_resource type="Resource" path="res://data/cars/starter_car.tres" id="2_stats"]
+[ext_resource type="Script" path="res://scenes/car/follow_camera.gd" id="3_camera"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(40, 70)
@@ -9,6 +10,36 @@ size = Vector2(40, 70)
 [node name="Car" type="CharacterBody2D" groups=["player_car"]]
 script = ExtResource("1_car")
 stats = ExtResource("2_stats")
+
+[node name="Dust" type="CPUParticles2D" parent="."]
+position = Vector2(0, 30)
+emitting = false
+amount = 14
+lifetime = 0.55
+local_coords = false
+direction = Vector2(0, 1)
+spread = 170.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 25.0
+initial_velocity_max = 70.0
+scale_amount_min = 3.0
+scale_amount_max = 6.5
+color = Color(0.52, 0.47, 0.35, 0.45)
+
+[node name="Splash" type="CPUParticles2D" parent="."]
+emitting = false
+one_shot = true
+explosiveness = 1.0
+amount = 26
+lifetime = 0.6
+local_coords = false
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 60.0
+initial_velocity_max = 160.0
+scale_amount_min = 3.0
+scale_amount_max = 7.0
+color = Color(0.55, 0.78, 0.85, 0.7)
 
 [node name="Shadow" type="Polygon2D" parent="."]
 position = Vector2(3, 4)
@@ -55,6 +86,7 @@ polygon = PackedVector2Array(-19, 29, 19, 29, 19, 35, -19, 35)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("3_camera")
 zoom = Vector2(0.6, 0.6)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

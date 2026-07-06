@@ -7,8 +7,14 @@ extends CharacterBody2D
 ## owned upgrades. The base resource is never mutated.
 
 const CarStatsScript = preload("res://scenes/car/car_stats.gd")
+const FollowCameraScript = preload("res://scenes/car/follow_camera.gd")
 const REAR_LEFT_TIRE := Vector2(-14.0, 24.0)
 const REAR_RIGHT_TIRE := Vector2(14.0, 24.0)
+## Sudden speed loss (px/s) in a collision that starts a camera bump.
+const IMPACT_SHAKE_THRESHOLD := 350.0
+const IMPACT_SHAKE_SCALE := 0.012
+## Minimum speed that kicks up off-road dust.
+const DUST_MIN_SPEED := 200.0
 ## Physics layer 2 ("road_surface") — Area2Ds marking drivable asphalt.
 const ROAD_SURFACE_MASK := 1 << 1
 ## Physics layer 3 ("water") — Area2Ds marking the sea around the island.
@@ -28,6 +34,10 @@ var _road_query: PhysicsPointQueryParameters2D
 var _water_query: PhysicsPointQueryParameters2D
 var _rubble_query: PhysicsPointQueryParameters2D
 var _last_road_pos := Vector2.ZERO
+
+@onready var _camera: FollowCameraScript = $Camera2D
+@onready var _dust: CPUParticles2D = $Dust
+@onready var _splash: CPUParticles2D = $Splash
 
 
 func _ready() -> void:
@@ -87,11 +97,17 @@ func _physics_process(delta: float) -> void:
 	lateral *= exp(-grip * delta)
 
 	velocity = forward * forward_speed + lateral
+	var before_impact := velocity
 	move_and_slide()
-	if _is_on_road():
+	var impact := (before_impact - velocity).length()
+	if impact > IMPACT_SHAKE_THRESHOLD:
+		_camera.bump(impact * IMPACT_SHAKE_SCALE)
+	var on_road := _is_on_road()
+	if on_road:
 		_last_road_pos = global_position
 	elif _query_hit(_water_query):
 		_reset_to_road()
+	_dust.emitting = not on_road and velocity.length() > DUST_MIN_SPEED
 	_update_drift_trails(drifting, lateral_speed, velocity.length())
 
 
@@ -132,6 +148,7 @@ func _query_hit(query: PhysicsPointQueryParameters2D) -> bool:
 func _reset_to_road() -> void:
 	global_position = _last_road_pos
 	velocity = Vector2.ZERO
+	_splash.restart()
 	Events.car_reset_to_road.emit()
 
 
