@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="8_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/route_log.tscn" id="9_routelog"]
 [ext_resource type="Script" uid="uid://dcal8wjcu7eva" path="res://scenes/dev/dev_calibrate.gd" id="10_calibrate"]
+[ext_resource type="Script" path="res://scenes/dev/dev_photo.gd" id="11_photo"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")
@@ -37,3 +38,6 @@ script = ExtResource("4_probe")
 
 [node name="DevCalibrate" type="Node" parent="." unique_id=1293606145]
 script = ExtResource("10_calibrate")
+
+[node name="DevPhoto" type="Node" parent="."]
+script = ExtResource("11_photo")

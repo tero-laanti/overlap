@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=37 format=3]
 
 [ext_resource type="Script" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" path="res://data/tracks/track01.tres" id="2_def"]
@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://scenes/track/tree.tscn" id="7_tree"]
 [ext_resource type="Script" path="res://scenes/track/secret_road.gd" id="8_secret"]
 [ext_resource type="PackedScene" path="res://scenes/track/wall_segment.tscn" id="9_wall"]
+[ext_resource type="Shader" path="res://assets/shaders/water.gdshader" id="10_water_shader"]
+[ext_resource type="Shader" path="res://assets/shaders/mottle.gdshader" id="11_mottle_shader"]
 
 [sub_resource type="Curve2D" id="Curve2D_top"]
 _data = {
@@ -51,6 +53,44 @@ _data = {
 "points": PackedVector2Array(0, 0, 0, -300, -660, -550, 250, 300, -250, -300, -1500, -1400, -350, 0, 350, 0, -900, -2100, -300, -100, 300, 100, 300, -1900, 0, -300, 0, 300, 900, -1200, 50, -250, 0, 0, 700, -550)
 }
 point_count = 6
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
+shader = ExtResource("10_water_shader")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grass"]
+shader = ExtResource("11_mottle_shader")
+shader_parameter/base_color = Color(0.22, 0.43, 0.18, 1)
+shader_parameter/detail_color = Color(0.18, 0.37, 0.15, 1)
+shader_parameter/noise_scale = 0.006
+shader_parameter/detail_strength = 0.85
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_island"]
+shader = ExtResource("11_mottle_shader")
+shader_parameter/base_color = Color(0.16, 0.34, 0.15, 1)
+shader_parameter/detail_color = Color(0.13, 0.29, 0.12, 1)
+shader_parameter/noise_scale = 0.008
+shader_parameter/detail_strength = 0.8
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dunes"]
+shader = ExtResource("11_mottle_shader")
+shader_parameter/base_color = Color(0.63, 0.55, 0.37, 1)
+shader_parameter/detail_color = Color(0.56, 0.48, 0.31, 1)
+shader_parameter/noise_scale = 0.005
+shader_parameter/detail_strength = 0.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cliff_rock"]
+shader = ExtResource("11_mottle_shader")
+shader_parameter/base_color = Color(0.38, 0.4, 0.38, 1)
+shader_parameter/detail_color = Color(0.32, 0.34, 0.33, 1)
+shader_parameter/noise_scale = 0.007
+shader_parameter/detail_strength = 0.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_woods"]
+shader = ExtResource("11_mottle_shader")
+shader_parameter/base_color = Color(0.17, 0.36, 0.15, 1)
+shader_parameter/detail_color = Color(0.13, 0.3, 0.12, 1)
+shader_parameter/noise_scale = 0.009
+shader_parameter/detail_strength = 0.9
 
 [sub_resource type="Curve2D" id="Curve2D_cliff"]
 _data = {
@@ -104,18 +144,36 @@ network = ExtResource("3_network")
 
 [node name="WaterVisual" type="Polygon2D" parent="."]
 z_index = -4
+material = SubResource("ShaderMaterial_water")
 color = Color(0.13, 0.3, 0.42, 1)
 polygon = PackedVector2Array(-8000, -8000, 8000, -8000, 8000, 8000, -8000, 8000)
 
 [node name="Grass" type="Polygon2D" parent="."]
 z_index = -3
+material = SubResource("ShaderMaterial_grass")
 color = Color(0.2, 0.42, 0.18, 1)
 polygon = PackedVector2Array(-2900, -2700, 2900, -2700, 2900, 1500, -2900, 1500)
 
 [node name="IslandVisual" type="Polygon2D" parent="."]
 z_index = -2
+material = SubResource("ShaderMaterial_island")
 color = Color(0.16, 0.34, 0.15, 1)
 polygon = PackedVector2Array(-900, -400, 900, -400, 900, 400, -900, 400)
+
+[node name="DuneField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_dunes")
+polygon = PackedVector2Array(-2550, -350, -2300, -900, -1700, -1000, -1150, -750, -1000, -300, -950, 200, -1150, 700, -1650, 950, -2200, 850, -2500, 400)
+
+[node name="CliffField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_cliff_rock")
+polygon = PackedVector2Array(1150, -680, 1400, -900, 1350, -1500, 1250, -1950, 700, -2050, 430, -2250, 700, -2500, 1500, -2560, 2200, -2620, 2650, -2450, 2820, -1800, 2750, -1050, 2400, -750, 1750, -640)
+
+[node name="WoodsField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_woods")
+polygon = PackedVector2Array(-2400, -700, -2500, -1500, -2100, -2200, -1400, -2500, -500, -2450, 0, -2100, 150, -1500, 0, -900, -500, -700, -1500, -650)
 
 [node name="Road" type="Node2D" parent="."]
 
