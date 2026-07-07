@@ -9,8 +9,10 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       forward/lateral-split controller, drift factor
 - [x] One hand-built track scene (simple closed circuit, walls)
 - [x] Follow camera
-- [ ] **Accept:** drive 3 clean laps; steering and drift feel good at speed.
+- [x] **Accept:** drive 3 clean laps; steering and drift feel good at speed.
       Feel sign-off is the gate — iterate here before moving on.
+      (Ticked 2026-07-07: the notes below record the 2026-07-05 human
+      sign-off; the box was simply never checked.)
 - Notes: auto-verified 2026-07-05 via DevProbe (scenes/dev/dev_probe.gd —
   scripted drive, telemetry, screenshots to user://dev/; activate by
   creating user://autopilot.flag). Accel 0→920 px/s, cornering, drift and
@@ -155,6 +157,12 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   discovered on first lap through it, cut PB 5.12 s, income 3.01 → 5.55/s
   (exactly Σ slots × payout / pb), 4 ghosts in 2 fleets, v2 save migrated
   with offline earnings intact. Human feel pass on the cut still pending.
+- Notes (2026-07-07 review fixes, NOT play-verified — no Godot on that
+  machine): route certification now requires all RouteDef.required_gates
+  owned (closes the cliff-gate grass-flank exploit); start/west/east/
+  petal/forest crossing lines overhang the inside curb (apex clips no
+  longer void laps); saves write atomically; shop buttons no longer take
+  keyboard focus (Space re-purchase). Run the probe loop to re-verify.
 
 ## Visual identity pass (2026-07-06, human-directed)
 - [x] Flat-vector look leaned into (art-of-rally direction, no tile

@@ -1,22 +1,26 @@
-# Handoff — for the next agent (written 2026-07-05 by Claude Fable 5)
+# Handoff — for the next agent (updated 2026-07-07 by Claude Fable 5)
 
 You have fresh context. This file is your fastest path to being useful.
 Read in order: AGENTS.md (rules — non-negotiable), ROADMAP.md (state),
-this file (next steps), and when you touch the gate network,
-`.worktrees/design/docs/GATE_NETWORK.md` + `docs/research/*` on the
-`design/gate-network` branch.
+this file (next steps), and when you touch the gate network, the design
+doc on the `design/gate-network` branch (remote-only now — no local
+worktree; `git show origin/design/gate-network:docs/GATE_NETWORK.md`).
 
 ## Where the project stands
 
-Main is through Slice 5 plus most of Slice 6: offline earnings are DONE
-and precisely verified (income × min(elapsed, 8h cap) — I tested with a
-backdated save: exact to the second). Drift trails are in and
-functionally verified (both tires emit points headlessly). The car feel
-on main is now DRIFT-HEAVY (grip 6.0, drift_grip 0.65) — folded in from
-a variant branch by an external LLM session, then reviewed by me. The
-last three commits (2f1e3e3, 1511357, cb7f9ff) are that fold + review;
-all verified green: full probe loop, laps 6.90/6.61s, income 3.02/s,
-zero script errors.
+Main is through ROADMAP slice 7 petal 2 (THE CLIFFS) plus the visual
+identity pass: 7 authored routes across the ring, island chord, dune
+petal, secret forest road, and the cliff ladder; per-route PBs, fleets,
+and mastery medals; save v3; flat-vector look with water/mottle shaders
+and photo-mode tooling. The numbered list below is the full history —
+items 1–10 are DONE, item 11 is next. A 2026-07-07 code-review pass
+(multi-agent, adversarially verified — see that session's report)
+landed on top of it: atomic save writes, shop buttons unfocusable,
+route certification requires owned gates (cliff-gate flank exploit),
+crossing-line inside margins, docs refreshed, Bank/DevProbe split under
+the line ceiling. NOT play-verified — Godot was unavailable on the
+machine that made those fixes; run the probe loop before building on
+them.
 
 ## Highest-priority next steps, in order
 
@@ -167,7 +171,7 @@ zero script errors.
 ## Open questions parked for the human
 
 - Which topology for the full network (design doc recommends Clover;
-  diagrams in .worktrees/design/docs/diagrams/).
+  diagrams in docs/diagrams/ on the remote design/gate-network branch).
 - Economy feel checkpoints: first 90 seconds should feel generous; the
   10-ghost ×2 milestone should be looming by minute 15 (knobs in
   data/economy.tres — see docs/DESIGN_NOTES.md "Tuned economy v1").
