@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="TrackNetworkDef" format=3 uid="uid://c30fdpsklg1v2"]
+
+[ext_resource type="Script" uid="uid://dtrs0rnqxmyk0" path="res://scenes/track/track_network_def.gd" id="1"]
+[ext_resource type="Script" uid="uid://bhi68a7giyavv" path="res://scenes/track/crossing_line_def.gd" id="2"]
+[ext_resource type="Script" uid="uid://bgtfu6xjrfgsx" path="res://scenes/track/route_def.gd" id="3"]
+[ext_resource type="Script" uid="uid://kniwdrrbxkfc" path="res://scenes/track/gate_def.gd" id="4"]
+
+[sub_resource type="Resource" id="Resource_line_start"]
+script = ExtResource("2")
+id = "start"
+a = Vector2(0, 1010)
+b = Vector2(0, 1600)
+
+[sub_resource type="Resource" id="Resource_line_west"]
+script = ExtResource("2")
+id = "west"
+a = Vector2(-2160, -300)
+b = Vector2(-2890, -300)
+
+[sub_resource type="Resource" id="Resource_line_east"]
+script = ExtResource("2")
+id = "east"
+a = Vector2(1800, 0)
+b = Vector2(2500, 0)
+
+[sub_resource type="Resource" id="Resource_line_chord_mouth"]
+script = ExtResource("2")
+id = "chord_mouth"
+a = Vector2(300, -1140)
+b = Vector2(700, -1140)
+
+[sub_resource type="Resource" id="Resource_line_chord"]
+script = ExtResource("2")
+id = "chord"
+a = Vector2(300, -100)
+b = Vector2(700, -100)
+
+[sub_resource type="Resource" id="Resource_gate_chord"]
+script = ExtResource("4")
+id = "island_chord"
+display_name = "Island Gate"
+price = 120.0
+
+[sub_resource type="Resource" id="Resource_route_ring"]
+script = ExtResource("3")
+id = "ring"
+display_name = "Grand Ring"
+edges = PackedStringArray("west", "east")
+par_time = 15.0
+payout_per_lap = 25.0
+
+[sub_resource type="Resource" id="Resource_route_cut"]
+script = ExtResource("3")
+id = "cut"
+display_name = "Island Cut"
+edges = PackedStringArray("west", "chord_mouth", "chord")
+par_time = 11.5
+payout_per_lap = 19.5
+medal_unlock_cost = 220.0
+clue = "The island hides a faster line."
+required_gates = PackedStringArray("island_chord")
+
+[resource]
+script = ExtResource("1")
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut")])
+gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord")])

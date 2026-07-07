@@ -22,19 +22,8 @@ The game is called Overlap: expansions should share road, not add menus.
 Architectural implication adopted now: define tracks as checkpoint routes
 over composable road geometry, not sealed one-off scenes.
 
-## Full track relayout (2026-07-07 — user: "re plan the track layout
-## completely at one point"; current cliffs layout accepted as ok)
-
-The island grew petal by petal around a rectangular hub authored first;
-a ground-up relayout could design the whole geography as one composition
-instead (proper coastline, zones planned together, junctions placed by
-the ≥1600px rule from the start rather than grandfathered). Big: every
-route, crossing line, par, waypoint set, and the players' PB recordings
-are geometry-coupled — a relayout is a save-breaking (or PB-voiding)
-event, so it should ride along with a natural reset moment (prestige
-layer?) or land before any public release. Note MAP_DESIGN §5's route
-table survives a relayout — it's the geometry that moves, not the
-design grammar.
+## ~~Full track relayout~~ CHOSEN 2026-07-07 → docs/MAP_DESIGN_V2.md
+## (15 s hub, design-all build-hub-first, full save wipe)
 
 ## Roguelite rounds + rival onboarding (2026-07-07 brainstorm — user, undecided)
 

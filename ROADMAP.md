@@ -201,6 +201,18 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   PENDING HUMAN EARS: mix levels (exports on car_audio.gd + per-player
   dB), synth vs sampled engine A/B, music taste check.
 
+## Slice 8 — Island v2: the 15-second hub (design: docs/MAP_DESIGN_V2.md)
+- [ ] V2-1 The hub: GP-style ~15 s circuit (fast+flowing, one braking
+      corner) + chord gate, save v4 full wipe, dev tooling retargeted,
+      pars/payouts calibrated, economy sim re-checked. track01 deleted.
+- [ ] V2-2 Minimap / island map screen (required — circuit no longer
+      fits one screen).
+- [ ] V2-3..5 Zone re-adaptations: dunes, cliffs+woods (the X returns),
+      then harbor per MAP_DESIGN §8.
+- **Accept (V2-1):** a first-time lap takes ~15–18 s and feels like a
+      race lap (straight → braking spot → sweepers → esses → carousel);
+      full probe loop green on the new geometry.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

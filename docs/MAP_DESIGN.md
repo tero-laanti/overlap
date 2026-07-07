@@ -1,5 +1,10 @@
 # Overlap — The Island (map & track design)
 
+> **SUPERSEDED for geography 2026-07-07** by MAP_DESIGN_V2.md (full
+> relayout around a ~15 s hub). The pillars (§1), zone identities (§3),
+> authoring rules (§4), and lap-ladder reasoning (§6) still govern;
+> the concrete coordinates and build order do not.
+
 Status: DESIGN — no code. Companion to `GATE_NETWORK.md` (design branch),
 which owns the systems (gates, routes, discovery, economy). This doc owns
 the *geography*: what the island actually looks like, what each zone
