@@ -131,7 +131,20 @@ them.
    file. Camera zoom/shake knobs await a human feel pass
    (scenes/car/follow_camera.gd exports); car HANDLING untouched
    (probe lap times identical pre/post).
-11. Next: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
+11. Esc overlay + audio pass DONE 2026-07-07 (human-directed): Esc
+   menu (non-pausing — the idle world keeps earning; buttons/sliders
+   FOCUS_NONE per the shop lesson), settings.cfg owns device prefs.
+   Audio: buses in default_bus_layout.tres, ALL SFX synthesized by
+   tools/gen_sfx.py (rerun + commit WAVs to tweak), CarAudio reads
+   car state via is_on_road_now()/is_sliding(), GameAudio wires
+   Events stingers, CC0 music + engine sample per
+   assets/audio/SOURCES.md. GOTCHA: headless audio players leak
+   playback objects at exit (dummy driver never mixes) — both audio
+   nodes go dormant under headless; keep it that way. WAITING ON THE
+   HUMAN: mix levels, synth-vs-sampled engine A/B
+   (use_sampled_engine on CarAudio), music taste, plus the older
+   cliffs-hairpin and camera zoom/shake feel passes.
+12. Next: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
    foundation is in, so author it pretty from the start (navy/rust/
    crane-yellow palette per MAP_DESIGN §7). Then Jump Kit gateway
    moment (+ cliff washout jump spot), coast linker + grand tour,

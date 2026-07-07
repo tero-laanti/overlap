@@ -5,14 +5,17 @@ extends Node
 ## here at runtime instead of via import metadata.
 
 const CarScript = preload("res://scenes/car/car.gd")
-const LOOP_SECONDS := 1.0
 ## dB per second toward each loop's target volume — fast enough to feel
 ## instant, slow enough not to click.
 const FADE_DB_PER_SECOND := 300.0
 const SILENT_DB := -60.0
 ## Rumble only reads as movement above this speed.
 const OFFROAD_MIN_SPEED := 120.0
+const SAMPLED_ENGINE := "res://assets/audio/sfx/engine_sample.wav"
 
+## A/B for the human ear pass: swap the synth engine for the CC0
+## recorded sample (see assets/audio/SOURCES.md), pick the better one.
+@export var use_sampled_engine := false
 @export var engine_pitch_min := 0.7
 @export var engine_pitch_max := 2.1
 @export var engine_db_min := -22.0
@@ -33,6 +36,8 @@ func _ready() -> void:
 	if DisplayServer.get_name() == "headless":
 		set_physics_process(false)
 		return
+	if use_sampled_engine and ResourceLoader.exists(SAMPLED_ENGINE):
+		_engine.stream = load(SAMPLED_ENGINE)
 	for player: AudioStreamPlayer in [_engine, _drift, _offroad]:
 		_make_looping(player)
 		player.volume_db = SILENT_DB
@@ -40,11 +45,13 @@ func _ready() -> void:
 	Events.car_reset_to_road.connect(func() -> void: _splash.play())
 
 
+## Loop the whole stream: the generated WAVs are authored seam-free
+## end-to-end, so no import metadata is needed.
 func _make_looping(player: AudioStreamPlayer) -> void:
 	var stream: AudioStreamWAV = player.stream
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	stream.loop_begin = 0
-	stream.loop_end = int(stream.mix_rate * LOOP_SECONDS)
+	stream.loop_end = int(stream.get_length() * stream.mix_rate)
 
 
 func _physics_process(delta: float) -> void:

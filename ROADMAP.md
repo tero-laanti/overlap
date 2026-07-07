@@ -182,6 +182,25 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   on camera zoom/shake amounts pending (knobs exported on
   scenes/car/follow_camera.gd).
 
+## System & audio pass (2026-07-07, human-directed)
+- [x] Esc system overlay: non-pausing menu (resume, controls card,
+      fullscreen, Master/Music/SFX sliders, reset-save behind a
+      click-again confirm, save-and-quit). Settings persist to
+      user://settings.cfg — device prefs, never the profile save.
+- [x] Audio: Music/SFX buses; tools/gen_sfx.py synthesizes all SFX as
+      committed WAVs (engine/drift/offroad loops seam-free from
+      integer-Hz partials; splash, purchase, gate, lap, PB, medal,
+      discovery one-shots); CarAudio pitches the engine with speed and
+      fades screech/rumble; GameAudio plays progression stingers off
+      the Events bus (ghost laps deliberately silent). CC0 assets per
+      assets/audio/SOURCES.md: chill lofi music loop (autoplays) and a
+      recorded engine A/B candidate (use_sampled_engine on CarAudio).
+- Notes: verified 2026-07-07 — boot, windowed run, and full probe all
+  zero warnings/errors, lap times identical (headless keeps audio
+  dormant: the dummy driver never mixes, playing streams would leak).
+  PENDING HUMAN EARS: mix levels (exports on car_audio.gd + per-player
+  dB), synth vs sampled engine A/B, music taste check.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:
@@ -196,8 +215,8 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 ## Later (unordered)
 - Prestige/reset layer; more cars (CarStats variants); track hazards that
   make YOUR lap risky but ghosts immune (risk = better recorded lines);
-  audio pass (engine, drift screech, splash — drift trails and
-  screenshake landed 2026-07-06); minimap/map screen; web export.
+  minimap/map screen; web export (music/audio autoplay needs the
+  click-to-start gate there). Audio pass landed 2026-07-07.
 - Engine bump to Godot 4.7.x once 4.7.1 lands (brew has 4.7.0 now; shared
   binary also serves fieldbound/overlap — coordinate before upgrading).
 - GdUnit4 tests for Bank math once the economy stabilizes (slice 6+), not
