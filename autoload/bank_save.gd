@@ -10,8 +10,11 @@ const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 const LEGACY_ROUTE_ID := "ring"
 
 
+## Atomic: written to a temp file first, then renamed over the real one,
+## so a crash mid-write never leaves a truncated save behind.
 static func write(path: String, bank: Node) -> void:
-	var file := FileAccess.open(path, FileAccess.WRITE)
+	var tmp_path := path + ".tmp"
+	var file := FileAccess.open(tmp_path, FileAccess.WRITE)
 	if file == null:
 		push_error("BankSave: cannot write save file: %s" % FileAccess.get_open_error())
 		return
@@ -36,6 +39,10 @@ static func write(path: String, bank: Node) -> void:
 		"medal_unlocked_routes": bank.medal_unlocked_routes,
 		"unlocked_secrets": bank.unlocked_secrets,
 	})
+	file.close()
+	var err := DirAccess.rename_absolute(tmp_path, path)
+	if err != OK:
+		push_error("BankSave: cannot replace save file: %s" % error_string(err))
 
 
 ## Returns the loaded save's unix timestamp, or 0.0 when nothing loaded.
