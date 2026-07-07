@@ -79,6 +79,9 @@ func _make_row(title: String) -> Dictionary:
 	box.add_child(label)
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(90, 0)
+	# The game never pauses: a focused button would fire on Space (drift)
+	# and arrow keys (steering double as ui_* focus moves) while driving.
+	button.focus_mode = Control.FOCUS_NONE
 	box.add_child(button)
 	_rows.add_child(box)
 	return {"label": label, "button": button}
