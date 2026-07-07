@@ -8,19 +8,19 @@
 [sub_resource type="Resource" id="Resource_line_start"]
 script = ExtResource("2")
 id = "start"
-a = Vector2(0, 400)
+a = Vector2(0, 360)
 b = Vector2(0, 1200)
 
 [sub_resource type="Resource" id="Resource_line_west"]
 script = ExtResource("2")
 id = "west"
-a = Vector2(-900, 0)
-b = Vector2(-1340, 0)
+a = Vector2(-860, 0)
+b = Vector2(-1276, 0)
 
 [sub_resource type="Resource" id="Resource_line_east"]
 script = ExtResource("2")
 id = "east"
-a = Vector2(900, 0)
+a = Vector2(860, 0)
 b = Vector2(1650, 0)
 
 [sub_resource type="Resource" id="Resource_line_chord_mouth"]
@@ -44,7 +44,7 @@ b = Vector2(-1260, 500)
 [sub_resource type="Resource" id="Resource_line_petal"]
 script = ExtResource("2")
 id = "petal"
-a = Vector2(-1350, 0)
+a = Vector2(-1277, 0)
 b = Vector2(-1720, 0)
 
 [sub_resource type="Resource" id="Resource_line_forest_gap"]
@@ -56,8 +56,8 @@ b = Vector2(-800, -780)
 [sub_resource type="Resource" id="Resource_line_forest"]
 script = ExtResource("2")
 id = "forest"
-a = Vector2(-900, -1980)
-b = Vector2(-900, -2220)
+a = Vector2(-900, -1930)
+b = Vector2(-900, -2270)
 
 [sub_resource type="Resource" id="Resource_line_cliff_climb"]
 script = ExtResource("2")
