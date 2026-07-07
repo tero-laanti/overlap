@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://dl0hqxm3vv2pe"]
+
+[ext_resource type="Script" path="res://scenes/ui/minimap.gd" id="1_minimap"]
+
+[node name="Minimap" type="CanvasLayer"]
+layer = 1
+
+[node name="Map" type="Control" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -240.0
+offset_right = 276.0
+offset_bottom = -80.0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("1_minimap")

@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://dahefs56ktnk7" path="res://scenes/dev/dev_photo.gd" id="11_photo"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12_menu"]
 [ext_resource type="PackedScene" path="res://scenes/audio/game_audio.tscn" id="13_audio"]
+[ext_resource type="PackedScene" uid="uid://dl0hqxm3vv2pe" path="res://scenes/ui/minimap.tscn" id="14_minimap"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")
@@ -30,6 +31,8 @@ rotation = -1.5707964
 script = ExtResource("5_race")
 
 [node name="HUD" parent="." unique_id=148299819 instance=ExtResource("6_hud")]
+
+[node name="Minimap" parent="." instance=ExtResource("14_minimap")]
 
 [node name="Shop" parent="." unique_id=1594345435 instance=ExtResource("8_shop")]
 

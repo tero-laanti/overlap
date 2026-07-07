@@ -10,6 +10,7 @@ extends StaticBody2D
 
 
 func _ready() -> void:
+	add_to_group("gate")
 	if Bank.is_gate_purchased(gate_id):
 		_open()
 	Events.gate_purchased.connect(func(id: String) -> void:
