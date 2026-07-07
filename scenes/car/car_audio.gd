@@ -15,10 +15,9 @@ const OFFROAD_MIN_SPEED := 120.0
 @export var engine_pitch_max := 2.1
 @export var engine_db_min := -22.0
 @export var engine_db_max := -10.0
-## Human-tuned 2026-07-07, twice: -11 drowned the engine, -18 was
-## still way too loud in play.
-@export var drift_db := -25.0
-@export var offroad_db := -13.0
+## Human-tuned 2026-07-07 (three passes: -11, -18, -25 all too loud).
+@export var drift_db := -30.0
+@export var offroad_db := -20.0
 
 @onready var _car: CarScript = get_parent()
 @onready var _engine: AudioStreamPlayer = $Engine
