@@ -38,6 +38,9 @@ func _ready() -> void:
 		return
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_camera = Camera2D.new()
+	# Physics interpolation forces cameras to physics process anyway;
+	# declaring it avoids the engine's override warning.
+	_camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	add_child(_camera)
 	_shoot_all.call_deferred()
 

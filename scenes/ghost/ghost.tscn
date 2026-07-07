@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://b3oaqqbmol038"]
 
-[ext_resource type="Script" path="res://scenes/ghost/ghost.gd" id="1_ghost"]
+[ext_resource type="Script" uid="uid://c1ovr4qei68h1" path="res://scenes/ghost/ghost.gd" id="1_ghost"]
 
 [node name="Ghost" type="Node2D" groups=["ghost"]]
 modulate = Color(1, 1, 1, 0.45)

@@ -1,8 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=5 format=3 uid="uid://dgip6ylhsgl0l"]
 
-[ext_resource type="Script" path="res://scenes/car/car.gd" id="1_car"]
-[ext_resource type="Resource" path="res://data/cars/starter_car.tres" id="2_stats"]
-[ext_resource type="Script" path="res://scenes/car/follow_camera.gd" id="3_camera"]
+[ext_resource type="Script" uid="uid://bh57r7e7eags6" path="res://scenes/car/car.gd" id="1_car"]
+[ext_resource type="Resource" uid="uid://dm2jg8i3yu5cs" path="res://data/cars/starter_car.tres" id="2_stats"]
+[ext_resource type="Script" uid="uid://jyoq8arusa0s" path="res://scenes/car/follow_camera.gd" id="3_camera"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(40, 70)
@@ -88,5 +88,6 @@ shape = SubResource("RectangleShape2D_body")
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("3_camera")
 zoom = Vector2(0.6, 0.6)
+process_callback = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=3 format=3 uid="uid://cytv5ptv23x5q"]
 
-[ext_resource type="Script" path="res://scenes/ui/route_log.gd" id="1_routelog"]
+[ext_resource type="Script" uid="uid://cjgsqdks1q1hc" path="res://scenes/ui/route_log.gd" id="1_routelog"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_routelog"]
 content_margin_left = 20.0

@@ -1,16 +1,16 @@
 [gd_scene format=3 uid="uid://pp8338uc35sm"]
 
 [ext_resource type="Script" uid="uid://cj46gv6p6j5l3" path="res://scenes/main/main.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://scenes/track/track01/track.tscn" id="2_track"]
-[ext_resource type="PackedScene" path="res://scenes/car/car.tscn" id="3_car"]
+[ext_resource type="PackedScene" uid="uid://cyoa17bn30tm8" path="res://scenes/track/track01/track.tscn" id="2_track"]
+[ext_resource type="PackedScene" uid="uid://dgip6ylhsgl0l" path="res://scenes/car/car.tscn" id="3_car"]
 [ext_resource type="Script" uid="uid://b8fl0kv1hl8tg" path="res://scenes/dev/dev_probe.gd" id="4_probe"]
 [ext_resource type="Script" uid="uid://bmd6oycf0lryp" path="res://scenes/main/race_state.gd" id="5_race"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
+[ext_resource type="PackedScene" uid="uid://mtjghhsfqr6a" path="res://scenes/ui/hud.tscn" id="6_hud"]
 [ext_resource type="Script" uid="uid://bnpgnsmrsgy6e" path="res://scenes/ghost/ghost_fleet.gd" id="7_fleet"]
-[ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="8_shop"]
-[ext_resource type="PackedScene" path="res://scenes/ui/route_log.tscn" id="9_routelog"]
+[ext_resource type="PackedScene" uid="uid://n0mgu8hwmlw6" path="res://scenes/ui/shop.tscn" id="8_shop"]
+[ext_resource type="PackedScene" uid="uid://cytv5ptv23x5q" path="res://scenes/ui/route_log.tscn" id="9_routelog"]
 [ext_resource type="Script" uid="uid://dcal8wjcu7eva" path="res://scenes/dev/dev_calibrate.gd" id="10_calibrate"]
-[ext_resource type="Script" path="res://scenes/dev/dev_photo.gd" id="11_photo"]
+[ext_resource type="Script" uid="uid://dahefs56ktnk7" path="res://scenes/dev/dev_photo.gd" id="11_photo"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")

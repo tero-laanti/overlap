@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://bid5ymy01usvm"]
 
-[ext_resource type="Script" path="res://scenes/track/wall_segment.gd" id="1_wall"]
+[ext_resource type="Script" uid="uid://calrfdxb0r1k7" path="res://scenes/track/wall_segment.gd" id="1_wall"]
 
 [node name="WallSegment" type="Path2D"]
 script = ExtResource("1_wall")
