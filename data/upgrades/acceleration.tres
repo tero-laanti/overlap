@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3 uid="uid://ew04xroiifuh"]
+[gd_resource type="Resource" script_class="UpgradeDef" format=3 uid="uid://ew04xroiifuh"]
 
 [ext_resource type="Script" uid="uid://bh2kqbl81v3di" path="res://scenes/car/upgrade_def.gd" id="1"]
 
@@ -8,7 +8,6 @@ id = "acceleration"
 display_name = "Acceleration"
 stat = "acceleration"
 effect_multiplier = 1.08
-base_cost = 50.0
 cost_growth = 1.5
 max_level = 8
 unlock_total_levels = 2

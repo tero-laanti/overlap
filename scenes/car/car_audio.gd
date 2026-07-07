@@ -11,16 +11,12 @@ const FADE_DB_PER_SECOND := 300.0
 const SILENT_DB := -60.0
 ## Rumble only reads as movement above this speed.
 const OFFROAD_MIN_SPEED := 120.0
-const SAMPLED_ENGINE := "res://assets/audio/sfx/engine_sample.wav"
-
-## A/B for the human ear pass: swap the synth engine for the CC0
-## recorded sample (see assets/audio/SOURCES.md), pick the better one.
-@export var use_sampled_engine := false
 @export var engine_pitch_min := 0.7
 @export var engine_pitch_max := 2.1
 @export var engine_db_min := -22.0
 @export var engine_db_max := -10.0
-@export var drift_db := -11.0
+## Human-tuned 2026-07-07: -11 drowned the engine while drifting.
+@export var drift_db := -18.0
 @export var offroad_db := -13.0
 
 @onready var _car: CarScript = get_parent()
@@ -36,8 +32,6 @@ func _ready() -> void:
 	if DisplayServer.get_name() == "headless":
 		set_physics_process(false)
 		return
-	if use_sampled_engine and ResourceLoader.exists(SAMPLED_ENGINE):
-		_engine.stream = load(SAMPLED_ENGINE)
 	for player: AudioStreamPlayer in [_engine, _drift, _offroad]:
 		_make_looping(player)
 		player.volume_db = SILENT_DB

@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="UpgradeCatalog" load_steps=5 format=3 uid="uid://daesjbvvix13x"]
+[gd_resource type="Resource" script_class="UpgradeCatalog" format=3 uid="uid://daesjbvvix13x"]
 
 [ext_resource type="Script" uid="uid://dlycx1xt1bqjd" path="res://scenes/car/upgrade_catalog.gd" id="1"]
 [ext_resource type="Resource" uid="uid://b0s5tyrwdtrda" path="res://data/upgrades/top_speed.tres" id="2"]
+[ext_resource type="Script" uid="uid://bh2kqbl81v3di" path="res://scenes/car/upgrade_def.gd" id="2_bxnb1"]
 [ext_resource type="Resource" uid="uid://ew04xroiifuh" path="res://data/upgrades/acceleration.tres" id="3"]
 [ext_resource type="Resource" uid="uid://catb57i13hmy3" path="res://data/upgrades/grip.tres" id="4"]
 
 [resource]
 script = ExtResource("1")
-upgrades = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
+upgrades = Array[ExtResource("2_bxnb1")]([ExtResource("2"), ExtResource("3"), ExtResource("4")])
