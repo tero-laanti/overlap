@@ -96,3 +96,15 @@ const FOREST: Array[Vector2] = [
 	Vector2(2300, -800), Vector2(1950, -250), Vector2(2350, 300),
 	Vector2(2650, 750), Vector2(2350, 1150), Vector2(1400, 1200),
 ]
+## Off the esses into the container maze, the dock straight, and back
+## via the carousel.
+const HARBOR: Array[Vector2] = [
+	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
+	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
+	Vector2(-1000, -1450), Vector2(0, -1380), Vector2(1000, -1450),
+	Vector2(1900, -1250), Vector2(2300, -800), Vector2(2100, -400),
+	Vector2(2750, -200), Vector2(3350, -350), Vector2(3350, -800),
+	Vector2(4050, -800), Vector2(4050, -150), Vector2(4650, -150),
+	Vector2(4650, 650), Vector2(3700, 800), Vector2(2660, 740),
+	Vector2(2350, 1150), Vector2(1400, 1200),
+]

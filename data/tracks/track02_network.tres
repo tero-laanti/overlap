@@ -21,7 +21,7 @@ b = Vector2(-2800, -150)
 script = ExtResource("2")
 id = "east"
 a = Vector2(1800, 0)
-b = Vector2(2500, 0)
+b = Vector2(2350, 0)
 
 [sub_resource type="Resource" id="Resource_line_chord_mouth"]
 script = ExtResource("2")
@@ -71,6 +71,18 @@ id = "forest"
 a = Vector2(-1650, -3130)
 b = Vector2(-1650, -3470)
 
+[sub_resource type="Resource" id="Resource_line_harbor_mouth"]
+script = ExtResource("2")
+id = "harbor_mouth"
+a = Vector2(2550, -45)
+b = Vector2(2550, -425)
+
+[sub_resource type="Resource" id="Resource_line_harbor"]
+script = ExtResource("2")
+id = "harbor"
+a = Vector2(4470, 250)
+b = Vector2(4830, 250)
+
 [sub_resource type="Resource" id="Resource_gate_chord"]
 script = ExtResource("4")
 id = "island_chord"
@@ -88,6 +100,12 @@ script = ExtResource("4")
 id = "cliff_gate"
 display_name = "Cliff Gate"
 price = 900.0
+
+[sub_resource type="Resource" id="Resource_gate_harbor"]
+script = ExtResource("4")
+id = "harbor_gate"
+display_name = "Harbor Gate"
+price = 2200.0
 
 [sub_resource type="Resource" id="Resource_route_ring"]
 script = ExtResource("3")
@@ -162,8 +180,19 @@ payout_per_lap = 41.0
 medal_unlock_cost = 400.0
 secret = true
 
+[sub_resource type="Resource" id="Resource_route_harbor"]
+script = ExtResource("3")
+id = "harbor"
+display_name = "Container Run"
+edges = PackedStringArray("west", "harbor_mouth", "harbor")
+par_time = 20.0
+payout_per_lap = 42.5
+medal_unlock_cost = 500.0
+clue = "Steel canyons stack beside the esses."
+required_gates = PackedStringArray("harbor_gate")
+
 [resource]
 script = ExtResource("1")
-crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_dune_mouth"), SubResource("Resource_line_dune"), SubResource("Resource_line_cliff_climb"), SubResource("Resource_line_cliff_top"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest")])
-routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_dune"), SubResource("Resource_route_sandcut"), SubResource("Resource_route_climb"), SubResource("Resource_route_high_ring"), SubResource("Resource_route_forest")])
-gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_dune"), SubResource("Resource_gate_cliff")])
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_dune_mouth"), SubResource("Resource_line_dune"), SubResource("Resource_line_cliff_climb"), SubResource("Resource_line_cliff_top"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest"), SubResource("Resource_line_harbor_mouth"), SubResource("Resource_line_harbor")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_dune"), SubResource("Resource_route_sandcut"), SubResource("Resource_route_climb"), SubResource("Resource_route_high_ring"), SubResource("Resource_route_forest"), SubResource("Resource_route_harbor")])
+gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_dune"), SubResource("Resource_gate_cliff"), SubResource("Resource_gate_harbor")])

@@ -10,7 +10,7 @@ extends Node
 
 const FLAG_PATH := "user://calibrate.flag"
 const LAPS_PER_ROUTE := 3
-const TIMEOUT := 700.0
+const TIMEOUT := 900.0
 const GRANT := 100000.0
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -20,6 +20,7 @@ const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 var _driver: DevDriverScript = DevDriverScript.new()
 var _route_ids: Array[String] = [
 	"ring", "cut", "dune", "sandcut", "climb", "high_ring", "forest",
+	"harbor",
 ]
 var _route_points := {
 	"ring": RoutesScript.RING,
@@ -29,12 +30,14 @@ var _route_points := {
 	"climb": RoutesScript.CLIMB,
 	"high_ring": RoutesScript.HIGH_RING,
 	"forest": RoutesScript.FOREST,
+	"harbor": RoutesScript.HARBOR,
 }
 ## Routes whose mouths or hairpins need a tighter capture radius.
 var _route_reach := {
 	"climb": RoutesScript.CLIFF_REACH,
 	"high_ring": RoutesScript.CLIFF_REACH,
 	"forest": RoutesScript.CLIFF_REACH,
+	"harbor": 130.0,
 }
 var _stage := -1
 var _stage_laps := 0

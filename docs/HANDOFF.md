@@ -159,9 +159,29 @@ them.
    an annulus, RoadSegment keeps the largest polygon — split loops
    into open segments at zero-curvature points); Curve2D point_count
    larger than the data invents a phantom point at the origin.
-13. Next: V2-2 minimap (required — the circuit doesn't fit one
-   screen), then V2-3 dunes re-adaptation, V2-4 cliffs+woods (the X
-   returns; rival-ready per docs/IDEAS.md), V2-5 harbor (petal 3) — OLD PLAN CONTINUES: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
+13. ISLAND V2 COMPLETE 2026-07-07 (V2-2..V2-5 in one session,
+   human-directed "let's do them all"): minimap (bounds derive from
+   the track's Grass polygon — annexes appear automatically; secret
+   roads stay off it until revealed), dunes west (Dune Bend +
+   Sand Cut), cliffs+woods north (Lighthouse Climb, High Ring,
+   secret Forest Run — the descent crosses at the chord mouth, ONE
+   X, junction-spacing clean), harbor east (Container Run, stop-go
+   maze, container walls = WallSegment ribbons, navy/rust palette).
+   Gates ladder: island 120 → dunes 250 → cliffs 900 → harbor 2200.
+   All pars from calibration runs; probe covers the full five-gate
+   loop. GOTCHAS this session: (a) closed-loop centerlines bake as
+   filled blobs — split into open segments at zero-curvature points;
+   (b) Curve2D point_count beyond the data invents a phantom origin
+   point; (c) gate.gd requires its CollisionShape2D child be named
+   exactly "Shape"; (d) Bank.reset_profile now emits
+   Events.profile_reset — stat consumers (car) must recompute on it;
+   (e) sliver dashes at segment ends fail triangulation (guarded).
+14. Next candidates: rival onboarding (docs/IDEAS.md — the 15 s hub
+   was designed for it; calibrator recordings are the rival source),
+   Jump Kit + canal/washout soft gates, coast linker + grand tour,
+   gate-exhausted badges, prestige (pick-1-of-3 seasons). Human feel
+   passes pending: cliffs hairpins at v2 scale, camera zoom/shake,
+   audio mix in long play. OLD PLAN CONTINUES: petal 3 (harbor) — OLD PLAN CONTINUES: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
    foundation is in, so author it pretty from the start (navy/rust/
    crane-yellow palette per MAP_DESIGN §7). Then Jump Kit gateway
    moment (+ cliff washout jump spot), coast linker + grand tour,

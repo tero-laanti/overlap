@@ -1,7 +1,8 @@
 # Overlap — The Island v2 (full relayout)
 
-Status: DESIGN, human-approved direction 2026-07-07 ("initial loop
-should be like 15 seconds — a 5 second lap doesn't feel race-y").
+Status: BUILT 2026-07-07 (V2-1..V2-5 all landed the same day the
+design was approved; see ROADMAP slice 8 notes for verification).
+Original design statement follows — deviations are noted inline.
 Supersedes the *geography* of MAP_DESIGN.md; its pillars, zone grammar,
 authoring rules, and route-design lessons all carry over. Build order:
 design everything here, build the hub first, re-adapt the annex content
@@ -125,7 +126,10 @@ Mouths named now so spacing is designed, not discovered:
   because rejoins don't count as decisions). Forest Run ~30 s.
 - **HARBOR (east)** — container maze east of the esses. Decision mouth
   off ess #12 (~(2050, -350)); merge into the carousel entry
-  (~(2600, 600)). Dock straight runs the east shore. 30–40 s routes.
+  (~(2600, 600)). Dock straight runs the east shore. BUILT: one route
+  (Container Run, par 20.0); dock-tour variants and the canal/Jump-Kit
+  ramp remain future work, as do oil-slick hazards (hazards are a
+  roadmap-later item).
 - **COAST (south)** — the linker forks off T1 (continue straight
   instead of braking — the most legible gate placement on the island)
   and runs the south beach to the harbor's south edge. Enables the

@@ -13,6 +13,7 @@ enum Phase {
 	BUY_GATE, DRIVE_CUT, WATCH_CUT,
 	EARN_DUNE, BUY_DUNE, DRIVE_DUNE, WATCH_DUNE,
 	EARN_CLIFF, BUY_CLIFF, DRIVE_CLIMB, WATCH_CLIFF,
+	EARN_HARBOR, BUY_HARBOR, DRIVE_HARBOR, WATCH_HARBOR,
 	DONE,
 }
 
@@ -20,22 +21,26 @@ const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 600.0
+const TIMEOUT := 800.0
 const DRIVE_LAPS := 2
 const REDRIVE_LAPS := 2
 const CUT_LAPS := 2
 const DUNE_LAPS := 2
 const CLIMB_LAPS := 2
+const HARBOR_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
 const DUNE_EARN_TARGET := 280.0  # Dune Gate (250) + slack
 const CLIFF_EARN_TARGET := 950.0  # Cliff Gate (900) + slack
+const HARBOR_EARN_TARGET := 2260.0  # Harbor Gate (2200) + slack
 const WATCH_SECONDS := 16.0
 const WATCH_CUT_SECONDS := 12.0
 const WATCH_DUNE_SECONDS := 12.0
 const WATCH_CLIFF_SECONDS := 12.0
+const WATCH_HARBOR_SECONDS := 12.0
 const GATE_ID := "island_chord"
 const DUNE_GATE_ID := "west_dunes"
 const CLIFF_GATE_ID := "cliff_gate"
+const HARBOR_GATE_ID := "harbor_gate"
 const MASTERY_ROUTE_ID := "ring"
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -171,14 +176,31 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH_CLIFF, "watching every fleet")
 		Phase.WATCH_CLIFF:
 			if _elapsed >= _watch_until:
+				print("[PROBE] climb done money=%.0f income=%.2f/s climb_pb=%.2f" % [
+					Bank.currency, Bank.income_per_second(), Bank.route_pb("climb"),
+				])
+				_enter(Phase.EARN_HARBOR, "idling until $%d" % int(HARBOR_EARN_TARGET))
+		Phase.EARN_HARBOR:
+			if Bank.currency >= HARBOR_EARN_TARGET:
+				_buy_harbor_gate()
+		Phase.BUY_HARBOR:
+			pass  # transitions inside _buy_harbor_gate()
+		Phase.DRIVE_HARBOR:
+			_driver.drive(delta)
+			if _laps_done >= _lap_target:
+				_driver.release_all()
+				_watch_until = _elapsed + WATCH_HARBOR_SECONDS
+				_enter(Phase.WATCH_HARBOR, "watching every fleet")
+		Phase.WATCH_HARBOR:
+			if _elapsed >= _watch_until:
 				var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
 				print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
 				ReportScript.dump_route_log(get_tree())
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f dune_pb=%.2f climb_pb=%.2f ghosts=%d" % [
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f dune_pb=%.2f climb_pb=%.2f harbor_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
 					Bank.route_pb("cut"), Bank.route_pb("dune"),
-					Bank.route_pb("climb"),
+					Bank.route_pb("climb"), Bank.route_pb("harbor"),
 					get_tree().get_nodes_in_group("ghost").size(),
 				])
 				_enter(Phase.DONE, "finished")
@@ -249,6 +271,16 @@ func _buy_cliff_gate() -> void:
 	_driver.set_route(RoutesScript.CLIMB, RoutesScript.CLIFF_REACH)
 	_lap_target = _laps_done + CLIMB_LAPS
 	_enter(Phase.DRIVE_CLIMB, "driving the lighthouse climb")
+
+
+func _buy_harbor_gate() -> void:
+	_enter(Phase.BUY_HARBOR, "buying the harbor gate")
+	var gate_ok := Bank.try_buy_gate(HARBOR_GATE_ID)
+	print("[PROBE] bought harbor_gate=%s money=%.0f" % [gate_ok, Bank.currency])
+	ReportScript.dump_route_log(get_tree())
+	_driver.set_route(RoutesScript.HARBOR, 130.0)
+	_lap_target = _laps_done + HARBOR_LAPS
+	_enter(Phase.DRIVE_HARBOR, "driving the container run")
 
 
 func _enter(phase: Phase, note: String) -> void:

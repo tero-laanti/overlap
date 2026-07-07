@@ -13,7 +13,7 @@ const SETTLE_FRAMES := 8
 ## name -> [world position, zoom]. Island v2 hub viewpoints; annex
 ## slices add their own.
 const SPOTS := {
-	"island": [Vector2(0, -100), 0.085],
+	"island": [Vector2(-100, -900), 0.105],
 	"start": [Vector2(500, 1150), 0.5],
 	"t1_braking": [Vector2(-2350, 950), 0.45],
 	"riser": [Vector2(-2500, -300), 0.4],
@@ -31,6 +31,8 @@ const SPOTS := {
 	"lighthouse": [Vector2(3150, -2720), 0.55],
 	"forest_gap": [Vector2(-1990, -1720), 0.55],
 	"woods": [Vector2(-1600, -2600), 0.3],
+	"harbor_maze": [Vector2(3800, -300), 0.35],
+	"dock": [Vector2(4650, 300), 0.45],
 }
 
 var _camera: Camera2D

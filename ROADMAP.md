@@ -230,8 +230,17 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       no longer force a second crossing, v1's documented compromise is
       repaid), golden-gap secret forest arc NW. Pars from calibration:
       climb 21.3, high_ring 25.3, forest 18.6.
-- [ ] V2-5 harbor per MAP_DESIGN_V2 §3 (container maze, stop-go rhythm,
-      dock straight; navy/rust/crane-yellow).
+- [x] V2-5 harbor — Container Run (par 20.0, 1.25x), stop-go maze in
+      navy/rust with container walls (WallSegment ribbons), crane,
+      dock straight, Harbor Gate \$2200. Land grows east to 5400.
+- Notes: slice 8 verified complete 2026-07-07 — final probe drove the
+  entire five-gate loop in one run (island 120 → dune 250 → cliff 900
+  → harbor 2200): 12 laps across 5 discovered routes, 10 ghosts,
+  income 16.25/s, route log 5/8 with all three hint clues live, zero
+  errors, 434 s. All pars from calibration; every annex probe-driven.
+  Remaining from the v2 plan: coast linker + grand tour (needs the
+  harbor's south edge), Jump Kit, dock-tour variants. Human feel pass
+  on the whole island pending.
 - **Accept (V2-1):** a first-time lap takes ~15–18 s and feels like a
       race lap (straight → braking spot → sweepers → esses → carousel);
       full probe loop green on the new geometry.
