@@ -50,12 +50,21 @@ func _shoot_all() -> void:
 	for spot_name: String in SPOTS:
 		_camera.global_position = SPOTS[spot_name][0]
 		_camera.zoom = Vector2.ONE * (SPOTS[spot_name][1] as float)
-		for i in SETTLE_FRAMES:
-			await get_tree().process_frame
-		var image := get_viewport().get_texture().get_image()
-		if image != null:
-			var path := "%s/photo_%s.png" % [SHOT_DIR, spot_name]
-			image.save_png(path)
-			print("[PHOTO] saved %s" % path)
+		await _snap(spot_name)
+	var menu := get_node_or_null("/root/Main/PauseMenu")
+	if menu != null:
+		menu.visible = true
+		await _snap("menu")
+		menu.visible = false
 	print("[PHOTO] done")
 	get_tree().quit()
+
+
+func _snap(shot_name: String) -> void:
+	for i in SETTLE_FRAMES:
+		await get_tree().process_frame
+	var image := get_viewport().get_texture().get_image()
+	if image != null:
+		var path := "%s/photo_%s.png" % [SHOT_DIR, shot_name]
+		image.save_png(path)
+		print("[PHOTO] saved %s" % path)
