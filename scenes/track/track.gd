@@ -23,12 +23,25 @@ const SecretRoadScript = preload("res://scenes/track/secret_road.gd")
 func _ready() -> void:
 	_tracker.network = network
 	_tracker.lap_started.connect(lap_started.emit)
-	_tracker.route_lap_completed.connect(lap_completed.emit)
+	_tracker.route_lap_completed.connect(_on_route_lap_completed)
 	_tracker.edge_crossed.connect(func(count: int) -> void:
 		checkpoint_crossed.emit(count - 1, _longest_route_edges()))
 	for child in $Road.get_children():
 		if child is SecretRoadScript:
 			_tracker.line_crossed.connect(child.on_line_crossed)
+
+
+## Belt over the physical gate bars: a route whose gates aren't all owned
+## never certifies, so flanking a closed gate over grass earns nothing —
+## no discovery, no PB, no fleet. RouteDef: gates "must all be owned
+## before this route is drivable."
+func _on_route_lap_completed(route_id: String) -> void:
+	var route := network.find_route(route_id)
+	if route != null:
+		for gate_id in route.required_gates:
+			if not Bank.is_gate_purchased(gate_id):
+				return
+	lap_completed.emit(route_id)
 
 
 func _longest_route_edges() -> int:
