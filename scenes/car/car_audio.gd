@@ -15,8 +15,9 @@ const OFFROAD_MIN_SPEED := 120.0
 @export var engine_pitch_max := 2.1
 @export var engine_db_min := -22.0
 @export var engine_db_max := -10.0
-## Human-tuned 2026-07-07: -11 drowned the engine while drifting.
-@export var drift_db := -18.0
+## Human-tuned 2026-07-07, twice: -11 drowned the engine, -18 was
+## still way too loud in play.
+@export var drift_db := -25.0
 @export var offroad_db := -13.0
 
 @onready var _car: CarScript = get_parent()

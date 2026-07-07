@@ -76,6 +76,8 @@ def engine_loop() -> list[float]:
 
 def drift_loop() -> list[float]:
     # Tonal squeal with 5 Hz vibrato (integer → loops) over band noise.
+    # Human-tuned 2026-07-07: squeal dropped out of the ear's most
+    # sensitive band (1150 → 950 Hz) and de-emphasized — it read as loud.
     n_total = int(SR * (LOOP_SECONDS + 0.15))
     noise = lowpass([rng.uniform(-1, 1) for _ in range(n_total)], 0.35)
     deep = lowpass(noise, 0.04)
@@ -84,9 +86,9 @@ def drift_loop() -> list[float]:
     phase = 0.0
     for i in range(n_total):
         t = i / SR
-        phase += math.tau * (1150 + 60 * sine(5, t)) / SR
-        squeal = 0.6 * math.sin(phase) + 0.2 * math.sin(2.01 * phase)
-        out.append(squeal * 0.5 + band[i] * 1.6)
+        phase += math.tau * (950 + 50 * sine(5, t)) / SR
+        squeal = 0.6 * math.sin(phase) + 0.15 * math.sin(2.01 * phase)
+        out.append(squeal * 0.35 + band[i] * 1.5)
     return crossfade_loop(out, int(0.15 * SR))
 
 
