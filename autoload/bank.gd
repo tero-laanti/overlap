@@ -277,6 +277,7 @@ func reset_profile() -> void:
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(SAVE_PATH)
 	Events.currency_changed.emit(currency)
+	Events.profile_reset.emit()
 
 
 func _apply_pending_offline_earnings() -> void:

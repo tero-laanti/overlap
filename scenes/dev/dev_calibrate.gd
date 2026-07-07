@@ -19,11 +19,13 @@ const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 
 var _driver: DevDriverScript = DevDriverScript.new()
 var _route_ids: Array[String] = [
-	"ring", "cut",
+	"ring", "cut", "dune", "sandcut",
 ]
 var _route_points := {
 	"ring": RoutesScript.RING,
 	"cut": RoutesScript.CUT,
+	"dune": RoutesScript.DUNE,
+	"sandcut": RoutesScript.SANDCUT,
 }
 ## Routes whose mouths or hairpins need a tighter capture radius (the
 ## v1 forest gap needed 120; annex re-adaptations will repopulate this).

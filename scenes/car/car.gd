@@ -49,6 +49,9 @@ func _ready() -> void:
 	_last_road_pos = global_position
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
+	# A dev-tool profile wipe clears upgrades without buying anything —
+	# recompute or the car keeps pre-reset stats until the next purchase.
+	Events.profile_reset.connect(_refresh_stats)
 
 
 func _make_point_query(mask: int) -> PhysicsPointQueryParameters2D:

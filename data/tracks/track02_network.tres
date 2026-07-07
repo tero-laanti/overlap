@@ -14,8 +14,8 @@ b = Vector2(0, 1600)
 [sub_resource type="Resource" id="Resource_line_west"]
 script = ExtResource("2")
 id = "west"
-a = Vector2(-2160, -300)
-b = Vector2(-2890, -300)
+a = Vector2(-2050, -150)
+b = Vector2(-2800, -150)
 
 [sub_resource type="Resource" id="Resource_line_east"]
 script = ExtResource("2")
@@ -35,11 +35,29 @@ id = "chord"
 a = Vector2(300, -100)
 b = Vector2(700, -100)
 
+[sub_resource type="Resource" id="Resource_line_dune_mouth"]
+script = ExtResource("2")
+id = "dune_mouth"
+a = Vector2(-3000, 350)
+b = Vector2(-3000, 730)
+
+[sub_resource type="Resource" id="Resource_line_dune"]
+script = ExtResource("2")
+id = "dune"
+a = Vector2(-4630, -350)
+b = Vector2(-5010, -350)
+
 [sub_resource type="Resource" id="Resource_gate_chord"]
 script = ExtResource("4")
 id = "island_chord"
 display_name = "Island Gate"
 price = 120.0
+
+[sub_resource type="Resource" id="Resource_gate_dune"]
+script = ExtResource("4")
+id = "west_dunes"
+display_name = "Dune Gate"
+price = 250.0
 
 [sub_resource type="Resource" id="Resource_route_ring"]
 script = ExtResource("3")
@@ -60,8 +78,30 @@ medal_unlock_cost = 220.0
 clue = "The island hides a faster line."
 required_gates = PackedStringArray("island_chord")
 
+[sub_resource type="Resource" id="Resource_route_dune"]
+script = ExtResource("3")
+id = "dune"
+display_name = "Dune Bend"
+edges = PackedStringArray("dune_mouth", "dune", "east")
+par_time = 16.75
+payout_per_lap = 31.0
+medal_unlock_cost = 300.0
+clue = "A sand bowl sweeps wide of the west riser."
+required_gates = PackedStringArray("west_dunes")
+
+[sub_resource type="Resource" id="Resource_route_sandcut"]
+script = ExtResource("3")
+id = "sandcut"
+display_name = "Sand Cut"
+edges = PackedStringArray("dune_mouth", "dune", "chord_mouth", "chord")
+par_time = 13.4
+payout_per_lap = 26.0
+medal_unlock_cost = 350.0
+clue = "Two gates, one breath."
+required_gates = PackedStringArray("west_dunes", "island_chord")
+
 [resource]
 script = ExtResource("1")
-crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord")])
-routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut")])
-gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord")])
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_dune_mouth"), SubResource("Resource_line_dune")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_dune"), SubResource("Resource_route_sandcut")])
+gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_dune")])

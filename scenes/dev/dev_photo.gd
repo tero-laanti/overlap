@@ -23,6 +23,8 @@ const SPOTS := {
 	"carousel": [Vector2(2450, 950), 0.45],
 	"chord_gate": [Vector2(500, -1200), 0.5],
 	"shore_south": [Vector2(0, 2050), 0.5],
+	"dune_gate": [Vector2(-2750, 460), 0.5],
+	"dune_bowl": [Vector2(-4300, -400), 0.32],
 }
 
 var _camera: Camera2D

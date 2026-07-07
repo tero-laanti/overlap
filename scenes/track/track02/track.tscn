@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://bvxq2h44wr02k"]
+[gd_scene load_steps=22 format=3 uid="uid://bvxq2h44wr02k"]
 
 [ext_resource type="Script" uid="uid://7t7lgp08bywd" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" uid="uid://c6qm608rh2q2p" path="res://data/tracks/track01.tres" id="2_def"]
@@ -12,8 +12,8 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
 shader = ExtResource("7_water_shader")
-shader_parameter/land_center = Vector2(0, -200)
-shader_parameter/land_extents = Vector2(3600, 2200)
+shader_parameter/land_center = Vector2(-1000, -200)
+shader_parameter/land_extents = Vector2(4600, 2200)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_grass"]
 shader = ExtResource("8_mottle_shader")
@@ -24,6 +24,22 @@ shader_parameter/detail_strength = 0.85
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_checker"]
 shader = ExtResource("9_checker_shader")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dunes"]
+shader = ExtResource("8_mottle_shader")
+shader_parameter/base_color = Color(0.63, 0.55, 0.37, 1)
+shader_parameter/detail_color = Color(0.56, 0.48, 0.31, 1)
+shader_parameter/noise_scale = 0.005
+shader_parameter/detail_strength = 0.9
+
+[sub_resource type="Curve2D" id="Curve2D_dune"]
+_data = {
+"points": PackedVector2Array(0, 0, -280, 60, -2540, 420, 260, 60, -260, -60, -3350, 640, 280, 120, -280, -120, -4250, 330, 60, 260, -60, -260, -4820, -350, -280, -100, 280, 100, -4250, -1060, -300, -30, 300, 30, -3300, -1210, -220, -190, 0, 0, -2660, -640)
+}
+point_count = 7
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dune_gate_bar"]
+size = Vector2(380, 24)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_infield"]
 shader = ExtResource("8_mottle_shader")
@@ -74,17 +90,27 @@ polygon = PackedVector2Array(-9000, -9000, 9000, -9000, 9000, 9000, -9000, 9000)
 z_index = -3
 material = SubResource("ShaderMaterial_grass")
 color = Color(0.2, 0.42, 0.18, 1)
-polygon = PackedVector2Array(-3600, -2400, 3600, -2400, 3600, 2000, -3600, 2000)
+polygon = PackedVector2Array(-5600, -2400, 3600, -2400, 3600, 2000, -5600, 2000)
 
 [node name="Infield" type="Polygon2D" parent="."]
 z_index = -2
 material = SubResource("ShaderMaterial_infield")
 polygon = PackedVector2Array(-2000, 850, -2300, 200, -2250, -500, -1800, -1050, -600, -1200, 700, -1150, 1600, -900, 1900, -300, 1800, 300, 1500, 800, 400, 1000, -1000, 1000)
 
+[node name="DuneField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_dunes")
+polygon = PackedVector2Array(-5300, -600, -5000, -1500, -4200, -1700, -3200, -1650, -2500, -1100, -2400, -300, -2600, 600, -3200, 1000, -4400, 950, -5200, 300)
+
 [node name="Road" type="Node2D" parent="."]
 
 [node name="SegChord" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_chord")
+
+[node name="SegDune" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_dune")
+color = Color(0.72, 0.63, 0.42, 1)
+border_color = Color(0.55, 0.42, 0.25, 1)
 
 [node name="SegHubWest" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_hub_west")
@@ -166,6 +192,31 @@ polygon = PackedVector2Array(-90, -12, -50, -12, -50, 12, -90, 12)
 color = Color(0.15, 0.13, 0.1, 1)
 polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
 
+[node name="DuneGate" type="StaticBody2D" parent="."]
+position = Vector2(-2780, 470)
+rotation = 1.31
+script = ExtResource("5_gate")
+gate_id = "west_dunes"
+
+[node name="Shape" type="CollisionShape2D" parent="DuneGate"]
+shape = SubResource("RectangleShape2D_dune_gate_bar")
+
+[node name="Bar" type="Polygon2D" parent="DuneGate"]
+color = Color(0.95, 0.55, 0.1, 1)
+polygon = PackedVector2Array(-190, -12, 190, -12, 190, 12, -190, 12)
+
+[node name="Stripe1" type="Polygon2D" parent="DuneGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-150, -12, -110, -12, -110, 12, -150, 12)
+
+[node name="Stripe2" type="Polygon2D" parent="DuneGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-20, -12, 20, -12, 20, 12, -20, 12)
+
+[node name="Stripe3" type="Polygon2D" parent="DuneGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
+
 [node name="Water" type="Area2D" parent="."]
 collision_layer = 4
 collision_mask = 0
@@ -180,7 +231,7 @@ position = Vector2(0, 5250)
 shape = SubResource("RectangleShape2D_water_h")
 
 [node name="West" type="CollisionShape2D" parent="Water"]
-position = Vector2(-6150, 0)
+position = Vector2(-8150, 0)
 shape = SubResource("RectangleShape2D_water_v")
 
 [node name="East" type="CollisionShape2D" parent="Water"]

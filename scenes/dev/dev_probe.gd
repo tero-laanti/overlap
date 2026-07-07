@@ -11,6 +11,7 @@ extends Node
 enum Phase {
 	DRIVE, EARN, SPEND, REDRIVE, WATCH,
 	BUY_GATE, DRIVE_CUT, WATCH_CUT,
+	EARN_DUNE, BUY_DUNE, DRIVE_DUNE, WATCH_DUNE,
 	DONE,
 }
 
@@ -18,14 +19,18 @@ const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 300.0
+const TIMEOUT := 420.0
 const DRIVE_LAPS := 2
 const REDRIVE_LAPS := 2
 const CUT_LAPS := 2
+const DUNE_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
+const DUNE_EARN_TARGET := 280.0  # Dune Gate (250) + slack
 const WATCH_SECONDS := 16.0
 const WATCH_CUT_SECONDS := 12.0
+const WATCH_DUNE_SECONDS := 12.0
 const GATE_ID := "island_chord"
+const DUNE_GATE_ID := "west_dunes"
 const MASTERY_ROUTE_ID := "ring"
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -127,13 +132,30 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH_CUT, "watching both fleets")
 		Phase.WATCH_CUT:
 			if _elapsed >= _watch_until:
+				print("[PROBE] cut done money=%.0f income=%.2f/s cut_pb=%.2f" % [
+					Bank.currency, Bank.income_per_second(), Bank.route_pb("cut"),
+				])
+				_enter(Phase.EARN_DUNE, "idling until $%d" % int(DUNE_EARN_TARGET))
+		Phase.EARN_DUNE:
+			if Bank.currency >= DUNE_EARN_TARGET:
+				_buy_dune_gate()
+		Phase.BUY_DUNE:
+			pass  # transitions inside _buy_dune_gate()
+		Phase.DRIVE_DUNE:
+			_driver.drive(delta)
+			if _laps_done >= _lap_target:
+				_driver.release_all()
+				_watch_until = _elapsed + WATCH_DUNE_SECONDS
+				_enter(Phase.WATCH_DUNE, "watching every fleet")
+		Phase.WATCH_DUNE:
+			if _elapsed >= _watch_until:
 				var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
 				print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
 				ReportScript.dump_route_log(get_tree())
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f ghosts=%d" % [
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f dune_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
-					Bank.route_pb("cut"),
+					Bank.route_pb("cut"), Bank.route_pb("dune"),
 					get_tree().get_nodes_in_group("ghost").size(),
 				])
 				_enter(Phase.DONE, "finished")
@@ -184,6 +206,16 @@ func _buy_gate() -> void:
 	_driver.set_route(RoutesScript.CUT)
 	_lap_target = _laps_done + CUT_LAPS
 	_enter(Phase.DRIVE_CUT, "driving the island cut")
+
+
+func _buy_dune_gate() -> void:
+	_enter(Phase.BUY_DUNE, "buying the dune gate")
+	var gate_ok := Bank.try_buy_gate(DUNE_GATE_ID)
+	print("[PROBE] bought dune_gate=%s money=%.0f" % [gate_ok, Bank.currency])
+	ReportScript.dump_route_log(get_tree())
+	_driver.set_route(RoutesScript.DUNE)
+	_lap_target = _laps_done + DUNE_LAPS
+	_enter(Phase.DRIVE_DUNE, "driving the dune bend")
 
 
 func _enter(phase: Phase, note: String) -> void:
