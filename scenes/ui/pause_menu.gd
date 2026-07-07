@@ -24,6 +24,9 @@ func _ready() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	_fullscreen.button_pressed = _config.get_value("display", "fullscreen", false)
 	_fullscreen.toggled.connect(_on_fullscreen_toggled)
+	_bind_volume(%Master, "Master")
+	_bind_volume(%Music, "Music")
+	_bind_volume(%Sfx, "SFX")
 	%Resume.pressed.connect(func() -> void: visible = false)
 	_reset.pressed.connect(_on_reset_pressed)
 	%Quit.pressed.connect(func() -> void:
@@ -36,6 +39,23 @@ func _process(_delta: float) -> void:
 		visible = not visible
 	if _reset_armed_until > 0 and Time.get_ticks_msec() > _reset_armed_until:
 		_disarm_reset()
+
+
+## Slider 0..1 → bus volume; 0 mutes outright. Saved value wins over the
+## slider's scene default.
+func _bind_volume(slider: HSlider, bus_name: String) -> void:
+	var bus := AudioServer.get_bus_index(bus_name)
+	slider.value = _config.get_value("audio", bus_name, slider.value)
+	_apply_volume(bus, slider.value)
+	slider.value_changed.connect(func(value: float) -> void:
+		_apply_volume(bus, value)
+		_config.set_value("audio", bus_name, value)
+		_config.save(SETTINGS_PATH))
+
+
+func _apply_volume(bus: int, value: float) -> void:
+	AudioServer.set_bus_mute(bus, value <= 0.001)
+	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(value, 0.001)))
 
 
 func _on_fullscreen_toggled(on: bool) -> void:

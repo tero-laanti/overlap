@@ -66,6 +66,60 @@ layout_mode = 2
 focus_mode = 0
 text = "Fullscreen"
 
+[node name="MasterRow" type="HBoxContainer" parent="Panel/VBox/Settings"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/VBox/Settings/MasterRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(70, 0)
+theme_override_font_sizes/font_size = 14
+text = "Master"
+
+[node name="Master" type="HSlider" parent="Panel/VBox/Settings/MasterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 0.8
+
+[node name="MusicRow" type="HBoxContainer" parent="Panel/VBox/Settings"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/VBox/Settings/MusicRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(70, 0)
+theme_override_font_sizes/font_size = 14
+text = "Music"
+
+[node name="Music" type="HSlider" parent="Panel/VBox/Settings/MusicRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 0.6
+
+[node name="SfxRow" type="HBoxContainer" parent="Panel/VBox/Settings"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/VBox/Settings/SfxRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(70, 0)
+theme_override_font_sizes/font_size = 14
+text = "SFX"
+
+[node name="Sfx" type="HSlider" parent="Panel/VBox/Settings/SfxRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 0.8
+
 [node name="Resume" type="Button" parent="Panel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2

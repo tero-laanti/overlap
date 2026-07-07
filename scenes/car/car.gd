@@ -34,6 +34,7 @@ var _road_query: PhysicsPointQueryParameters2D
 var _water_query: PhysicsPointQueryParameters2D
 var _rubble_query: PhysicsPointQueryParameters2D
 var _last_road_pos := Vector2.ZERO
+var _on_road := true
 
 @onready var _camera: FollowCameraScript = $Camera2D
 @onready var _dust: CPUParticles2D = $Dust
@@ -102,12 +103,12 @@ func _physics_process(delta: float) -> void:
 	var impact := (before_impact - velocity).length()
 	if impact > IMPACT_SHAKE_THRESHOLD:
 		_camera.bump(impact * IMPACT_SHAKE_SCALE)
-	var on_road := _is_on_road()
-	if on_road:
+	_on_road = _is_on_road()
+	if _on_road:
 		_last_road_pos = global_position
 	elif _query_hit(_water_query):
 		_reset_to_road()
-	_dust.emitting = not on_road and velocity.length() > DUST_MIN_SPEED
+	_dust.emitting = not _on_road and velocity.length() > DUST_MIN_SPEED
 	_update_drift_trails(drifting, lateral_speed, velocity.length())
 
 
@@ -136,6 +137,16 @@ func _apply_throttle(throttle: float, forward_speed: float, delta: float) -> flo
 
 func _is_on_road() -> bool:
 	return _query_hit(_road_query)
+
+
+## State reads for observers (camera, audio): this tick's surface and
+## whether the tires are scrubbing hard enough to draw trails.
+func is_on_road_now() -> bool:
+	return _on_road
+
+
+func is_sliding() -> bool:
+	return _trails_active
 
 
 func _query_hit(query: PhysicsPointQueryParameters2D) -> bool:

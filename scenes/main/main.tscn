@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://dcal8wjcu7eva" path="res://scenes/dev/dev_calibrate.gd" id="10_calibrate"]
 [ext_resource type="Script" uid="uid://dahefs56ktnk7" path="res://scenes/dev/dev_photo.gd" id="11_photo"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12_menu"]
+[ext_resource type="PackedScene" path="res://scenes/audio/game_audio.tscn" id="13_audio"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")
@@ -35,6 +36,8 @@ script = ExtResource("5_race")
 [node name="RouteLog" parent="." unique_id=1581962153 instance=ExtResource("9_routelog")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("12_menu")]
+
+[node name="GameAudio" parent="." instance=ExtResource("13_audio")]
 
 [node name="DevProbe" type="Node" parent="." unique_id=1780207203]
 script = ExtResource("4_probe")
