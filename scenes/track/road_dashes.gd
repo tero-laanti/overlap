@@ -37,7 +37,8 @@ func _draw() -> void:
 		while start < travelled + length:
 			var from := maxf(start, travelled) - travelled
 			var to := minf(start + DASH_LENGTH, travelled + length) - travelled
-			if to > from:
+			# Sliver dashes at segment ends triangulate degenerate quads.
+			if to - from > 2.0:
 				var p0 := a + direction * from
 				var p1 := a + direction * to
 				draw_colored_polygon(PackedVector2Array([

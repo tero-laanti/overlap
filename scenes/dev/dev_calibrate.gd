@@ -10,7 +10,7 @@ extends Node
 
 const FLAG_PATH := "user://calibrate.flag"
 const LAPS_PER_ROUTE := 3
-const TIMEOUT := 300.0
+const TIMEOUT := 700.0
 const GRANT := 100000.0
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -19,17 +19,23 @@ const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 
 var _driver: DevDriverScript = DevDriverScript.new()
 var _route_ids: Array[String] = [
-	"ring", "cut", "dune", "sandcut",
+	"ring", "cut", "dune", "sandcut", "climb", "high_ring", "forest",
 ]
 var _route_points := {
 	"ring": RoutesScript.RING,
 	"cut": RoutesScript.CUT,
 	"dune": RoutesScript.DUNE,
 	"sandcut": RoutesScript.SANDCUT,
+	"climb": RoutesScript.CLIMB,
+	"high_ring": RoutesScript.HIGH_RING,
+	"forest": RoutesScript.FOREST,
 }
-## Routes whose mouths or hairpins need a tighter capture radius (the
-## v1 forest gap needed 120; annex re-adaptations will repopulate this).
-var _route_reach := {}
+## Routes whose mouths or hairpins need a tighter capture radius.
+var _route_reach := {
+	"climb": RoutesScript.CLIFF_REACH,
+	"high_ring": RoutesScript.CLIFF_REACH,
+	"forest": RoutesScript.CLIFF_REACH,
+}
 var _stage := -1
 var _stage_laps := 0
 var _elapsed := 0.0

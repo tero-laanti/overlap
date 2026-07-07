@@ -218,8 +218,20 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   point_count beyond the data invents a phantom origin point.
 - [ ] V2-2 Minimap / island map screen (required — circuit no longer
       fits one screen).
-- [ ] V2-3..5 Zone re-adaptations: dunes, cliffs+woods (the X returns),
-      then harbor per MAP_DESIGN §8.
+- [x] V2-2 minimap — Notes: verified 2026-07-07, photo run; island
+      bounds derive from the Grass polygon so annexes auto-appear.
+- [x] V2-3 dunes — Notes: verified 2026-07-07 — calibration (dune
+      17.58, sandcut 14.06; pars 16.75/13.4), full probe green.
+      Also fixed a latent stats leak (profile_reset fact on Events;
+      car recomputes on dev wipes).
+- [x] V2-4 cliffs + woods — the X returns with room to breathe: v1's
+      proven ladder geometry translated NE (+850,-700), descent dives
+      through the chord's top mouth (the single at-grade X — the woods
+      no longer force a second crossing, v1's documented compromise is
+      repaid), golden-gap secret forest arc NW. Pars from calibration:
+      climb 21.3, high_ring 25.3, forest 18.6.
+- [ ] V2-5 harbor per MAP_DESIGN_V2 §3 (container maze, stop-go rhythm,
+      dock straight; navy/rust/crane-yellow).
 - **Accept (V2-1):** a first-time lap takes ~15–18 s and feels like a
       race lap (straight → braking spot → sweepers → esses → carousel);
       full probe loop green on the new geometry.

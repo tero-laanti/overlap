@@ -6,6 +6,9 @@ extends RefCounted
 ## (docs/MAP_DESIGN_V2.md §2); annex routes return with their
 ## re-adaptation slices.
 
+## Hairpin apex / tree gap capture: the default reach corner-cuts both.
+const CLIFF_REACH := 120.0
+
 const RING: Array[Vector2] = [
 	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
 	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
@@ -41,4 +44,55 @@ const SANDCUT: Array[Vector2] = [
 	Vector2(-1000, -1450), Vector2(-200, -1390), Vector2(450, -1360),
 	Vector2(500, -900), Vector2(500, 0), Vector2(500, 1000),
 	Vector2(0, 1200),
+]
+## NE fork, hairpin ladder, lighthouse, north-shore esses, descent
+## through the X into the chord.
+const CLIMB: Array[Vector2] = [
+	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
+	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
+	Vector2(-1000, -1450), Vector2(0, -1380), Vector2(1000, -1450),
+	Vector2(1900, -1250), Vector2(2250, -1490), Vector2(2390, -1820),
+	Vector2(3100, -1820), Vector2(3250, -1880), Vector2(3270, -1990),
+	Vector2(3250, -2100), Vector2(3100, -2160),
+	Vector2(2500, -2160), Vector2(2350, -2220), Vector2(2330, -2330),
+	Vector2(2350, -2440), Vector2(2500, -2500),
+	Vector2(3100, -2500), Vector2(3290, -2580), Vector2(3320, -2710),
+	Vector2(3290, -2840), Vector2(3100, -2920),
+	Vector2(2570, -2980), Vector2(2130, -2860), Vector2(1710, -3000),
+	Vector2(1370, -2850),
+	Vector2(1110, -2450), Vector2(700, -2100), Vector2(520, -1750),
+	Vector2(500, -1300), Vector2(500, -900), Vector2(500, 0),
+	Vector2(500, 1000), Vector2(0, 1200),
+]
+## Same climb, but turning east at the X onto the top straight.
+const HIGH_RING: Array[Vector2] = [
+	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
+	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
+	Vector2(-1000, -1450), Vector2(0, -1380), Vector2(1000, -1450),
+	Vector2(1900, -1250), Vector2(2250, -1490), Vector2(2390, -1820),
+	Vector2(3100, -1820), Vector2(3250, -1880), Vector2(3270, -1990),
+	Vector2(3250, -2100), Vector2(3100, -2160),
+	Vector2(2500, -2160), Vector2(2350, -2220), Vector2(2330, -2330),
+	Vector2(2350, -2440), Vector2(2500, -2500),
+	Vector2(3100, -2500), Vector2(3290, -2580), Vector2(3320, -2710),
+	Vector2(3290, -2840), Vector2(3100, -2920),
+	Vector2(2570, -2980), Vector2(2130, -2860), Vector2(1710, -3000),
+	Vector2(1370, -2850),
+	Vector2(1110, -2450), Vector2(700, -2100), Vector2(520, -1750),
+	Vector2(500, -1520), Vector2(900, -1430), Vector2(1900, -1250),
+	Vector2(2300, -800), Vector2(1950, -250), Vector2(2350, 300),
+	Vector2(2650, 750), Vector2(2350, 1150), Vector2(1400, 1200),
+]
+## Through the golden tree gap into the woods arc — the first crossing
+## proves the secret trigger fires from real driving.
+const FOREST: Array[Vector2] = [
+	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
+	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
+	Vector2(-1900, -1450), Vector2(-1990, -1620), Vector2(-2060, -1810),
+	Vector2(-2250, -2100),
+	Vector2(-2350, -2850), Vector2(-1650, -3300), Vector2(-800, -3150),
+	Vector2(-550, -2400), Vector2(-1100, -1450),
+	Vector2(0, -1380), Vector2(1000, -1450), Vector2(1900, -1250),
+	Vector2(2300, -800), Vector2(1950, -250), Vector2(2350, 300),
+	Vector2(2650, 750), Vector2(2350, 1150), Vector2(1400, 1200),
 ]

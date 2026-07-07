@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://bvxq2h44wr02k"]
+[gd_scene load_steps=33 format=3 uid="uid://bvxq2h44wr02k"]
 
 [ext_resource type="Script" uid="uid://7t7lgp08bywd" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" uid="uid://c6qm608rh2q2p" path="res://data/tracks/track01.tres" id="2_def"]
@@ -9,11 +9,15 @@
 [ext_resource type="Shader" uid="uid://71cq3buhh4e7" path="res://assets/shaders/water.gdshader" id="7_water_shader"]
 [ext_resource type="Shader" uid="uid://dyg3e8igt01bi" path="res://assets/shaders/mottle.gdshader" id="8_mottle_shader"]
 [ext_resource type="Shader" uid="uid://ri5r1uhysyem" path="res://assets/shaders/checker.gdshader" id="9_checker_shader"]
+[ext_resource type="PackedScene" uid="uid://bid5ymy01usvm" path="res://scenes/track/wall_segment.tscn" id="10_wall"]
+[ext_resource type="PackedScene" uid="uid://b61ybjhs5jr4n" path="res://scenes/track/tree.tscn" id="11_tree"]
+[ext_resource type="Script" uid="uid://b75vxexwudubg" path="res://scenes/track/secret_road.gd" id="12_secret"]
+[ext_resource type="Script" uid="uid://cx67rrxf0ksfu" path="res://scenes/track/spinner.gd" id="13_spinner"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
 shader = ExtResource("7_water_shader")
-shader_parameter/land_center = Vector2(-1000, -200)
-shader_parameter/land_extents = Vector2(4600, 2200)
+shader_parameter/land_center = Vector2(-1000, -900)
+shader_parameter/land_extents = Vector2(4600, 2900)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_grass"]
 shader = ExtResource("8_mottle_shader")
@@ -40,6 +44,59 @@ point_count = 7
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dune_gate_bar"]
 size = Vector2(380, 24)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cliff_rock"]
+shader = ExtResource("8_mottle_shader")
+shader_parameter/base_color = Color(0.38, 0.4, 0.38, 1)
+shader_parameter/detail_color = Color(0.32, 0.34, 0.33, 1)
+shader_parameter/noise_scale = 0.007
+shader_parameter/detail_strength = 0.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_woods"]
+shader = ExtResource("8_mottle_shader")
+shader_parameter/base_color = Color(0.17, 0.36, 0.15, 1)
+shader_parameter/detail_color = Color(0.13, 0.3, 0.12, 1)
+shader_parameter/noise_scale = 0.009
+shader_parameter/detail_strength = 0.9
+
+[sub_resource type="Curve2D" id="Curve2D_cliff"]
+_data = {
+"points": PackedVector2Array(0, 0, 240, -40, 1900, -1250, -100, 150, 100, -150, 2270, -1500, -180, 0, 180, 0, 2410, -1820, -200, 0, 200, 0, 3100, -1820, 0, 170, 0, -170, 3270, -1990, 200, 0, -200, 0, 3100, -2160, 200, 0, -200, 0, 2500, -2160, 0, 170, 0, -170, 2330, -2330, -200, 0, 200, 0, 2500, -2500, -200, 0, 200, 0, 3100, -2500, 0, 210, 0, -210, 3320, -2710, 200, 0, -200, 0, 3100, -2920, 230, -40, -230, 40, 2570, -2980, 220, 60, -220, -60, 2130, -2860, 200, -70, -200, 70, 1710, -3000, 150, -100, -150, 100, 1370, -2850, 150, -230, -150, 230, 1110, -2450, 160, -180, -160, 180, 700, -2100, 30, -190, -30, 190, 520, -1750, 0, -200, 0, 0, 500, -1360)
+}
+point_count = 20
+
+[sub_resource type="Curve2D" id="Curve2D_forest"]
+_data = {
+"points": PackedVector2Array(0, 0, -60, -220, -1900, -1430, 80, 220, -80, -220, -2250, -2100, 150, 200, -150, -200, -2350, -2850, -300, -30, 300, 30, -1650, -3300, -250, -100, 250, 100, -800, -3150, -60, -250, 60, 250, -550, -2400, 150, -230, 0, 0, -1100, -1420)
+}
+point_count = 7
+
+[sub_resource type="Curve2D" id="Curve2D_wall_east"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 3490, -1740, 0, 0, 0, 0, 3490, -2240)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_wall_west"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 2110, -2080, 0, 0, 0, 0, 2110, -2580)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_wall_north"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 3570, -2550, 0, 0, 0, 0, 3570, -2840, 0, 0, 0, 0, 3390, -3150, 0, 0, 0, 0, 2550, -3270, 0, 0, 0, 0, 1750, -3220, 0, 0, 0, 0, 1350, -3100)
+}
+point_count = 6
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cliff_gate_bar"]
+size = Vector2(380, 24)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_lighthouse"]
+radius = 26.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gold_trunk"]
+radius = 18.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_infield"]
 shader = ExtResource("8_mottle_shader")
@@ -90,7 +147,7 @@ polygon = PackedVector2Array(-9000, -9000, 9000, -9000, 9000, 9000, -9000, 9000)
 z_index = -3
 material = SubResource("ShaderMaterial_grass")
 color = Color(0.2, 0.42, 0.18, 1)
-polygon = PackedVector2Array(-5600, -2400, 3600, -2400, 3600, 2000, -5600, 2000)
+polygon = PackedVector2Array(-5600, -3800, 3600, -3800, 3600, 2000, -5600, 2000)
 
 [node name="Infield" type="Polygon2D" parent="."]
 z_index = -2
@@ -102,10 +159,39 @@ z_index = -2
 material = SubResource("ShaderMaterial_dunes")
 polygon = PackedVector2Array(-5300, -600, -5000, -1500, -4200, -1700, -3200, -1650, -2500, -1100, -2400, -300, -2600, 600, -3200, 1000, -4400, 950, -5200, 300)
 
+[node name="CliffField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_cliff_rock")
+polygon = PackedVector2Array(2000, -1500, 2250, -1700, 2150, -2300, 2100, -2750, 1550, -2800, 1280, -3000, 1550, -3250, 2350, -3330, 3050, -3350, 3500, -3150, 3620, -2500, 3550, -1800, 3200, -1550, 2550, -1420)
+
+[node name="WoodsField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_woods")
+polygon = PackedVector2Array(-3200, -1600, -3300, -2400, -2900, -3300, -2100, -3650, -900, -3600, -250, -3100, -150, -2300, -350, -1750, -900, -1550, -2400, -1500)
+
 [node name="Road" type="Node2D" parent="."]
 
 [node name="SegChord" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_chord")
+
+[node name="ForestRoad" type="Node2D" parent="Road"]
+script = ExtResource("12_secret")
+secret_id = "forest_run"
+trigger_line_id = "forest_gap"
+
+[node name="Segment" parent="Road/ForestRoad" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_forest")
+half_width = 140.0
+color = Color(0.23, 0.27, 0.23, 1)
+border_color = Color(0.15, 0.19, 0.14, 1)
+
+[node name="SegCliff" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_cliff")
+half_width = 115.0
+color = Color(0.29, 0.3, 0.34, 1)
+border_width = 60.0
+border_color = Color(0.37, 0.36, 0.38, 1)
+rubble = true
 
 [node name="SegDune" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_dune")
@@ -217,13 +303,149 @@ polygon = PackedVector2Array(-20, -12, 20, -12, 20, 12, -20, 12)
 color = Color(0.15, 0.13, 0.1, 1)
 polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
 
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="WallEast" parent="Walls" instance=ExtResource("10_wall")]
+curve = SubResource("Curve2D_wall_east")
+
+[node name="WallWest" parent="Walls" instance=ExtResource("10_wall")]
+curve = SubResource("Curve2D_wall_west")
+
+[node name="WallNorth" parent="Walls" instance=ExtResource("10_wall")]
+curve = SubResource("Curve2D_wall_north")
+
+[node name="Lighthouse" type="StaticBody2D" parent="."]
+position = Vector2(3110, -2710)
+
+[node name="Shape" type="CollisionShape2D" parent="Lighthouse"]
+shape = SubResource("CircleShape2D_lighthouse")
+
+[node name="Base" type="Polygon2D" parent="Lighthouse"]
+color = Color(0.35, 0.34, 0.38, 1)
+polygon = PackedVector2Array(34, 0, 24, 24, 0, 34, -24, 24, -34, 0, -24, -24, 0, -34, 24, -24)
+
+[node name="Tower" type="Polygon2D" parent="Lighthouse"]
+color = Color(0.92, 0.9, 0.88, 1)
+polygon = PackedVector2Array(24, 0, 17, 17, 0, 24, -17, 17, -24, 0, -17, -17, 0, -24, 17, -17)
+
+[node name="Band" type="Polygon2D" parent="Lighthouse"]
+color = Color(0.85, 0.25, 0.2, 1)
+polygon = PackedVector2Array(15, 0, 11, 11, 0, 15, -11, 11, -15, 0, -11, -11, 0, -15, 11, -11)
+
+[node name="Lamp" type="Polygon2D" parent="Lighthouse"]
+color = Color(1, 0.85, 0.4, 1)
+polygon = PackedVector2Array(7, 0, 5, 5, 0, 7, -5, 5, -7, 0, -5, -5, 0, -7, 5, -5)
+
+[node name="Beam" type="Node2D" parent="Lighthouse"]
+z_index = 1
+script = ExtResource("13_spinner")
+
+[node name="Fan" type="Polygon2D" parent="Lighthouse/Beam"]
+color = Color(1, 0.9, 0.5, 0.2)
+polygon = PackedVector2Array(0, -6, 340, -44, 340, 44, 0, 6)
+
+[node name="Trees" type="Node2D" parent="."]
+
+[node name="GoldTreeWest" type="StaticBody2D" parent="Trees"]
+position = Vector2(-2210, -1700)
+
+[node name="GoldShapeW" type="CollisionShape2D" parent="Trees/GoldTreeWest"]
+shape = SubResource("CircleShape2D_gold_trunk")
+
+[node name="ShadeW" type="Polygon2D" parent="Trees/GoldTreeWest"]
+position = Vector2(5, 6)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="CanopyW" type="Polygon2D" parent="Trees/GoldTreeWest"]
+color = Color(0.62, 0.45, 0.1, 1)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="CrownW" type="Polygon2D" parent="Trees/GoldTreeWest"]
+color = Color(0.85, 0.65, 0.2, 1)
+polygon = PackedVector2Array(0, -26, 19, -13, 19, 13, 0, 26, -19, 13, -19, -13)
+
+[node name="GoldTreeEast" type="StaticBody2D" parent="Trees"]
+position = Vector2(-1810, -1700)
+
+[node name="GoldShapeE" type="CollisionShape2D" parent="Trees/GoldTreeEast"]
+shape = SubResource("CircleShape2D_gold_trunk")
+
+[node name="ShadeE" type="Polygon2D" parent="Trees/GoldTreeEast"]
+position = Vector2(5, 6)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="CanopyE" type="Polygon2D" parent="Trees/GoldTreeEast"]
+color = Color(0.62, 0.45, 0.1, 1)
+polygon = PackedVector2Array(0, -42, 30, -21, 30, 21, 0, 42, -30, 21, -30, -21)
+
+[node name="CrownE" type="Polygon2D" parent="Trees/GoldTreeEast"]
+color = Color(0.85, 0.65, 0.2, 1)
+polygon = PackedVector2Array(0, -26, 19, -13, 19, 13, 0, 26, -19, 13, -19, -13)
+
+[node name="Tree1" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-2600, -1900)
+
+[node name="Tree2" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-1500, -1800)
+
+[node name="Tree3" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-1000, -2050)
+
+[node name="Tree4" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-1300, -2400)
+
+[node name="Tree5" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-1100, -2800)
+
+[node name="Tree6" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-2000, -2700)
+
+[node name="Tree7" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-2700, -3200)
+
+[node name="Tree8" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-1250, -2950)
+
+[node name="Tree9" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-2900, -2500)
+
+[node name="Tree10" parent="Trees" instance=ExtResource("11_tree")]
+position = Vector2(-450, -1900)
+
+[node name="CliffGate" type="StaticBody2D" parent="."]
+position = Vector2(2184, -1385)
+rotation = 0.6435011
+script = ExtResource("5_gate")
+gate_id = "cliff_gate"
+
+[node name="Shape" type="CollisionShape2D" parent="CliffGate"]
+shape = SubResource("RectangleShape2D_cliff_gate_bar")
+
+[node name="CliffBar" type="Polygon2D" parent="CliffGate"]
+color = Color(0.95, 0.55, 0.1, 1)
+polygon = PackedVector2Array(-190, -12, 190, -12, 190, 12, -190, 12)
+
+[node name="CliffStripe1" type="Polygon2D" parent="CliffGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-150, -12, -110, -12, -110, 12, -150, 12)
+
+[node name="CliffStripe2" type="Polygon2D" parent="CliffGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(-20, -12, 20, -12, 20, 12, -20, 12)
+
+[node name="CliffStripe3" type="Polygon2D" parent="CliffGate"]
+color = Color(0.15, 0.13, 0.1, 1)
+polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
+
 [node name="Water" type="Area2D" parent="."]
 collision_layer = 4
 collision_mask = 0
 monitoring = false
 
 [node name="North" type="CollisionShape2D" parent="Water"]
-position = Vector2(0, -5650)
+position = Vector2(0, -7050)
 shape = SubResource("RectangleShape2D_water_h")
 
 [node name="South" type="CollisionShape2D" parent="Water"]

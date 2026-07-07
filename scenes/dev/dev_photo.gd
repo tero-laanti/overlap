@@ -25,6 +25,12 @@ const SPOTS := {
 	"shore_south": [Vector2(0, 2050), 0.5],
 	"dune_gate": [Vector2(-2750, 460), 0.5],
 	"dune_bowl": [Vector2(-4300, -400), 0.32],
+	"x_crossing": [Vector2(500, -1330), 0.5],
+	"cliff_gate": [Vector2(2150, -1400), 0.5],
+	"ladder": [Vector2(2800, -2170), 0.38],
+	"lighthouse": [Vector2(3150, -2720), 0.55],
+	"forest_gap": [Vector2(-1990, -1720), 0.55],
+	"woods": [Vector2(-1600, -2600), 0.3],
 }
 
 var _camera: Camera2D
