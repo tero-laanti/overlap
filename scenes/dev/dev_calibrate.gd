@@ -10,67 +10,24 @@ extends Node
 
 const FLAG_PATH := "user://calibrate.flag"
 const LAPS_PER_ROUTE := 3
-const TIMEOUT := 600.0
+const TIMEOUT := 300.0
 const GRANT := 100000.0
 
 const CarScript = preload("res://scenes/car/car.gd")
 const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
 const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 
-const TWIN_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1260, 300), Vector2(-1520, 0),
-	Vector2(-1260, -300), Vector2(-1050, -550),
-	Vector2(300, -550), Vector2(300, -100), Vector2(300, 550),
-]
-## Through the golden tree gap — the first crossing also proves the
-## secret unlock trigger fires from real driving.
-const FOREST_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1050, -550), Vector2(-660, -430),
-	Vector2(-660, -1000), Vector2(-1500, -1400), Vector2(-900, -2100),
-	Vector2(300, -1900), Vector2(900, -1200), Vector2(700, -550),
-	Vector2(1050, -550), Vector2(1050, 550),
-]
-## The tree gap is 240 px wide — the default reach radius corner-cuts
-## straight past it.
-const FOREST_REACH := 120.0
-## Same climb as the probe, but turning east at the X onto the top road
-## instead of diving into the chord — the High Ring discovery.
-const HIGH_RING_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1050, -550),
-	Vector2(600, -550), Vector2(1100, -570),
-	Vector2(1400, -790), Vector2(1540, -1120),
-	Vector2(2250, -1120), Vector2(2400, -1180), Vector2(2420, -1290),
-	Vector2(2400, -1400), Vector2(2250, -1460),
-	Vector2(1650, -1460), Vector2(1500, -1520), Vector2(1480, -1630),
-	Vector2(1500, -1740), Vector2(1650, -1800),
-	Vector2(2250, -1800), Vector2(2440, -1880), Vector2(2470, -2010),
-	Vector2(2440, -2140), Vector2(2250, -2220),
-	Vector2(1720, -2280), Vector2(1280, -2160), Vector2(860, -2300),
-	Vector2(520, -2150),
-	Vector2(260, -1750), Vector2(230, -1350), Vector2(260, -950),
-	Vector2(300, -750), Vector2(600, -560), Vector2(1050, -550),
-	Vector2(1050, 0), Vector2(1050, 550),
-]
-
 var _driver: DevDriverScript = DevDriverScript.new()
 var _route_ids: Array[String] = [
-	"ring", "cut", "petal", "twin", "forest", "climb", "high_ring",
+	"ring", "cut",
 ]
 var _route_points := {
 	"ring": RoutesScript.RING,
 	"cut": RoutesScript.CUT,
-	"petal": RoutesScript.PETAL,
-	"twin": TWIN_WAYPOINTS,
-	"forest": FOREST_WAYPOINTS,
-	"climb": RoutesScript.CLIMB,
-	"high_ring": HIGH_RING_WAYPOINTS,
 }
-## Routes whose mouths or hairpins need a tighter capture radius.
-var _route_reach := {
-	"forest": FOREST_REACH,
-	"climb": RoutesScript.CLIFF_REACH,
-	"high_ring": RoutesScript.CLIFF_REACH,
-}
+## Routes whose mouths or hairpins need a tighter capture radius (the
+## v1 forest gap needed 120; annex re-adaptations will repopulate this).
+var _route_reach := {}
 var _stage := -1
 var _stage_laps := 0
 var _elapsed := 0.0

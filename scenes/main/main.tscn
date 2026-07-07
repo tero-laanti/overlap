@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://pp8338uc35sm"]
 
 [ext_resource type="Script" uid="uid://cj46gv6p6j5l3" path="res://scenes/main/main.gd" id="1_main"]
-[ext_resource type="PackedScene" uid="uid://cyoa17bn30tm8" path="res://scenes/track/track01/track.tscn" id="2_track"]
+[ext_resource type="PackedScene" uid="uid://bvxq2h44wr02k" path="res://scenes/track/track02/track.tscn" id="2_track"]
 [ext_resource type="PackedScene" uid="uid://dgip6ylhsgl0l" path="res://scenes/car/car.tscn" id="3_car"]
 [ext_resource type="Script" uid="uid://b8fl0kv1hl8tg" path="res://scenes/dev/dev_probe.gd" id="4_probe"]
 [ext_resource type="Script" uid="uid://bmd6oycf0lryp" path="res://scenes/main/race_state.gd" id="5_race"]
@@ -23,7 +23,7 @@ script = ExtResource("1_main")
 script = ExtResource("7_fleet")
 
 [node name="Car" parent="." unique_id=381192272 instance=ExtResource("3_car")]
-position = Vector2(250, 550)
+position = Vector2(600, 1200)
 rotation = -1.5707964
 
 [node name="RaceState" type="Node" parent="." unique_id=1190303084]

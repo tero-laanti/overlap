@@ -46,16 +46,16 @@ script = ExtResource("3")
 id = "ring"
 display_name = "Grand Ring"
 edges = PackedStringArray("west", "east")
-par_time = 15.0
-payout_per_lap = 25.0
+par_time = 12.4
+payout_per_lap = 21.0
 
 [sub_resource type="Resource" id="Resource_route_cut"]
 script = ExtResource("3")
 id = "cut"
 display_name = "Island Cut"
 edges = PackedStringArray("west", "chord_mouth", "chord")
-par_time = 11.5
-payout_per_lap = 19.5
+par_time = 9.1
+payout_per_lap = 15.5
 medal_unlock_cost = 220.0
 clue = "The island hides a faster line."
 required_gates = PackedStringArray("island_chord")

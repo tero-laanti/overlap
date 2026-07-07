@@ -1,18 +1,16 @@
 extends Node
 ## Dev-only verification probe. Dormant unless user://autopilot.flag exists
 ## (created by tooling before a run). Runs a phased full-loop test with the
-## shared waypoint autopilot: drive PB laps, idle to earn, buy a ghost slot
-## and an upgrade through the real Bank APIs, re-drive, watch fleet income,
-## then buy both gates, discover the Island Cut and Dune Bend routes, and
-## buy one mastery unlock. Prints telemetry and saves screenshots to
-## user://dev/. Never active in release builds. For par calibration use
+## shared waypoint autopilot on the island v2 hub: drive PB laps, idle to
+## earn, buy a ghost slot and an upgrade through the real Bank APIs,
+## re-drive, watch fleet income, buy the island gate, discover the Island
+## Cut, and buy one mastery unlock. Prints telemetry and saves screenshots
+## to user://dev/. Never active in release builds. For par calibration use
 ## user://calibrate.flag (DevCalibrate) instead — not both at once.
 
 enum Phase {
 	DRIVE, EARN, SPEND, REDRIVE, WATCH,
 	BUY_GATE, DRIVE_CUT, WATCH_CUT,
-	EARN_PETAL, BUY_PETAL, DRIVE_PETAL, WATCH_FINAL,
-	EARN_CLIFF, BUY_CLIFF, DRIVE_CLIMB, WATCH_CLIFF,
 	DONE,
 }
 
@@ -20,22 +18,14 @@ const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 420.0
+const TIMEOUT := 300.0
 const DRIVE_LAPS := 2
 const REDRIVE_LAPS := 2
 const CUT_LAPS := 2
-const PETAL_LAPS := 2
-const CLIMB_LAPS := 2
 const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
-const PETAL_EARN_TARGET := 260.0  # Dune Gate (250) + slack
-const CLIFF_EARN_TARGET := 950.0  # Cliff Gate (900) + slack
 const WATCH_SECONDS := 16.0
 const WATCH_CUT_SECONDS := 12.0
-const WATCH_FINAL_SECONDS := 12.0
-const WATCH_CLIFF_SECONDS := 12.0
 const GATE_ID := "island_chord"
-const PETAL_GATE_ID := "west_petal"
-const CLIFF_GATE_ID := "cliff_gate"
 const MASTERY_ROUTE_ID := "ring"
 
 const CarScript = preload("res://scenes/car/car.gd")
@@ -137,48 +127,13 @@ func _process(delta: float) -> void:
 				_enter(Phase.WATCH_CUT, "watching both fleets")
 		Phase.WATCH_CUT:
 			if _elapsed >= _watch_until:
-				print("[PROBE] cut done money=%.0f income=%.2f/s cut_pb=%.2f" % [
-					Bank.currency, Bank.income_per_second(), Bank.route_pb("cut"),
-				])
-				_enter(Phase.EARN_PETAL, "idling until $%d" % int(PETAL_EARN_TARGET))
-		Phase.EARN_PETAL:
-			if Bank.currency >= PETAL_EARN_TARGET:
-				_buy_petal_gate()
-		Phase.BUY_PETAL:
-			pass  # transitions inside _buy_petal_gate()
-		Phase.DRIVE_PETAL:
-			_driver.drive(delta)
-			if _laps_done >= _lap_target:
-				_driver.release_all()
-				_watch_until = _elapsed + WATCH_FINAL_SECONDS
-				_enter(Phase.WATCH_FINAL, "watching all fleets")
-		Phase.WATCH_FINAL:
-			if _elapsed >= _watch_until:
-				print("[PROBE] petal done money=%.0f income=%.2f/s petal_pb=%.2f" % [
-					Bank.currency, Bank.income_per_second(), Bank.route_pb("petal"),
-				])
-				_enter(Phase.EARN_CLIFF, "idling until $%d" % int(CLIFF_EARN_TARGET))
-		Phase.EARN_CLIFF:
-			if Bank.currency >= CLIFF_EARN_TARGET:
-				_buy_cliff_gate()
-		Phase.BUY_CLIFF:
-			pass  # transitions inside _buy_cliff_gate()
-		Phase.DRIVE_CLIMB:
-			_driver.drive(delta)
-			if _laps_done >= _lap_target:
-				_driver.release_all()
-				_watch_until = _elapsed + WATCH_CLIFF_SECONDS
-				_enter(Phase.WATCH_CLIFF, "watching every fleet")
-		Phase.WATCH_CLIFF:
-			if _elapsed >= _watch_until:
 				var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
 				print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
 				ReportScript.dump_route_log(get_tree())
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f petal_pb=%.2f climb_pb=%.2f ghosts=%d" % [
+				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
-					Bank.route_pb("cut"), Bank.route_pb("petal"),
-					Bank.route_pb("climb"),
+					Bank.route_pb("cut"),
 					get_tree().get_nodes_in_group("ghost").size(),
 				])
 				_enter(Phase.DONE, "finished")
@@ -229,26 +184,6 @@ func _buy_gate() -> void:
 	_driver.set_route(RoutesScript.CUT)
 	_lap_target = _laps_done + CUT_LAPS
 	_enter(Phase.DRIVE_CUT, "driving the island cut")
-
-
-func _buy_petal_gate() -> void:
-	_enter(Phase.BUY_PETAL, "buying the dune gate")
-	var gate_ok := Bank.try_buy_gate(PETAL_GATE_ID)
-	print("[PROBE] bought petal_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	ReportScript.dump_route_log(get_tree())
-	_driver.set_route(RoutesScript.PETAL)
-	_lap_target = _laps_done + PETAL_LAPS
-	_enter(Phase.DRIVE_PETAL, "driving the dune bend")
-
-
-func _buy_cliff_gate() -> void:
-	_enter(Phase.BUY_CLIFF, "buying the cliff gate")
-	var gate_ok := Bank.try_buy_gate(CLIFF_GATE_ID)
-	print("[PROBE] bought cliff_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	ReportScript.dump_route_log(get_tree())
-	_driver.set_route(RoutesScript.CLIMB, RoutesScript.CLIFF_REACH)
-	_lap_target = _laps_done + CLIMB_LAPS
-	_enter(Phase.DRIVE_CLIMB, "driving the lighthouse climb")
 
 
 func _enter(phase: Phase, note: String) -> void:

@@ -202,9 +202,20 @@ Tick when done. Notes about deviations go under the slice, not in new files.
   dB), synth vs sampled engine A/B, music taste check.
 
 ## Slice 8 — Island v2: the 15-second hub (design: docs/MAP_DESIGN_V2.md)
-- [ ] V2-1 The hub: GP-style ~15 s circuit (fast+flowing, one braking
+- [x] V2-1 The hub: GP-style ~15 s circuit (fast+flowing, one braking
       corner) + chord gate, save v4 full wipe, dev tooling retargeted,
       pars/payouts calibrated, economy sim re-checked. track01 deleted.
+- Notes: verified 2026-07-07 — human test-drove the prototype and
+  approved ("the track is better"); full probe green on v2 (first-time
+  lap 15.35 s — on target; upgraded 14.77 s = bronze vs par 12.4; cut
+  discovered at 10.82 s; income 5.99/s, 4 ghosts, zero errors, 113 s
+  run). Pars from maxed-bot calibration (ring 13.02→12.4, cut
+  9.55→9.1); payouts par-normalized at ~1.7/s/slot. Cold-start model:
+  first purchase ~15–31 s, inside the 20–40 s target — no economy
+  retune. Saves v3 and older wipe on load (approved). Two bake gotchas
+  recorded in a3cd464: closed centerlines fill their interior (split
+  loops into open segments at zero-curvature points) and Curve2D
+  point_count beyond the data invents a phantom origin point.
 - [ ] V2-2 Minimap / island map screen (required — circuit no longer
       fits one screen).
 - [ ] V2-3..5 Zone re-adaptations: dunes, cliffs+woods (the X returns),

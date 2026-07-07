@@ -144,7 +144,24 @@ them.
    HUMAN: mix levels, synth-vs-sampled engine A/B
    (use_sampled_engine on CarAudio), music taste, plus the older
    cliffs-hairpin and camera zoom/shake feel passes.
-12. Next: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
+12. ISLAND V2 SLICE 1 DONE 2026-07-07 (human-directed: "a 5 second
+   lap doesn't feel race-y"): the game now runs the ~15 s GP-style hub
+   (scenes/track/track02, docs/MAP_DESIGN_V2.md — read it before any
+   geometry work; MAP_DESIGN.md is superseded for geography but its
+   rules still govern). Save v4 wipes older saves on load (approved).
+   track01 and its petals are DELETED — the cliffs/dunes/forest
+   content returns re-adapted per V2-3/4; their designs live in
+   MAP_DESIGN_V2 §3 and git history (cliffs: commit 5812e53). The
+   human's pre-wipe save is parked at
+   ".../Overlap/save.dat.track01.bak". Probe/calibrator/photo all
+   retargeted; calibrated pars ring 12.4 / cut 9.1. Bake gotchas: a
+   CLOSED centerline bakes as a filled blob (offset_polyline returns
+   an annulus, RoadSegment keeps the largest polygon — split loops
+   into open segments at zero-curvature points); Curve2D point_count
+   larger than the data invents a phantom point at the origin.
+13. Next: V2-2 minimap (required — the circuit doesn't fit one
+   screen), then V2-3 dunes re-adaptation, V2-4 cliffs+woods (the X
+   returns; rival-ready per docs/IDEAS.md), V2-5 harbor (petal 3) — OLD PLAN CONTINUES: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
    foundation is in, so author it pretty from the start (navy/rust/
    crane-yellow palette per MAP_DESIGN §7). Then Jump Kit gateway
    moment (+ cliff washout jump spot), coast linker + grand tour,

@@ -10,20 +10,19 @@ const SHOT_DIR := "user://dev"
 ## Frames to let rendering settle after each camera jump.
 const SETTLE_FRAMES := 8
 
-## name -> [world position, zoom]
+## name -> [world position, zoom]. Island v2 hub viewpoints; annex
+## slices add their own.
 const SPOTS := {
-	"island": [Vector2(0, -700), 0.115],
-	"start": [Vector2(150, 480), 0.55],
-	"hub_west": [Vector2(-1050, 0), 0.5],
-	"x_crossing": [Vector2(300, -480), 0.55],
-	"cliff_gate": [Vector2(1250, -700), 0.55],
-	"ladder": [Vector2(1950, -1470), 0.4],
-	"lighthouse": [Vector2(2300, -2020), 0.55],
-	"esses": [Vector2(1100, -2250), 0.45],
-	"descent": [Vector2(280, -1300), 0.45],
-	"petal": [Vector2(-1500, 0), 0.45],
-	"forest_gap": [Vector2(-660, -800), 0.55],
-	"shore_south": [Vector2(0, 1350), 0.5],
+	"island": [Vector2(0, -100), 0.085],
+	"start": [Vector2(500, 1150), 0.5],
+	"t1_braking": [Vector2(-2350, 950), 0.45],
+	"riser": [Vector2(-2500, -300), 0.4],
+	"top_kink": [Vector2(0, -1400), 0.45],
+	"ne_sweep": [Vector2(2100, -1050), 0.45],
+	"esses": [Vector2(2150, 0), 0.4],
+	"carousel": [Vector2(2450, 950), 0.45],
+	"chord_gate": [Vector2(500, -1200), 0.5],
+	"shore_south": [Vector2(0, 2050), 0.5],
 }
 
 var _camera: Camera2D
