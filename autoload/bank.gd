@@ -16,6 +16,7 @@ const GateDefScript = preload("res://scenes/track/gate_def.gd")
 const RouteDefScript = preload("res://scenes/track/route_def.gd")
 const BankSaveScript = preload("res://autoload/bank_save.gd")
 const BankMedalsScript = preload("res://autoload/bank_medals.gd")
+const BankIncomeScript = preload("res://autoload/bank_income.gd")
 const CATALOG: UpgradeCatalogScript = preload("res://data/upgrades/catalog.tres")
 const ECONOMY: EconomyDefScript = preload("res://data/economy.tres")
 
@@ -92,13 +93,8 @@ func is_route_hinted(route_id: String) -> bool:
 	return true
 
 
-## ×2 for every fleet milestone reached (10/25/50 ghosts by default).
 func milestone_multiplier() -> float:
-	var m := 1.0
-	for count in ECONOMY.milestone_counts:
-		if ghost_slots >= count:
-			m *= ECONOMY.milestone_multiplier
-	return m
+	return BankIncomeScript.milestone_multiplier(self)
 
 
 ## Mastery medal for a route — "", "bronze", "silver" or "gold" —
@@ -141,18 +137,11 @@ func try_buy_medal_unlock(route_id: String) -> bool:
 
 
 func route_income_per_second(route_id: String) -> float:
-	var pb := route_pb(route_id)
-	if pb <= 0.0:
-		return 0.0
-	return ghost_slots * route_payout(route_id) * milestone_multiplier() \
-			* medal_multiplier(route_id) / pb
+	return BankIncomeScript.route_income_per_second(self, route_id)
 
 
 func income_per_second() -> float:
-	var total := 0.0
-	for route_id: String in route_records:
-		total += route_income_per_second(route_id)
-	return total
+	return BankIncomeScript.income_per_second(self)
 
 
 func upgrade_level(id: String) -> int:

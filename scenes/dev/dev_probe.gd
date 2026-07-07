@@ -37,44 +37,13 @@ const GATE_ID := "island_chord"
 const PETAL_GATE_ID := "west_petal"
 const CLIFF_GATE_ID := "cliff_gate"
 const MASTERY_ROUTE_ID := "ring"
-## Hairpin apex capture: the default reach radius corner-cuts the ladder.
-const CLIFF_REACH := 120.0
-
-const RING_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1050, -550),
-	Vector2(1050, -550), Vector2(1050, 550),
-]
-const CUT_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1050, -550),
-	Vector2(300, -550), Vector2(300, -100), Vector2(300, 550),
-]
-const PETAL_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1260, 300), Vector2(-1520, 0),
-	Vector2(-1260, -300), Vector2(-1050, -550),
-	Vector2(1050, -550), Vector2(1050, 550),
-]
-## Up the NE approach, the hairpin ladder, the lighthouse hairpin, the
-## esses, then the descent straight through the X into the chord.
-const CLIMB_WAYPOINTS: Array[Vector2] = [
-	Vector2(-1050, 550), Vector2(-1050, -550),
-	Vector2(600, -550), Vector2(1100, -570),
-	Vector2(1400, -790), Vector2(1540, -1120),
-	Vector2(2250, -1120), Vector2(2400, -1180), Vector2(2420, -1290),
-	Vector2(2400, -1400), Vector2(2250, -1460),
-	Vector2(1650, -1460), Vector2(1500, -1520), Vector2(1480, -1630),
-	Vector2(1500, -1740), Vector2(1650, -1800),
-	Vector2(2250, -1800), Vector2(2440, -1880), Vector2(2470, -2010),
-	Vector2(2440, -2140), Vector2(2250, -2220),
-	Vector2(1720, -2280), Vector2(1280, -2160), Vector2(860, -2300),
-	Vector2(520, -2150),
-	Vector2(260, -1750), Vector2(230, -1350), Vector2(260, -950),
-	Vector2(300, -450), Vector2(300, 100), Vector2(300, 500),
-]
 
 const CarScript = preload("res://scenes/car/car.gd")
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 const TrackScript = preload("res://scenes/track/track.gd")
 const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
+const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
+const ReportScript = preload("res://scenes/dev/dev_probe_report.gd")
 
 var _phase := Phase.DRIVE
 var _elapsed := 0.0
@@ -100,7 +69,7 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	_car = get_tree().get_first_node_in_group("player_car")
 	_driver.car = _car
-	_driver.set_route(RING_WAYPOINTS)
+	_driver.set_route(RoutesScript.RING)
 	Events.lap_completed.connect(_on_lap_completed)
 	Events.best_lap_recorded.connect(func(route_id: String, rec: LapRecordingScript) -> void:
 		print("[PROBE] best_lap_recorded route=%s samples=%d lap_time=%.2f" % [
@@ -204,7 +173,7 @@ func _process(delta: float) -> void:
 			if _elapsed >= _watch_until:
 				var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
 				print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
-				_dump_route_log()
+				ReportScript.dump_route_log(get_tree())
 				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f petal_pb=%.2f climb_pb=%.2f ghosts=%d" % [
 					_elapsed, Bank.currency, Bank.income_per_second(),
 					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
@@ -232,12 +201,12 @@ func _process(delta: float) -> void:
 		print("[PROBE] t=%.1f phase=%s pos=(%.0f, %.0f) speed=%.0f money=%.0f ghosts=%d trails=%d" % [
 			_elapsed, Phase.keys()[_phase], _car.global_position.x,
 			_car.global_position.y, _car.velocity.length(), Bank.currency,
-			ghosts.size(), _trail_count(),
+			ghosts.size(), ReportScript.trail_count(_car),
 		])
 
 	if _elapsed >= _next_screenshot:
 		_next_screenshot += SCREENSHOT_INTERVAL
-		_save_screenshot()
+		_shot_index = ReportScript.save_screenshot(get_viewport(), SHOT_DIR, _shot_index)
 
 
 func _spend() -> void:
@@ -256,8 +225,8 @@ func _buy_gate() -> void:
 	_enter(Phase.BUY_GATE, "buying the island gate")
 	var gate_ok := Bank.try_buy_gate(GATE_ID)
 	print("[PROBE] bought gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	_dump_route_log()
-	_driver.set_route(CUT_WAYPOINTS)
+	ReportScript.dump_route_log(get_tree())
+	_driver.set_route(RoutesScript.CUT)
 	_lap_target = _laps_done + CUT_LAPS
 	_enter(Phase.DRIVE_CUT, "driving the island cut")
 
@@ -266,8 +235,8 @@ func _buy_petal_gate() -> void:
 	_enter(Phase.BUY_PETAL, "buying the dune gate")
 	var gate_ok := Bank.try_buy_gate(PETAL_GATE_ID)
 	print("[PROBE] bought petal_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	_dump_route_log()
-	_driver.set_route(PETAL_WAYPOINTS)
+	ReportScript.dump_route_log(get_tree())
+	_driver.set_route(RoutesScript.PETAL)
 	_lap_target = _laps_done + PETAL_LAPS
 	_enter(Phase.DRIVE_PETAL, "driving the dune bend")
 
@@ -276,18 +245,10 @@ func _buy_cliff_gate() -> void:
 	_enter(Phase.BUY_CLIFF, "buying the cliff gate")
 	var gate_ok := Bank.try_buy_gate(CLIFF_GATE_ID)
 	print("[PROBE] bought cliff_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	_dump_route_log()
-	_driver.set_route(CLIMB_WAYPOINTS, CLIFF_REACH)
+	ReportScript.dump_route_log(get_tree())
+	_driver.set_route(RoutesScript.CLIMB, RoutesScript.CLIFF_REACH)
 	_lap_target = _laps_done + CLIMB_LAPS
 	_enter(Phase.DRIVE_CLIMB, "driving the lighthouse climb")
-
-
-func _dump_route_log() -> void:
-	var route_log := get_node_or_null("/root/Main/RouteLog")
-	if route_log == null:
-		return
-	for line: String in route_log.entries_text():
-		print("[PROBE] routelog | %s" % line)
 
 
 func _enter(phase: Phase, note: String) -> void:
@@ -299,27 +260,3 @@ func _on_lap_completed(route_id: String, lap_time: float, is_best: bool) -> void
 	_laps_done += 1
 	print("[PROBE] LAP %d route=%s completed in %.2fs best=%s" % [
 		_laps_done, route_id, lap_time, is_best])
-
-
-## Drift trail Line2Ds live as siblings of the car; the count rising in
-## corners and falling again proves per-stint spawn + fade-out cleanup.
-func _trail_count() -> int:
-	var container := _car.get_parent()
-	if container == null:
-		return 0
-	var count := 0
-	for child in container.get_children():
-		if child is Line2D:
-			count += 1
-	return count
-
-
-func _save_screenshot() -> void:
-	if DisplayServer.get_name() == "headless":
-		return
-	var image := get_viewport().get_texture().get_image()
-	if image == null:
-		return
-	var path := "%s/frame_%02d.png" % [SHOT_DIR, _shot_index]
-	image.save_png(path)
-	_shot_index += 1

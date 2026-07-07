@@ -15,7 +15,7 @@ const GRANT := 100000.0
 
 const CarScript = preload("res://scenes/car/car.gd")
 const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
-const ProbeScript = preload("res://scenes/dev/dev_probe.gd")
+const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 
 const TWIN_WAYPOINTS: Array[Vector2] = [
 	Vector2(-1050, 550), Vector2(-1260, 300), Vector2(-1520, 0),
@@ -57,19 +57,19 @@ var _route_ids: Array[String] = [
 	"ring", "cut", "petal", "twin", "forest", "climb", "high_ring",
 ]
 var _route_points := {
-	"ring": ProbeScript.RING_WAYPOINTS,
-	"cut": ProbeScript.CUT_WAYPOINTS,
-	"petal": ProbeScript.PETAL_WAYPOINTS,
+	"ring": RoutesScript.RING,
+	"cut": RoutesScript.CUT,
+	"petal": RoutesScript.PETAL,
 	"twin": TWIN_WAYPOINTS,
 	"forest": FOREST_WAYPOINTS,
-	"climb": ProbeScript.CLIMB_WAYPOINTS,
+	"climb": RoutesScript.CLIMB,
 	"high_ring": HIGH_RING_WAYPOINTS,
 }
 ## Routes whose mouths or hairpins need a tighter capture radius.
 var _route_reach := {
 	"forest": FOREST_REACH,
-	"climb": ProbeScript.CLIFF_REACH,
-	"high_ring": ProbeScript.CLIFF_REACH,
+	"climb": RoutesScript.CLIFF_REACH,
+	"high_ring": RoutesScript.CLIFF_REACH,
 }
 var _stage := -1
 var _stage_laps := 0
