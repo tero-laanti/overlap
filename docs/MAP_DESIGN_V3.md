@@ -37,6 +37,14 @@ of a lap. Crossing the strait is the "map explodes" moment: a whole
 new landmass with its own start line, its own rivals, its own fleets
 in its own livery filling its own roads.
 
+**Bridge gating (human, 2026-07-10):** the bridge to the next island
+goes on sale only when the current island is COMPLETE — all its
+routes unlocked — and you have the cash. Completion, not just money,
+is the ticket; finishing an island's route menu is what points you at
+the horizon. Bridge *flavor* varies per crossing (jump kit, ferry,
+teleport, …) — the grammar rule is only that it's travel, never a lap
+ingredient.
+
 **Junction grammar (hard rules, added to the authoring canon):**
 
 1. Variant ENTRY is a fork: the new road continues your heading
@@ -105,7 +113,9 @@ in its own livery filling its own roads.
   distant silhouettes — the horizon is the ad for the next island).
 - **Pacing**: Island 1 economy already tuned; Jump Kit price becomes
   the Island-2 ticket (replaces harbor_gate's slot at ~$2200);
-  in-island gates stay cheap and few.
+  in-island gates stay cheap and few. Per the §1 bridge-gating rule,
+  ShopPacing offers the ticket only once every Home route is unlocked
+  (dune gate owned + forest discovered), not on cash alone.
 
 ## 4. Build order (each slice playable, probe-verified)
 
@@ -125,7 +135,10 @@ in its own livery filling its own roads.
 - Port base-loop rhythm: pure stop-go (maze) or maze + dock straight
   as the lap? (Doc assumes maze+dock: burst-and-brake with one long
   breath.)
-- Does the ferry/coast linker idea survive for Island 3, or is a
-  long jump the only bridge grammar?
+- ~~Does the ferry/coast linker idea survive for Island 3, or is a
+  long jump the only bridge grammar?~~ ANSWERED 2026-07-10: bridge
+  flavor is free per crossing (jump/ferry/teleport all fine); the
+  only rule is travel-not-lap. Pick per island for theme. A teleport
+  bridge could foreshadow the non-Euclidean biome idea (IDEAS.md).
 - Island 1 keeps 2 gates (dune + ???) or just the Dune Gate before
   the Jump Kit ticket? (Doc assumes just dune — Home stays gentle.)

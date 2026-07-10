@@ -75,3 +75,28 @@ session contracts are still open homes for the draft moment.
      trickles immediately and only the FLEET is gated behind the win.
    - Requires a conscious amendment to the VISION scope fence if
      chosen.
+
+## Non-Euclidean biome (2026-07-10 brainstorm — user: "keep in mind for the future")
+
+Impossible-space tricks via **teleport seams**: turn left and re-enter
+from the right, a 180° hairpin that exits onto a different track, a
+straight that loops onto itself. Feasible because top-down + follow
+camera means the player only ever sees one screen radius — a seam is a
+`SeamSegment` pair (two line segments + translation-only transform;
+matching road headings so the non-rotating camera can't tell) that
+teleports car, velocity, and anything replaying through it.
+
+- Plumbing mostly exists: splash reset is already a mid-lap teleport
+  RouteTracker ignores; drift trails already break per stint; ghosts
+  stay dumb (a recording just contains a position jump — add a seam
+  flag on the sample so replay snaps instead of lerping a streak).
+- Art cost, not code cost: seam mouths must look identical within a
+  camera radius, and world-space shaders (mottle/water) shift phase at
+  the jump — put every seam under cover (tunnel/canopy at z+1, gantry-
+  beam precedent) and it's trivially clean + becomes the biome's look.
+- Design fit: V3 is about legibility; non-Euclidean is deliberate
+  illegibility. Contain it — a late "Mirage/Fold" island where the
+  gimmick IS the island (its per-island minimap being visibly wrong
+  advertises it), or a single secret route elsewhere.
+- Verify DevDriver waypoint-chasing survives a teleport before
+  building on it.
