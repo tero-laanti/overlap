@@ -305,9 +305,15 @@ them.
    camera zoom/shake, audio mix (dune fork + forest both signed off
    2026-07-10).
 
-## Verification workflow (mandatory before any commit)
+## Verification workflow
 
-- Boot: `godot --headless --path . --quit` → zero errors.
+- Boot: `godot --headless --path . --quit` → zero errors. Mandatory
+  before EVERY commit.
+- Full probe loop: only when the change warrants it (human, 2026-07-10:
+  "we should only run it when it really is needed") — geometry/route/
+  gate changes, car handling, save migrations, anything touching the
+  probe's own phases. Skip it for UI, docs, audio, or removals that a
+  boot check plus a read of the affected path can verify.
 - Full loop: BACK UP the human's save first, `touch .../autopilot.flag`,
   then `godot --headless --path .` (probe self-resets the profile,
   drives PB laps, buys ghost+upgrade, then all three gates in
