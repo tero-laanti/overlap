@@ -337,9 +337,20 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       surface effects mid-flight, splash-on-landing handled by the
       normal water flow. Route: Canal Runner (harbor_gate + the kit in
       practice; ability-premium payout), authored par from calibration.
-- **Accept:** fleets read as colored squads per route; a gated fleet
-      rolls gray and earns nothing until its rival falls; the canal
-      splashes a kitless car and the kit turns it into a shortcut.
+- Notes: verified 2026-07-10 — calibration drove all 9 routes (canal
+  21.87 with the kit, zero splashes; par 20.8); full probe green
+  (ladder → residents → kit at $1550 → Canal Runner discovered, PB
+  22.35, income 22.6/s, 12 ghosts, 20 laps, zero errors); dock photo
+  eyeballed. Geometry gotchas this session: container C sat across the
+  pier path (moved to the corner pocket) and the canal water initially
+  reached west of the pier, splashing maze-corner slides that used to
+  recover on grass (pulled back — keep a grass margin around splash
+  hazards). Race-result toast bug fixed: rivals only judge laps they
+  raced from the start (_racing flag), and a beaten rival can never
+  judge from hiding.
+- **Accept:** fleets read as colored squads per route; a rival-held
+      fleet appears only on the win; the canal splashes a kitless car
+      and the kit turns it into a shortcut.
 
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
