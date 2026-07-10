@@ -16,7 +16,10 @@
 [ext_resource type="PackedScene" uid="uid://dl0hqxm3vv2pe" path="res://scenes/ui/minimap.tscn" id="14_minimap"]
 [ext_resource type="PackedScene" path="res://scenes/ghost/rival_racer.tscn" id="15_rival"]
 [ext_resource type="Script" path="res://scenes/dev/dev_rival_record.gd" id="16_rivalrec"]
-[ext_resource type="Resource" path="res://data/rivals/ring_rival.tres" id="17_rivaldef"]
+[ext_resource type="Script" path="res://scenes/ghost/rival_def.gd" id="17_rivaldef"]
+[ext_resource type="Resource" path="res://data/rivals/amber.tres" id="18_amber"]
+[ext_resource type="Resource" path="res://data/rivals/cobalt.tres" id="19_cobalt"]
+[ext_resource type="Resource" path="res://data/rivals/onyx.tres" id="20_onyx"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")
@@ -27,7 +30,7 @@ script = ExtResource("1_main")
 script = ExtResource("7_fleet")
 
 [node name="RivalRacer" parent="." instance=ExtResource("15_rival")]
-def = ExtResource("17_rivaldef")
+ladder = Array[ExtResource("17_rivaldef")]([ExtResource("18_amber"), ExtResource("19_cobalt"), ExtResource("20_onyx")])
 
 [node name="Car" parent="." unique_id=381192272 instance=ExtResource("3_car")]
 position = Vector2(600, 1200)

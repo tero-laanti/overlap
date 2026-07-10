@@ -13,3 +13,5 @@ const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 ## Only laps on this route race (and can beat) the rival.
 @export var route_id := "ring"
 @export var recording: LapRecordingScript
+@export var body_color := Color(1.0, 0.62, 0.18)
+@export var stripe_color := Color(0.28, 0.16, 0.07, 0.9)

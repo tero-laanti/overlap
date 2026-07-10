@@ -8,6 +8,7 @@ extends RefCounted
 ## migrated: their PB recordings replay geometry that no longer exists
 ## (human-approved full reset, 2026-07-07).
 const SAVE_VERSION := 4
+const ONBOARDING_RIVALS: Array[String] = ["amber", "cobalt", "onyx"]
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 
 
@@ -40,6 +41,7 @@ static func write(path: String, bank: Node) -> void:
 		"medal_unlocked_routes": bank.medal_unlocked_routes,
 		"unlocked_secrets": bank.unlocked_secrets,
 		"rivals_beaten": bank.rivals_beaten,
+		"garage_unlocked": bank.garage_unlocked,
 	})
 	file.close()
 	var err := DirAccess.rename_absolute(tmp_path, path)
@@ -69,12 +71,15 @@ static func read_into(path: String, bank: Node) -> float:
 	bank.medal_unlocked_routes.assign(data.get("medal_unlocked_routes", []))
 	bank.unlocked_secrets.assign(data.get("unlocked_secrets", []))
 	bank.rivals_beaten.assign(data.get("rivals_beaten", []))
-	# Owning any ghost slot implies the onboarding win — beating the ring
-	# rival is the only path from 0 to 1 — so a slotted profile with no
-	# rivals on record is from before rivals existed. Grandfather it
-	# instead of re-gating its fleets.
-	if bank.rivals_beaten.is_empty() and bank.ghost_slots >= 1:
-		bank.rivals_beaten.append("ring_rival")
+	bank.garage_unlocked = data.get("garage_unlocked", false)
+	# Owning any ghost slot implies the whole onboarding is behind this
+	# profile — beating the final rival is the only path from 0 to 1 —
+	# so saves from before the current ladder are grandfathered by
+	# invariant, never re-gated. (Keep in sync with the ladder ids
+	# authored in main.tscn / data/rivals/.)
+	if bank.ghost_slots >= 1:
+		bank.rivals_beaten.assign(ONBOARDING_RIVALS)
+		bank.garage_unlocked = true
 	return data.get("saved_at_unix", 0.0)
 
 

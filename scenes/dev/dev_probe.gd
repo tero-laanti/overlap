@@ -1,47 +1,31 @@
 extends Node
 ## Dev-only verification probe. Dormant unless user://autopilot.flag exists
-## (created by tooling before a run). Runs a phased full-loop test with the
-## shared waypoint autopilot on the island v2 hub: drive PB laps, idle to
-## earn, buy a ghost slot and an upgrade through the real Bank APIs,
-## re-drive, watch fleet income, buy the island gate, discover the Island
-## Cut, and buy one mastery unlock. Prints telemetry and saves screenshots
-## to user://dev/. Never active in release builds. For par calibration use
+## (created by tooling before a run). Plays the whole game shape with the
+## shared waypoint autopilot: the onboarding rival ladder (drive to earn,
+## buy the ONYX spec piece by piece, beat AMBER/COBALT/ONYX), the first
+## ghost, then every gate in concertina order — driving each annex and
+## watching every fleet. Prints telemetry and saves screenshots to
+## user://dev/. Never active in release builds. For par calibration use
 ## user://calibrate.flag (DevCalibrate) instead — not both at once.
 
-enum Phase {
-	DRIVE, EARN, SPEND, REDRIVE, WATCH,
-	BUY_GATE, DRIVE_CUT, WATCH_CUT,
-	EARN_DUNE, BUY_DUNE, DRIVE_DUNE, WATCH_DUNE,
-	EARN_CLIFF, BUY_CLIFF, DRIVE_CLIMB, WATCH_CLIFF,
-	EARN_HARBOR, BUY_HARBOR, DRIVE_HARBOR, WATCH_HARBOR,
-	DONE,
-}
+enum Phase { LADDER, EARN, REDRIVE, WATCH, GATE_EARN, GATE_DRIVE, GATE_WATCH, DONE }
 
 const FLAG_PATH := "user://autopilot.flag"
 const SHOT_DIR := "user://dev"
 const TELEMETRY_INTERVAL := 1.0
 const SCREENSHOT_INTERVAL := 3.0
-const TIMEOUT := 800.0
-const DRIVE_LAPS := 2
+const TIMEOUT := 900.0
 const REDRIVE_LAPS := 2
-const CUT_LAPS := 2
-const DUNE_LAPS := 2
-const CLIMB_LAPS := 2
-const HARBOR_LAPS := 2
-const EARN_TARGET := 110.0  # ghost slot (25) + top speed (75) + slack
-const DUNE_EARN_TARGET := 280.0  # Dune Gate (250) + slack
-const CLIFF_EARN_TARGET := 950.0  # Cliff Gate (900) + slack
-const HARBOR_EARN_TARGET := 2260.0  # Harbor Gate (2200) + slack
 const WATCH_SECONDS := 16.0
-const WATCH_CUT_SECONDS := 12.0
-const WATCH_DUNE_SECONDS := 12.0
-const WATCH_CLIFF_SECONDS := 12.0
-const WATCH_HARBOR_SECONDS := 12.0
-const GATE_ID := "island_chord"
-const DUNE_GATE_ID := "west_dunes"
-const CLIFF_GATE_ID := "cliff_gate"
-const HARBOR_GATE_ID := "harbor_gate"
+const SLOT_EARN_TARGET := 30.0  # ghost slot ($25) + slack
 const MASTERY_ROUTE_ID := "ring"
+
+## The ladder phase buys these in order as lap earnings allow — ending
+## exactly at ONYX's authored spec, which beats ONYX by its handicap.
+const LADDER_BUYS: Array[Array] = [
+	["top_speed", 1], ["top_speed", 2], ["acceleration", 1],
+	["acceleration", 2], ["grip", 1],
+]
 
 const CarScript = preload("res://scenes/car/car.gd")
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
@@ -50,7 +34,7 @@ const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
 const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 const ReportScript = preload("res://scenes/dev/dev_probe_report.gd")
 
-var _phase := Phase.DRIVE
+var _phase := Phase.LADDER
 var _elapsed := 0.0
 var _next_telemetry := 0.0
 var _next_screenshot := 0.0
@@ -60,6 +44,9 @@ var _driver: DevDriverScript = DevDriverScript.new()
 var _laps_done := 0
 var _lap_target := 0
 var _watch_until := 0.0
+var _gate_index := 0
+## Concertina order; earn targets are gate price + slack.
+var _gates: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -72,9 +59,30 @@ func _ready() -> void:
 	Bank.reset_profile()
 	print("[PROBE] profile reset")
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
+	_gates = [
+		{"id": "island_chord", "route": "cut", "points": RoutesScript.CUT,
+			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
+			"earn": 130.0, "laps": 2, "watch": 12.0},
+		{"id": "west_dunes", "route": "dune", "points": RoutesScript.DUNE,
+			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
+			"earn": 280.0, "laps": 2, "watch": 12.0},
+		{"id": "cliff_gate", "route": "climb", "points": RoutesScript.CLIMB,
+			"reach": RoutesScript.CLIFF_REACH,
+			"earn": 950.0, "laps": 2, "watch": 12.0},
+		{"id": "harbor_gate", "route": "harbor", "points": RoutesScript.HARBOR,
+			"reach": 130.0, "earn": 2260.0, "laps": 2, "watch": 12.0},
+	]
 	_car = get_tree().get_first_node_in_group("player_car")
 	_driver.car = _car
 	_driver.set_route(RoutesScript.RING)
+	_connect_logging()
+	print("[PROBE] loaded money=%.0f ring_pb=%.2f slots=%d routes=%d garage=%s" % [
+		Bank.currency, Bank.route_pb("ring"), Bank.ghost_slots,
+		Bank.discovered_routes.size(), Bank.garage_unlocked,
+	])
+
+
+func _connect_logging() -> void:
 	Events.lap_completed.connect(_on_lap_completed)
 	Events.best_lap_recorded.connect(func(route_id: String, rec: LapRecordingScript) -> void:
 		print("[PROBE] best_lap_recorded route=%s samples=%d lap_time=%.2f" % [
@@ -92,15 +100,20 @@ func _ready() -> void:
 			_car.global_position.x, _car.global_position.y]))
 	Events.secret_unlocked.connect(func(secret_id: String) -> void:
 		print("[PROBE] secret_unlocked id=%s" % secret_id))
+	Events.garage_unlocked.connect(func() -> void:
+		print("[PROBE] garage_unlocked money=%.0f" % Bank.currency))
+	Events.rival_race_finished.connect(func(rival_id: String, _n: String,
+			player_time: float, rival_time: float, won: bool) -> void:
+		print("[PROBE] rival_race id=%s player=%.2f rival=%.2f won=%s" % [
+			rival_id, player_time, rival_time, won]))
 	Events.rival_beaten.connect(func(rival_id: String) -> void:
-		print("[PROBE] rival_beaten id=%s slots=%d" % [rival_id, Bank.ghost_slots]))
+		print("[PROBE] rival_beaten id=%s slots=%d mult=x%.0f" % [
+			rival_id, Bank.ghost_slots, Bank.rival_multiplier()]))
+	Events.ghost_hired.connect(func(count: int) -> void:
+		print("[PROBE] ghost_hired slots=%d" % count))
 	var track: TrackScript = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
-	print("[PROBE] loaded money=%.0f ring_pb=%.2f slots=%d routes=%d" % [
-		Bank.currency, Bank.route_pb("ring"), Bank.ghost_slots,
-		Bank.discovered_routes.size(),
-	])
 
 
 func _process(delta: float) -> void:
@@ -109,107 +122,60 @@ func _process(delta: float) -> void:
 		return
 
 	match _phase:
-		Phase.DRIVE:
+		Phase.LADDER:
 			_driver.drive(delta)
-			if _laps_done >= DRIVE_LAPS:
+			if Bank.ghost_slots >= 1:
 				_driver.release_all()
-				_enter(Phase.EARN, "idling until $%d" % int(EARN_TARGET))
+				print("[PROBE] ladder done laps=%d money=%.0f mult=x%.0f" % [
+					_laps_done, Bank.currency, Bank.rival_multiplier()])
+				_enter(Phase.EARN, "idling until $%d" % int(SLOT_EARN_TARGET))
 		Phase.EARN:
-			if Bank.currency >= EARN_TARGET:
-				_spend()
-		Phase.SPEND:
-			pass  # transitions inside _spend()
+			if Bank.currency >= SLOT_EARN_TARGET:
+				var slot_ok := Bank.try_buy_ghost_slot()
+				print("[PROBE] bought ghost_slot=%s money=%.0f slots=%d" % [
+					slot_ok, Bank.currency, Bank.ghost_slots])
+				_lap_target = _laps_done + REDRIVE_LAPS
+				_enter(Phase.REDRIVE, "re-driving the ring with the fleet out")
 		Phase.REDRIVE:
 			_driver.drive(delta)
 			if _laps_done >= _lap_target:
 				_driver.release_all()
 				_watch_until = _elapsed + WATCH_SECONDS
-				var shop := get_node_or_null("/root/Main/Shop")
-				if shop:
-					shop.visible = true  # show shop for screenshots
 				_enter(Phase.WATCH, "watching fleet income")
 		Phase.WATCH:
 			if _elapsed >= _watch_until:
 				print("[PROBE] ring done money=%.0f income=%.2f/s slots=%d laps=%d" % [
 					Bank.currency, Bank.income_per_second(), Bank.ghost_slots, _laps_done,
 				])
-				_buy_gate()
-		Phase.BUY_GATE:
-			pass  # transitions inside _buy_gate()
-		Phase.DRIVE_CUT:
-			_driver.drive(delta)
-			if _laps_done >= _lap_target:
-				_driver.release_all()
-				_watch_until = _elapsed + WATCH_CUT_SECONDS
-				_enter(Phase.WATCH_CUT, "watching both fleets")
-		Phase.WATCH_CUT:
-			if _elapsed >= _watch_until:
-				print("[PROBE] cut done money=%.0f income=%.2f/s cut_pb=%.2f" % [
-					Bank.currency, Bank.income_per_second(), Bank.route_pb("cut"),
-				])
-				_enter(Phase.EARN_DUNE, "idling until $%d" % int(DUNE_EARN_TARGET))
-		Phase.EARN_DUNE:
-			if Bank.currency >= DUNE_EARN_TARGET:
-				_buy_dune_gate()
-		Phase.BUY_DUNE:
-			pass  # transitions inside _buy_dune_gate()
-		Phase.DRIVE_DUNE:
-			_driver.drive(delta)
-			if _laps_done >= _lap_target:
-				_driver.release_all()
-				_watch_until = _elapsed + WATCH_DUNE_SECONDS
-				_enter(Phase.WATCH_DUNE, "watching every fleet")
-		Phase.WATCH_DUNE:
-			if _elapsed >= _watch_until:
-				print("[PROBE] dune done money=%.0f income=%.2f/s dune_pb=%.2f" % [
-					Bank.currency, Bank.income_per_second(), Bank.route_pb("dune"),
-				])
-				_enter(Phase.EARN_CLIFF, "idling until $%d" % int(CLIFF_EARN_TARGET))
-		Phase.EARN_CLIFF:
-			if Bank.currency >= CLIFF_EARN_TARGET:
-				_buy_cliff_gate()
-		Phase.BUY_CLIFF:
-			pass  # transitions inside _buy_cliff_gate()
-		Phase.DRIVE_CLIMB:
-			_driver.drive(delta)
-			if _laps_done >= _lap_target:
-				_driver.release_all()
-				_watch_until = _elapsed + WATCH_CLIFF_SECONDS
-				_enter(Phase.WATCH_CLIFF, "watching every fleet")
-		Phase.WATCH_CLIFF:
-			if _elapsed >= _watch_until:
-				print("[PROBE] climb done money=%.0f income=%.2f/s climb_pb=%.2f" % [
-					Bank.currency, Bank.income_per_second(), Bank.route_pb("climb"),
-				])
-				_enter(Phase.EARN_HARBOR, "idling until $%d" % int(HARBOR_EARN_TARGET))
-		Phase.EARN_HARBOR:
-			if Bank.currency >= HARBOR_EARN_TARGET:
-				_buy_harbor_gate()
-		Phase.BUY_HARBOR:
-			pass  # transitions inside _buy_harbor_gate()
-		Phase.DRIVE_HARBOR:
-			_driver.drive(delta)
-			if _laps_done >= _lap_target:
-				_driver.release_all()
-				_watch_until = _elapsed + WATCH_HARBOR_SECONDS
-				_enter(Phase.WATCH_HARBOR, "watching every fleet")
-		Phase.WATCH_HARBOR:
-			if _elapsed >= _watch_until:
-				var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
-				print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
+				_enter(Phase.GATE_EARN, "idling until $%d" % int(_gates[0].earn))
+		Phase.GATE_EARN:
+			var gate: Dictionary = _gates[_gate_index]
+			if Bank.currency >= float(gate.earn):
+				var gate_ok := Bank.try_buy_gate(gate.id)
+				print("[PROBE] bought gate %s=%s money=%.0f" % [gate.id, gate_ok, Bank.currency])
 				ReportScript.dump_route_log(get_tree())
-				print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f dune_pb=%.2f climb_pb=%.2f harbor_pb=%.2f ghosts=%d" % [
-					_elapsed, Bank.currency, Bank.income_per_second(),
-					Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
-					Bank.route_pb("cut"), Bank.route_pb("dune"),
-					Bank.route_pb("climb"), Bank.route_pb("harbor"),
-					get_tree().get_nodes_in_group("ghost").size(),
-				])
-				_enter(Phase.DONE, "finished")
-				set_process(false)
-				if DisplayServer.get_name() == "headless":
-					get_tree().quit()
-				return
+				_driver.set_route(gate.points, float(gate.reach))
+				_lap_target = _laps_done + int(gate.laps)
+				_enter(Phase.GATE_DRIVE, "driving %s" % gate.route)
+		Phase.GATE_DRIVE:
+			_driver.drive(delta)
+			if _laps_done >= _lap_target:
+				_driver.release_all()
+				_watch_until = _elapsed + float(_gates[_gate_index].watch)
+				_enter(Phase.GATE_WATCH, "watching every fleet")
+		Phase.GATE_WATCH:
+			if _elapsed >= _watch_until:
+				var gate: Dictionary = _gates[_gate_index]
+				print("[PROBE] %s done money=%.0f income=%.2f/s pb=%.2f" % [
+					gate.route, Bank.currency, Bank.income_per_second(),
+					Bank.route_pb(gate.route)])
+				_gate_index += 1
+				if _gate_index < _gates.size():
+					_enter(Phase.GATE_EARN,
+							"idling until $%d" % int(_gates[_gate_index].earn))
+				else:
+					_finish()
+					return
 		Phase.DONE:
 			return
 
@@ -233,56 +199,21 @@ func _process(delta: float) -> void:
 		_shot_index = ReportScript.save_screenshot(get_viewport(), SHOT_DIR, _shot_index)
 
 
-func _spend() -> void:
-	_enter(Phase.SPEND, "buying")
-	var slot_ok := Bank.try_buy_ghost_slot()
-	var upgrade_ok := Bank.try_buy_upgrade("top_speed")
-	print("[PROBE] bought ghost_slot=%s top_speed=%s money=%.0f slots=%d max_speed=%.0f" % [
-		slot_ok, upgrade_ok, Bank.currency, Bank.ghost_slots,
-		_car.effective_stats().max_speed,
+func _finish() -> void:
+	var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
+	print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
+	ReportScript.dump_route_log(get_tree())
+	print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f dune_pb=%.2f climb_pb=%.2f harbor_pb=%.2f ghosts=%d" % [
+		_elapsed, Bank.currency, Bank.income_per_second(),
+		Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
+		Bank.route_pb("cut"), Bank.route_pb("dune"),
+		Bank.route_pb("climb"), Bank.route_pb("harbor"),
+		get_tree().get_nodes_in_group("ghost").size(),
 	])
-	_lap_target = _laps_done + REDRIVE_LAPS
-	_enter(Phase.REDRIVE, "clearing stale lap, then one upgraded lap")
-
-
-func _buy_gate() -> void:
-	_enter(Phase.BUY_GATE, "buying the island gate")
-	var gate_ok := Bank.try_buy_gate(GATE_ID)
-	print("[PROBE] bought gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	ReportScript.dump_route_log(get_tree())
-	_driver.set_route(RoutesScript.CUT)
-	_lap_target = _laps_done + CUT_LAPS
-	_enter(Phase.DRIVE_CUT, "driving the island cut")
-
-
-func _buy_dune_gate() -> void:
-	_enter(Phase.BUY_DUNE, "buying the dune gate")
-	var gate_ok := Bank.try_buy_gate(DUNE_GATE_ID)
-	print("[PROBE] bought dune_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	ReportScript.dump_route_log(get_tree())
-	_driver.set_route(RoutesScript.DUNE)
-	_lap_target = _laps_done + DUNE_LAPS
-	_enter(Phase.DRIVE_DUNE, "driving the dune bend")
-
-
-func _buy_cliff_gate() -> void:
-	_enter(Phase.BUY_CLIFF, "buying the cliff gate")
-	var gate_ok := Bank.try_buy_gate(CLIFF_GATE_ID)
-	print("[PROBE] bought cliff_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	ReportScript.dump_route_log(get_tree())
-	_driver.set_route(RoutesScript.CLIMB, RoutesScript.CLIFF_REACH)
-	_lap_target = _laps_done + CLIMB_LAPS
-	_enter(Phase.DRIVE_CLIMB, "driving the lighthouse climb")
-
-
-func _buy_harbor_gate() -> void:
-	_enter(Phase.BUY_HARBOR, "buying the harbor gate")
-	var gate_ok := Bank.try_buy_gate(HARBOR_GATE_ID)
-	print("[PROBE] bought harbor_gate=%s money=%.0f" % [gate_ok, Bank.currency])
-	ReportScript.dump_route_log(get_tree())
-	_driver.set_route(RoutesScript.HARBOR, 130.0)
-	_lap_target = _laps_done + HARBOR_LAPS
-	_enter(Phase.DRIVE_HARBOR, "driving the container run")
+	_enter(Phase.DONE, "finished")
+	set_process(false)
+	if DisplayServer.get_name() == "headless":
+		get_tree().quit()
 
 
 func _enter(phase: Phase, note: String) -> void:
@@ -294,3 +225,11 @@ func _on_lap_completed(route_id: String, lap_time: float, is_best: bool) -> void
 	_laps_done += 1
 	print("[PROBE] LAP %d route=%s completed in %.2fs best=%s" % [
 		_laps_done, route_id, lap_time, is_best])
+	# During the ladder, spend lap earnings toward the ONYX spec the
+	# moment each piece is affordable — the intended player arc.
+	if _phase == Phase.LADDER:
+		for buy: Array in LADDER_BUYS:
+			if Bank.upgrade_level(buy[0]) < int(buy[1]) \
+					and Bank.try_buy_upgrade(buy[0]):
+				print("[PROBE] bought %s=%d money=%.0f" % [
+					buy[0], Bank.upgrade_level(buy[0]), Bank.currency])

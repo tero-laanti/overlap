@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3 uid="uid://bvxq2h44wr02k"]
+[gd_scene load_steps=44 format=3 uid="uid://bvxq2h44wr02k"]
 
 [ext_resource type="Script" uid="uid://7t7lgp08bywd" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" uid="uid://c6qm608rh2q2p" path="res://data/tracks/track01.tres" id="2_def"]
@@ -13,6 +13,8 @@
 [ext_resource type="PackedScene" uid="uid://b61ybjhs5jr4n" path="res://scenes/track/tree.tscn" id="11_tree"]
 [ext_resource type="Script" uid="uid://b75vxexwudubg" path="res://scenes/track/secret_road.gd" id="12_secret"]
 [ext_resource type="Script" uid="uid://cx67rrxf0ksfu" path="res://scenes/track/spinner.gd" id="13_spinner"]
+[ext_resource type="Script" path="res://scenes/track/garage_zone.gd" id="14_garagezone"]
+[ext_resource type="Script" path="res://scenes/track/track_reveal.gd" id="15_reveal"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
 shader = ExtResource("7_water_shader")
@@ -206,12 +208,12 @@ z_index = -2
 material = SubResource("ShaderMaterial_infield")
 polygon = PackedVector2Array(-2000, 850, -2300, 200, -2250, -500, -1800, -1050, -600, -1200, 700, -1150, 1600, -900, 1900, -300, 1800, 300, 1500, 800, 400, 1000, -1000, 1000)
 
-[node name="DuneField" type="Polygon2D" parent="."]
+[node name="DuneField" type="Polygon2D" parent="." groups=["zone_west_dunes"]]
 z_index = -2
 material = SubResource("ShaderMaterial_dunes")
 polygon = PackedVector2Array(-5300, -600, -5000, -1500, -4200, -1700, -3200, -1650, -2500, -1100, -2400, -300, -2600, 600, -3200, 1000, -4400, 950, -5200, 300)
 
-[node name="CliffField" type="Polygon2D" parent="."]
+[node name="CliffField" type="Polygon2D" parent="." groups=["zone_cliff_gate"]]
 z_index = -2
 material = SubResource("ShaderMaterial_cliff_rock")
 polygon = PackedVector2Array(2000, -1500, 2250, -1700, 2150, -2300, 2100, -2750, 1550, -2800, 1280, -3000, 1550, -3250, 2350, -3330, 3050, -3350, 3500, -3150, 3620, -2500, 3550, -1800, 3200, -1550, 2550, -1420)
@@ -221,14 +223,14 @@ z_index = -2
 material = SubResource("ShaderMaterial_woods")
 polygon = PackedVector2Array(-3200, -1600, -3300, -2400, -2900, -3300, -2100, -3650, -900, -3600, -250, -3100, -150, -2300, -350, -1750, -900, -1550, -2400, -1500)
 
-[node name="HarborField" type="Polygon2D" parent="."]
+[node name="HarborField" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
 z_index = -2
 material = SubResource("ShaderMaterial_harbor")
 polygon = PackedVector2Array(2500, -1000, 4300, -1100, 5300, -700, 5350, 900, 4300, 1100, 2900, 900, 2400, 200, 2300, -500)
 
 [node name="Road" type="Node2D" parent="."]
 
-[node name="SegChord" parent="Road" instance=ExtResource("6_segment")]
+[node name="SegChord" parent="Road" groups=["zone_island_chord"] instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_chord")
 
 [node name="ForestRoad" type="Node2D" parent="Road"]
@@ -242,7 +244,7 @@ half_width = 140.0
 color = Color(0.23, 0.27, 0.23, 1)
 border_color = Color(0.15, 0.19, 0.14, 1)
 
-[node name="SegCliff" parent="Road" instance=ExtResource("6_segment")]
+[node name="SegCliff" parent="Road" groups=["zone_cliff_gate"] instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_cliff")
 half_width = 115.0
 color = Color(0.29, 0.3, 0.34, 1)
@@ -250,13 +252,13 @@ border_width = 60.0
 border_color = Color(0.37, 0.36, 0.38, 1)
 rubble = true
 
-[node name="SegHarbor" parent="Road" instance=ExtResource("6_segment")]
+[node name="SegHarbor" parent="Road" groups=["zone_harbor_gate"] instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_harbor")
 half_width = 130.0
 color = Color(0.24, 0.26, 0.3, 1)
 border_color = Color(0.45, 0.3, 0.22, 1)
 
-[node name="SegDune" parent="Road" instance=ExtResource("6_segment")]
+[node name="SegDune" parent="Road" groups=["zone_west_dunes"] instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_dune")
 color = Color(0.72, 0.63, 0.42, 1)
 border_color = Color(0.55, 0.42, 0.25, 1)
@@ -298,6 +300,15 @@ polygon = PackedVector2Array(-400, 1382, 700, 1382, 700, 1402, -400, 1402)
 color = Color(0.75, 0.2, 0.18, 1)
 polygon = PackedVector2Array(-400, 1382, 700, 1382, 700, 1388, -400, 1388)
 
+[node name="GaragePad" type="Polygon2D" parent="."]
+z_index = -1
+color = Color(0.24, 0.25, 0.28, 1)
+polygon = PackedVector2Array(170, 1340, 480, 1340, 480, 1436, 170, 1436)
+
+[node name="GarageZone" type="Node2D" parent="."]
+position = Vector2(325, 1400)
+script = ExtResource("14_garagezone")
+
 [node name="GarageBase" type="Polygon2D" parent="."]
 color = Color(0.2, 0.21, 0.24, 1)
 polygon = PackedVector2Array(140, 1436, 510, 1436, 510, 1656, 140, 1656)
@@ -313,6 +324,9 @@ polygon = PackedVector2Array(200, 1436, 450, 1436, 450, 1466, 200, 1466)
 [node name="GarageLamp" type="Polygon2D" parent="."]
 color = Color(1, 0.85, 0.4, 1)
 polygon = PackedVector2Array(468, 1442, 490, 1442, 490, 1460, 468, 1460)
+
+[node name="TrackReveal" type="Node" parent="."]
+script = ExtResource("15_reveal")
 
 [node name="RouteTracker" type="Node" parent="."]
 script = ExtResource("4_tracker")
@@ -377,7 +391,7 @@ curve = SubResource("Curve2D_wall_west")
 [node name="WallNorth" parent="Walls" instance=ExtResource("10_wall")]
 curve = SubResource("Curve2D_wall_north")
 
-[node name="Lighthouse" type="StaticBody2D" parent="."]
+[node name="Lighthouse" type="StaticBody2D" parent="." groups=["zone_cliff_gate"]]
 position = Vector2(3110, -2710)
 
 [node name="Shape" type="CollisionShape2D" parent="Lighthouse"]
@@ -502,7 +516,7 @@ polygon = PackedVector2Array(-20, -12, 20, -12, 20, 12, -20, 12)
 color = Color(0.15, 0.13, 0.1, 1)
 polygon = PackedVector2Array(110, -12, 150, -12, 150, 12, 110, 12)
 
-[node name="Containers" type="Node2D" parent="."]
+[node name="Containers" type="Node2D" parent="." groups=["zone_harbor_gate"]]
 
 [node name="ContainerA" parent="Containers" instance=ExtResource("10_wall")]
 curve = SubResource("Curve2D_container_a")
@@ -534,11 +548,11 @@ curve = SubResource("Curve2D_container_f")
 half_thickness = 30.0
 color = Color(0.8, 0.65, 0.15, 1)
 
-[node name="CraneBase" type="Polygon2D" parent="."]
+[node name="CraneBase" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
 color = Color(0.8, 0.65, 0.15, 1)
 polygon = PackedVector2Array(4380, -1080, 4460, -1080, 4460, -920, 4380, -920)
 
-[node name="CraneBoom" type="Polygon2D" parent="."]
+[node name="CraneBoom" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
 z_index = 1
 color = Color(0.85, 0.7, 0.2, 1)
 polygon = PackedVector2Array(4400, -1020, 4900, -1000, 4900, -970, 4400, -990)

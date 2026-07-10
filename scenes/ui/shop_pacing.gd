@@ -23,7 +23,11 @@ static func visible_upgrades(bank: Node) -> Array:
 	return visible
 
 
+## Gates go on sale only once ghosts exist (the rival ladder is done) —
+## during onboarding the island is just the hub.
 static func next_gate(bank: Node) -> Resource:
+	if bank.ghost_slots < 1:
+		return null
 	var cheapest: Resource = null
 	for gate in bank.unpurchased_gates():
 		if cheapest == null or gate.price < cheapest.price:
@@ -31,9 +35,12 @@ static func next_gate(bank: Node) -> Resource:
 	return cheapest
 
 
-## Discovered routes whose mastery timing is still for sale.
+## Discovered routes whose mastery timing is still for sale. Medals
+## multiply fleet income, so they wait for the ghost era too.
 static func medal_offers(bank: Node) -> Array:
 	var offers := []
+	if bank.ghost_slots < 1:
+		return offers
 	for route in bank.authored_routes():
 		if route.id in bank.discovered_routes \
 				and not bank.is_medal_unlocked(route.id):

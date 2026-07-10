@@ -6,9 +6,16 @@ extends Resource
 
 @export var ghost_base_cost := 25.0
 @export var ghost_cost_growth := 1.30
-## Player's own completed laps pay payout × this (active play always beats
-## watching — the anti-"optimal play is not playing" guard).
-@export var active_lap_multiplier := 3.0
+## Player's own completed laps pay payout × this × the rival ladder
+## multiplier. The rival ladder is the early-game income curve, so this
+## stays at 1 — see "Onboarding v2" in docs/DESIGN_NOTES.md.
+@export var active_lap_multiplier := 1.0
+## Every beaten rival multiplies ACTIVE lap payouts by this (×2, ×4, ×8
+## through the ladder). Ghost income is untouched — the tuned fleet
+## economy starts only after the last rival falls.
+@export var rival_beaten_multiplier := 2.0
+## Driving earnings at which the GARAGE opens (one-way latch, ~2 laps).
+@export var garage_unlock_cash := 50.0
 ## Offline income is capped so long absences help without trivializing the loop.
 @export var offline_cap_seconds := 8.0 * 60.0 * 60.0
 ## Fleet sizes that each multiply all income by milestone_multiplier.

@@ -5,7 +5,10 @@ extends CanvasLayer
 ## GARAGE grows as the run progresses. Toggled with the toggle_shop action.
 
 const ShopPacingScript = preload("res://scenes/ui/shop_pacing.gd")
+const CarScript = preload("res://scenes/car/car.gd")
 
+var _car: CarScript
+var _garage_zone: Node2D
 var _upgrade_rows := {}
 var _gate_rows := {}
 var _medal_rows := {}
@@ -29,11 +32,28 @@ func _ready() -> void:
 	_rebuild.call_deferred()
 
 
+## Shopping happens AT the garage: TAB only works parked by the
+## building, and driving off closes the menu.
 func _process(_delta: float) -> void:
-	if Input.is_action_just_pressed("toggle_shop"):
+	if visible and not _at_garage():
+		visible = false
+		return
+	if Input.is_action_just_pressed("toggle_shop") and _at_garage():
 		visible = not visible
 		if visible:
 			_refresh()
+
+
+func _at_garage() -> bool:
+	if not Bank.garage_unlocked:
+		return false
+	if _car == null:
+		_car = get_tree().get_first_node_in_group("player_car")
+	if _garage_zone == null:
+		_garage_zone = get_tree().get_first_node_in_group("garage_zone")
+	if _car == null or _garage_zone == null:
+		return false
+	return _garage_zone.contains(_car.global_position)
 
 
 func _rebuild() -> void:
@@ -121,6 +141,8 @@ func _refresh() -> void:
 
 
 func _milestone_text() -> String:
+	if Bank.ghost_slots < 1:
+		return "Ghost bays locked — beat the rivals"
 	var passed := 0
 	for count: int in Bank.ECONOMY.milestone_counts:
 		if Bank.ghost_slots < count:

@@ -270,6 +270,36 @@ Tick when done. Notes about deviations go under the slice, not in new files.
 - **Accept:** a fresh profile races AMBER from the start line, income
       stays 0 until the win, and beating it hires ghost #1.
 
+## Slice 10 — Onboarding v2: the rival ladder (2026-07-10, human-directed)
+- [x] Three rival tiers replace the single rival: AMBER (base-bot ×1.04,
+      15.93) → COBALT (+TS1, 15.06) → ONYX (TS2/Accel2/Grip1, 14.28),
+      authored per spec by the 3-stage DevRivalRecord. Each win ×2 on
+      ACTIVE lap payouts (×2/×4/×8); beating ONYX unlocks personal
+      ghosts and idle income. Active lap multiplier dropped 3→1 — the
+      ladder is the early income curve (DESIGN_NOTES "Onboarding v2").
+- [x] The GARAGE is a place: reveals at $50 driving earnings (toast),
+      shop opens only parked at the building (GarageZone + pad), and
+      sells only upgrades until ghosts exist (gates/medals/slots wait).
+- [x] Progressive map reveal: locked annex roads/fields/dressing hidden
+      with their collision (TrackReveal + zone_<gate_id> groups); the
+      next gate on sale previews its road faintly and reveals fully on
+      purchase; minimap follows (+ only the on-sale gate pin); gate
+      bars always visible as locked promises; forest secret untouched.
+- [x] Onboarding feedback: race-result toasts with the time delta and
+      new multiplier, garage-open and ghosts-unlocked toasts, cold-open
+      "AMBER wants a race", controls hint until the garage opens.
+- Notes: verified 2026-07-10 — full probe green driving the entire arc:
+  AMBER lap 1 → garage $63 lap 2 → upgrades every ~2 laps → COBALT
+  lap 6 → ONYX lap 8 (ghost #1, ×8) → slot → all four gates → 18 laps,
+  income 17.20/s, 10 ghosts, 405 s, zero errors. Fresh-profile photos:
+  hub-only island, minimap hub-only (first build deferred past the
+  reveal sync), rival + toast + controls hint on the grid. Existing
+  saves grandfather by invariant (slots ≥ 1 ⇒ ladder done + garage).
+  Human feel pass PENDING: ladder pacing and the $50/cost curve.
+- **Accept:** a fresh profile sees ONLY the hub and one named rival;
+      income is laps-only until ONYX falls; the garage is a building
+      you drive to; annexes appear as they're earned.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

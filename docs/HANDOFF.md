@@ -201,12 +201,33 @@ them.
    Generalization parked in IDEAS.md: resident rival per zone, beat
    it to claim the route's fleet/medal — discovery toast → rival
    intro is the strong per-zone beat.
-15. Next candidates: coast linker + grand tour (needs the harbor's
+15. ONBOARDING V2 DONE 2026-07-10 (human-directed: "too much going on,
+   everything unlocks too fast, AMBER too easy"; ROADMAP slice 10,
+   DESIGN_NOTES "Onboarding v2"): THREE rival tiers — AMBER 15.93 →
+   COBALT 15.06 → ONYX 14.28 — each authored as the bot at a real car
+   spec × small handicap (3-stage DevRivalRecord; reaching the spec
+   beats the tier). Each win ×2 on ACTIVE lap payouts (economy
+   rival_beaten_multiplier; active_lap_multiplier is now 1.0 — the
+   ladder IS the early income curve); ONYX unlocks ghosts/idle. The
+   GARAGE is a building: reveals at $50 (economy garage_unlock_cash),
+   shop opens only inside GarageZone (track scene), sells upgrades
+   only until ghosts exist (ShopPacing gates gates/medals; Hire Ghost
+   row hidden at slots 0). Progressive reveal: TrackReveal +
+   zone_<gate_id> node groups hide locked annexes (visuals AND
+   collision); next-on-sale gate previews its road at alpha 0.22;
+   minimap only draws visible segments (first build DEFERRED past
+   TrackReveal's deferred sync — both queue at ready, tree order
+   matters) and only the on-sale gate pin. Save grandfather is
+   invariant-based: slots >= 1 ⇒ all ONBOARDING_RIVALS + garage
+   (bank_save.gd — keep that const in sync with main.tscn's ladder).
+   Probe now drives the whole arc (buys the ONYX spec from lap
+   earnings mid-ladder). Human feel pass PENDING: ladder pacing.
+16. Next candidates: coast linker + grand tour (needs the harbor's
    south edge), Jump Kit gateway moment (+ cliff washout jump spot),
-   per-zone resident rivals (IDEAS.md), gate-exhausted badges,
-   prestige (pick-1-of-3 seasons). Human feel passes pending: AMBER's
-   pace, cliffs hairpins at v2 scale, camera zoom/shake, audio mix in
-   long play.
+   per-zone resident rivals (IDEAS.md — natural sequel to the ladder),
+   gate-exhausted badges, prestige (pick-1-of-3 seasons). Human feel
+   passes pending: rival ladder pacing, cliffs hairpins at v2 scale,
+   camera zoom/shake, audio mix in long play.
 
 ## Verification workflow (mandatory before any commit)
 
@@ -223,10 +244,13 @@ them.
   (that's how every slice here got verified — its phased scenario is
   the project's de-facto integration test).
 - Dev flags (user://, debug builds, never combined): autopilot.flag
-  (probe), calibrate.flag (pars), rivalrecord.flag (authors
-  data/rivals/ring_rival.tres from a base-car bot run), photo.flag
-  (windowed art check). All of them wipe or rewrite the save — back
-  up the human's save.dat first and restore it after, every time.
+  (probe), calibrate.flag (pars), rivalrecord.flag (authors the three
+  data/rivals/*.tres from staged bot runs), photo.flag (windowed art
+  check). All of them wipe or rewrite the save — back up the human's
+  save.dat ONCE at session start to one canonical file and restore
+  that same file after every dev run. Do NOT re-copy save.dat between
+  runs: a 2026-07-10 session chained backups and briefly "restored" a
+  dev run's save over the human's (caught by inspecting the file).
 - Editor bridge (godot-mcp) needs the editor open; game-window
   screenshots don't work on macOS — the probe's user://dev/*.png frames
   are the substitute. If bridge calls time out, kill orphaned

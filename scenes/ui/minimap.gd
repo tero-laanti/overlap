@@ -7,6 +7,7 @@ extends Control
 
 const RoadSegmentScript = preload("res://scenes/track/road_segment.gd")
 const CarScript = preload("res://scenes/car/car.gd")
+const ShopPacingScript = preload("res://scenes/ui/shop_pacing.gd")
 
 const REBUILD_INTERVAL := 2.0
 const BG_COLOR := Color(0.05, 0.07, 0.1, 0.55)
@@ -18,7 +19,9 @@ const CAR_COLOR := Color(0.95, 0.25, 0.2, 1.0)
 const MAX_GHOST_DOTS := 40
 
 var _world := Rect2()
-var _roads: Array[PackedVector2Array] = []
+## Each entry: {"line": PackedVector2Array, "alpha": float} — preview
+## (faded) roads draw as faintly on the map as in the world.
+var _roads: Array[Dictionary] = []
 var _rebuild_timer := 0.0
 var _track: Node2D
 var _car: CarScript
@@ -37,7 +40,12 @@ func _ready() -> void:
 	# Height follows the island's aspect so the map never distorts.
 	custom_minimum_size = Vector2(size.x, size.x * _world.size.y / _world.size.x)
 	size = custom_minimum_size
-	_rebuild_roads()
+	# Deferred so the first build runs after TrackReveal's deferred sync
+	# (also queued at ready, earlier in the tree) hides locked annexes.
+	_rebuild_roads.call_deferred()
+	Events.gate_purchased.connect(func(_id: String) -> void: _rebuild_roads())
+	Events.ghost_hired.connect(func(_count: int) -> void: _rebuild_roads())
+	Events.profile_reset.connect(_rebuild_roads)
 
 
 func _process(delta: float) -> void:
@@ -56,7 +64,7 @@ func _rebuild_roads() -> void:
 		var line := PackedVector2Array()
 		for point in segment.curve.tessellate(4, 8.0):
 			line.append(_to_map(segment.to_global(point)))
-		_roads.append(line)
+		_roads.append({"line": line, "alpha": segment.modulate.a})
 
 
 func _find_segments(node: Node) -> Array[RoadSegmentScript]:
@@ -76,12 +84,18 @@ func _to_map(world_pos: Vector2) -> Vector2:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), BG_COLOR)
 	draw_rect(Rect2(Vector2.ZERO, size), COAST_COLOR, false, 1.5)
-	for line in _roads:
-		if line.size() >= 2:
-			draw_polyline(line, ROAD_COLOR, 2.0)
-	for gate in get_tree().get_nodes_in_group("gate"):
-		if gate.visible:  # purchased gates hide themselves
-			_draw_dot(gate.global_position, GATE_COLOR, 3.5)
+	for road in _roads:
+		if road.line.size() >= 2:
+			var color: Color = ROAD_COLOR
+			color.a *= road.alpha
+			draw_polyline(road.line, color, 2.0)
+	# Only the gate currently on sale gets a pin — closed doors farther
+	# down the ladder stay off the map.
+	var next: Resource = ShopPacingScript.next_gate(Bank)
+	if next != null:
+		for gate in get_tree().get_nodes_in_group("gate"):
+			if gate.visible and gate.gate_id == next.id:
+				_draw_dot(gate.global_position, GATE_COLOR, 3.5)
 	var ghosts := get_tree().get_nodes_in_group("ghost")
 	for i in mini(ghosts.size(), MAX_GHOST_DOTS):
 		_draw_dot(ghosts[i].global_position, GHOST_COLOR, 1.5)

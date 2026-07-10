@@ -28,8 +28,11 @@ var purchased_gates: Array[String] = []
 var medal_unlocked_routes: Array[String] = []
 var unlocked_secrets: Array[String] = []
 var rivals_beaten: Array[String] = []
+## One-way latch: the GARAGE (and upgrades) open once driving earnings
+## reach ECONOMY.garage_unlock_cash.
+var garage_unlocked := false
 var upgrade_levels := {}
-## 0 until the onboarding rival is beaten — beating it hires ghost #1,
+## 0 until the LAST onboarding rival is beaten — that win hires ghost #1,
 ## and passive income starts there, never before. Active laps still pay.
 var ghost_slots := 0
 
@@ -118,16 +121,24 @@ func is_rival_beaten(rival_id: String) -> bool:
 	return rival_id in rivals_beaten
 
 
-## Beating a rival is the onboarding win: it hires your first ghost.
-func mark_rival_beaten(rival_id: String) -> void:
+## Every beaten rival doubles ACTIVE lap payouts — the rival ladder is
+## the whole income curve until ghosts exist.
+func rival_multiplier() -> float:
+	return pow(ECONOMY.rival_beaten_multiplier, rivals_beaten.size())
+
+
+## Beating a rival grows the ladder multiplier; beating the FINAL one is
+## the onboarding win that hires your first ghost.
+func mark_rival_beaten(rival_id: String, final: bool) -> void:
 	if rival_id in rivals_beaten:
 		return
 	rivals_beaten.append(rival_id)
-	if ghost_slots < 1:
+	if final and ghost_slots < 1:
 		ghost_slots = 1
 	save_profile()
 	Events.rival_beaten.emit(rival_id)
-	Events.ghost_hired.emit(ghost_slots)
+	if final:
+		Events.ghost_hired.emit(ghost_slots)
 
 
 func is_secret_unlocked(secret_id: String) -> bool:
@@ -252,9 +263,13 @@ func _on_ghost_lap_completed(route_id: String) -> void:
 ## the ghost payout. First lap on a route also discovers it.
 func _on_player_lap_completed(route_id: String, _lap_time: float, _is_best: bool) -> void:
 	currency += route_payout(route_id) * ECONOMY.active_lap_multiplier \
-			* milestone_multiplier()
+			* rival_multiplier() * milestone_multiplier()
 	_dirty = true
 	Events.currency_changed.emit(currency)
+	if not garage_unlocked and currency >= ECONOMY.garage_unlock_cash:
+		garage_unlocked = true
+		save_profile()
+		Events.garage_unlocked.emit()
 	if route_id not in discovered_routes:
 		discovered_routes.append(route_id)
 		save_profile()
@@ -289,6 +304,7 @@ func reset_profile() -> void:
 	medal_unlocked_routes.clear()
 	unlocked_secrets.clear()
 	rivals_beaten.clear()
+	garage_unlocked = false
 	upgrade_levels.clear()
 	ghost_slots = 0
 	_loaded_save_unix = 0.0
