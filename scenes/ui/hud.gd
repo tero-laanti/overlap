@@ -14,7 +14,6 @@ var race_state: RaceStateScript
 var car: CarScript
 
 var _garage_zone: Node2D
-var _rival_racer: Node2D
 var _pips_filled := 0
 var _pips_total := 2
 var _suppress_lap_toast := false
@@ -41,6 +40,12 @@ func _ready() -> void:
 	Events.secret_unlocked.connect(func(_id: String) -> void:
 		_show_toast("A hidden road reveals itself…", true))
 	Events.rival_race_finished.connect(_on_rival_race_finished)
+	# A freshly bought gate may introduce that zone's resident rival.
+	Events.gate_purchased.connect(func(gate_id: String) -> void:
+		var rival = Bank.rival_for_gate(gate_id)
+		if rival != null:
+			_show_toast("%s guards this road — beat their lap to roll out the fleet"
+					% rival.display_name, true))
 	Events.garage_unlocked.connect(func() -> void:
 		_show_toast("GARAGE OPEN — pull in and press TAB", true))
 	# ghost_hired fires only once at slot 1: the final rival's reward.
@@ -50,7 +55,12 @@ func _ready() -> void:
 			_suppress_lap_toast = true)
 	_toast_label.modulate.a = 0.0
 	_refresh_pips()
-	# Cold open on a fresh profile: the game starts as a race.
+	# Deferred: rival activity resolves after Main hands Bank the network.
+	_show_cold_open.call_deferred()
+
+
+## On a fresh profile the game starts as a race.
+func _show_cold_open() -> void:
 	if Bank.ghost_slots == 0:
 		_show_toast("%s wants a race — beat their lap" % _rival_name(), true)
 
@@ -149,24 +159,29 @@ func _on_route_discovered(_route_id: String, display_name: String) -> void:
 func _on_rival_race_finished(_rival_id: String, display_name: String,
 		player_time: float, rival_time: float, won: bool) -> void:
 	_suppress_lap_toast = true
-	if won:
-		# Fires before Bank records the win — show the multiplier this
-		# win is about to set.
+	if not won:
+		_show_toast("%s wins by %.2fs" % [
+			display_name, player_time - rival_time], false)
+	elif Bank.ghost_slots == 0:
+		# Onboarding ladder win. Fires before Bank records it — show the
+		# multiplier this win is about to set. (The final win's toast is
+		# replaced by the ghost-unlock one a moment later.)
 		_show_toast("%s BEATEN by %.2fs — payouts ×%d" % [
 			display_name, rival_time - player_time,
 			int(Bank.rival_multiplier() * Bank.ECONOMY.rival_beaten_multiplier)], true)
 	else:
-		_show_toast("%s wins by %.2fs" % [
-			display_name, player_time - rival_time], false)
+		# Resident win: the prize is the fleet it was holding.
+		_show_toast("%s BEATEN by %.2fs — the fleet rolls out" % [
+			display_name, rival_time - player_time], true)
 
 
+## Name of the standing ONBOARDING rival (the one blocking ghosts).
 func _rival_name() -> String:
-	if _rival_racer == null:
-		_rival_racer = get_tree().get_first_node_in_group("rival_racer")
-	if _rival_racer == null:
-		return "the rival"
-	var rival_name: String = _rival_racer.current_rival_name()
-	return rival_name if rival_name != "" else "the rival"
+	for racer in get_tree().get_nodes_in_group("rival_racer"):
+		var rival_name: String = racer.current_rival_name()
+		if rival_name != "":
+			return rival_name
+	return "the rival"
 
 
 func _on_offline_earnings_granted(amount: float, elapsed_seconds: float) -> void:

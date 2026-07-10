@@ -14,6 +14,7 @@ const UpgradeCatalogScript = preload("res://scenes/car/upgrade_catalog.gd")
 const TrackNetworkDefScript = preload("res://scenes/track/track_network_def.gd")
 const GateDefScript = preload("res://scenes/track/gate_def.gd")
 const RouteDefScript = preload("res://scenes/track/route_def.gd")
+const RivalDefScript = preload("res://scenes/ghost/rival_def.gd")
 const BankSaveScript = preload("res://autoload/bank_save.gd")
 const BankMedalsScript = preload("res://autoload/bank_medals.gd")
 const BankIncomeScript = preload("res://autoload/bank_income.gd")
@@ -121,23 +122,71 @@ func is_rival_beaten(rival_id: String) -> bool:
 	return rival_id in rivals_beaten
 
 
-## Every beaten rival doubles ACTIVE lap payouts — the rival ladder is
-## the whole income curve until ghosts exist.
+## A rival stands (parked on the grid, racing your laps) once its gate
+## is owned and every earlier tier on its route has fallen.
+func is_rival_active(rival_id: String) -> bool:
+	if _network == null:
+		return false
+	var target := _network.find_rival(rival_id)
+	if target == null or target.id in rivals_beaten:
+		return false
+	if target.required_gate != "" and not is_gate_purchased(target.required_gate):
+		return false
+	for rival in _network.rivals:
+		if rival == target:
+			break
+		if rival.route_id == target.route_id and rival.id not in rivals_beaten:
+			return false
+	return true
+
+
+## A route's fleet only earns once no standing rival holds that route —
+## the onboarding ladder gates the ring, residents gate their annex.
+func is_route_fleet_active(route_id: String) -> bool:
+	if _network == null:
+		return true
+	for rival in _network.rivals:
+		if rival.route_id == route_id and rival.id not in rivals_beaten \
+				and (rival.required_gate == ""
+					or is_gate_purchased(rival.required_gate)):
+			return false
+	return true
+
+
+## The standing rival a freshly bought gate introduces, if any.
+func rival_for_gate(gate_id: String) -> RivalDefScript:
+	if _network == null:
+		return null
+	for rival in _network.rivals:
+		if rival.required_gate == gate_id and rival.id not in rivals_beaten:
+			return rival
+	return null
+
+
+## Every beaten ONBOARDING rival doubles ACTIVE lap payouts — the ring
+## ladder is the whole income curve until ghosts exist. Residents don't
+## compound it; their prize is the fleet they release.
 func rival_multiplier() -> float:
-	return pow(ECONOMY.rival_beaten_multiplier, rivals_beaten.size())
+	if _network == null:
+		return 1.0
+	var beaten_onboarding := 0
+	for rival in _network.rivals:
+		if rival.required_gate == "" and rival.id in rivals_beaten:
+			beaten_onboarding += 1
+	return pow(ECONOMY.rival_beaten_multiplier, beaten_onboarding)
 
 
-## Beating a rival grows the ladder multiplier; beating the FINAL one is
-## the onboarding win that hires your first ghost.
-func mark_rival_beaten(rival_id: String, final: bool) -> void:
+## Beating a rival releases whatever it held; the final onboarding win
+## also hires your first ghost.
+func mark_rival_beaten(rival_id: String, hires_ghost: bool) -> void:
 	if rival_id in rivals_beaten:
 		return
 	rivals_beaten.append(rival_id)
-	if final and ghost_slots < 1:
+	if hires_ghost and ghost_slots < 1:
 		ghost_slots = 1
 	save_profile()
 	Events.rival_beaten.emit(rival_id)
-	if final:
+	if hires_ghost:
 		Events.ghost_hired.emit(ghost_slots)
 
 

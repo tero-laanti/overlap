@@ -28,11 +28,11 @@ over composable road geometry, not sealed one-off scenes.
 ## Roguelite rounds + rival onboarding (2026-07-07 brainstorm)
 
 Two linked ideas. Item 2 (rival onboarding) CHOSEN 2026-07-10 →
-ROADMAP slice 9, ghost-replay variant with the active-income
-mitigation; the VISION scope fence was consciously amended. Its
-generalization — a resident rival per zone, beat it to claim the
-route's fleet or medal — remains parked here. Item 1 (pick-1-of-3
-rounds) remains undecided.
+ROADMAP slices 9–11: the ladder (AMBER/COBALT/ONYX), then resident
+rivals per zone gating each route's fleet. The VISION scope fence was
+consciously amended (replay rivals in, live AI out). Item 1
+(pick-1-of-3 rounds) remains undecided — prestige-as-seasons and
+session contracts are still open homes for the draft moment.
 
 1. **Pick-1-of-3 rounds** — after a "round" of sorts, choose one of
    three offers: a new route, extra rewards, a whole new track, etc.

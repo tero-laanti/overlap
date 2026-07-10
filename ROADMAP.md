@@ -300,6 +300,28 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       income is laps-only until ONYX falls; the garage is a building
       you drive to; annexes appear as they're earned.
 
+## Slice 11 — Resident rivals (2026-07-10, human-chosen)
+- [x] Rivals live in TrackNetworkDef.rivals (authored order = ladder
+      order); RivalDef gains required_gate + hires_first_ghost. The
+      unified rule (Bank): a rival stands once its gate is owned and
+      earlier same-route tiers fell; a route's FLEET only earns while
+      no standing rival holds it. The onboarding trio becomes the
+      ring's rivals; each annex ships a resident at its arrival spec:
+      JADE (cut, ONYX spec ×1.05), SIENNA (dune, TS3/A3/G2 ×1.04),
+      SLATE (climb, TS3/A4/G4 ×1.04), RUST (harbor, TS3/A6/G5 ×1.04).
+      Buying a gate introduces the resident (toast); beating it rolls
+      out that route's fleet. Residents don't grow the ×2 ladder
+      multiplier — their prize is the fleet. Rivals host spawns one
+      racer per network rival; save v5 (v4 loads: routes already
+      earning grandfather their resident as beaten).
+- Notes: verified 2026-07-10 — see probe run in the commit; each gate
+  phase now buys the zone spec, races the resident, and the fleet
+  income appears only after the win. Human feel pass PENDING:
+  resident pacing per zone.
+- **Accept:** buying a gate parks a named rival on the grid; the new
+      route pays active laps only until you beat them; the win spawns
+      the fleet.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

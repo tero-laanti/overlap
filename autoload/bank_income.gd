@@ -18,7 +18,7 @@ static func milestone_multiplier(bank: Node) -> float:
 
 static func route_income_per_second(bank: Node, route_id: String) -> float:
 	var pb: float = bank.route_pb(route_id)
-	if pb <= 0.0:
+	if pb <= 0.0 or not bank.is_route_fleet_active(route_id):
 		return 0.0
 	return bank.ghost_slots * bank.route_payout(route_id) \
 			* milestone_multiplier(bank) \

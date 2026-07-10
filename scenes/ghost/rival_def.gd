@@ -15,3 +15,8 @@ const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 @export var recording: LapRecordingScript
 @export var body_color := Color(1.0, 0.62, 0.18)
 @export var stripe_color := Color(0.28, 0.16, 0.07, 0.9)
+## Resident rivals appear once their zone's gate is owned; "" means an
+## onboarding rival, active from the start.
+@export var required_gate := ""
+## The final onboarding rival carries the ghost unlock.
+@export var hires_first_ghost := false

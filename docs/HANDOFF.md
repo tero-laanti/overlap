@@ -222,12 +222,30 @@ them.
    (bank_save.gd — keep that const in sync with main.tscn's ladder).
    Probe now drives the whole arc (buys the ONYX spec from lap
    earnings mid-ladder). Human feel pass PENDING: ladder pacing.
-16. Next candidates: coast linker + grand tour (needs the harbor's
+16. RESIDENT RIVALS DONE 2026-07-10 (human-chosen; ROADMAP slice 11):
+   rivals moved into TrackNetworkDef.rivals (order matters — it's the
+   ladder order per route); RivalDef gained required_gate +
+   hires_first_ghost. ONE rule in Bank drives everything:
+   is_rival_active (gate owned + earlier same-route tiers beaten) and
+   is_route_fleet_active (no standing rival on the route → fleet
+   earns; BankIncome and GhostFleet both consult it). Residents JADE
+   (cut) / SIENNA (dune) / SLATE (climb) / RUST (harbor) are authored
+   at each zone's arrival spec by DevRivalRecord (now drives every
+   route; keep its STAGES, bank_save's ONBOARDING_RIVALS +
+   RESIDENT_RIVALS, and track02_network.tres rivals array in sync).
+   Gate purchase toasts the resident intro; beating it rolls out the
+   fleet (residents do NOT grow the ×2 ladder multiplier). Save v5;
+   v4 loads grandfather residents on routes that already had PBs.
+   Multiple standing rivals all park on the start grid (they overlap
+   if you stack unbeaten residents — rare, cosmetic, unfixed). Human
+   feel pass PENDING: resident pacing per zone.
+17. Next candidates: coast linker + grand tour (needs the harbor's
    south edge), Jump Kit gateway moment (+ cliff washout jump spot),
-   per-zone resident rivals (IDEAS.md — natural sequel to the ladder),
-   gate-exhausted badges, prestige (pick-1-of-3 seasons). Human feel
-   passes pending: rival ladder pacing, cliffs hairpins at v2 scale,
-   camera zoom/shake, audio mix in long play.
+   gate-exhausted badges, prestige (pick-1-of-3 seasons), route log
+   polish (gated routes could say "rival holds this road" instead of
+   income 0). Human feel passes pending: rival ladder + resident
+   pacing, cliffs hairpins at v2 scale, camera zoom/shake, audio mix
+   in long play.
 
 ## Verification workflow (mandatory before any commit)
 

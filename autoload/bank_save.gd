@@ -4,11 +4,16 @@ extends RefCounted
 ## functions operate on the Bank autoload passed in — no state here.
 ## Saves are plain data via store_var (no serialized objects).
 
-## v4 = island v2 (docs/MAP_DESIGN_V2.md). Older saves are wiped, not
-## migrated: their PB recordings replay geometry that no longer exists
-## (human-approved full reset, 2026-07-07).
-const SAVE_VERSION := 4
+## v4 = island v2 (docs/MAP_DESIGN_V2.md); v5 adds resident rivals.
+## Pre-v4 saves are wiped, not migrated: their PB recordings replay
+## geometry that no longer exists (human-approved full reset,
+## 2026-07-07). v4 loads with the resident grandfather below.
+const SAVE_VERSION := 5
+const OLDEST_LOADABLE_VERSION := 4
+## Keep both in sync with the rivals authored in track02_network.tres.
 const ONBOARDING_RIVALS: Array[String] = ["amber", "cobalt", "onyx"]
+const RESIDENT_RIVALS := {"jade": "cut", "sienna": "dune",
+		"slate": "climb", "rust": "harbor"}
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 
 
@@ -59,7 +64,7 @@ static func read_into(path: String, bank: Node) -> float:
 	var data: Variant = file.get_var()
 	if typeof(data) != TYPE_DICTIONARY:
 		return 0.0
-	if int(data.get("version", 1)) < SAVE_VERSION:
+	if int(data.get("version", 1)) < OLDEST_LOADABLE_VERSION:
 		return 0.0
 	bank.currency = data.get("currency", 0.0)
 	bank.upgrade_levels = data.get("upgrade_levels", {})
@@ -78,8 +83,17 @@ static func read_into(path: String, bank: Node) -> float:
 	# invariant, never re-gated. (Keep in sync with the ladder ids
 	# authored in main.tscn / data/rivals/.)
 	if bank.ghost_slots >= 1:
-		bank.rivals_beaten.assign(ONBOARDING_RIVALS)
+		for rival_id in ONBOARDING_RIVALS:
+			if rival_id not in bank.rivals_beaten:
+				bank.rivals_beaten.append(rival_id)
 		bank.garage_unlocked = true
+	# v4 predates residents: a route already earning keeps earning — its
+	# resident counts as beaten. v5+ saves know their own rival state.
+	if int(data.get("version", 1)) == 4:
+		for rival_id: String in RESIDENT_RIVALS:
+			if bank.route_records.has(RESIDENT_RIVALS[rival_id]) \
+					and rival_id not in bank.rivals_beaten:
+				bank.rivals_beaten.append(rival_id)
 	return data.get("saved_at_unix", 0.0)
 
 

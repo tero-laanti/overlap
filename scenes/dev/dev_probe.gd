@@ -59,18 +59,23 @@ func _ready() -> void:
 	Bank.reset_profile()
 	print("[PROBE] profile reset")
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
+	# Earn targets cover the gate PLUS that zone's arrival spec (the
+	# resident rival's authored spec — reaching it beats the resident).
 	_gates = [
 		{"id": "island_chord", "route": "cut", "points": RoutesScript.CUT,
 			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
-			"earn": 130.0, "laps": 2, "watch": 12.0},
+			"earn": 130.0, "laps": 2, "watch": 12.0, "buys": []},
 		{"id": "west_dunes", "route": "dune", "points": RoutesScript.DUNE,
 			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
-			"earn": 280.0, "laps": 2, "watch": 12.0},
+			"earn": 630.0, "laps": 2, "watch": 12.0,
+			"buys": [["top_speed", 3], ["acceleration", 3], ["grip", 2]]},
 		{"id": "cliff_gate", "route": "climb", "points": RoutesScript.CLIMB,
 			"reach": RoutesScript.CLIFF_REACH,
-			"earn": 950.0, "laps": 2, "watch": 12.0},
+			"earn": 1370.0, "laps": 2, "watch": 12.0,
+			"buys": [["acceleration", 4], ["grip", 4]]},
 		{"id": "harbor_gate", "route": "harbor", "points": RoutesScript.HARBOR,
-			"reach": 130.0, "earn": 2260.0, "laps": 2, "watch": 12.0},
+			"reach": 130.0, "earn": 3100.0, "laps": 2, "watch": 12.0,
+			"buys": [["acceleration", 6], ["grip", 5]]},
 	]
 	_car = get_tree().get_first_node_in_group("player_car")
 	_driver.car = _car
@@ -153,13 +158,21 @@ func _process(delta: float) -> void:
 			if Bank.currency >= float(gate.earn):
 				var gate_ok := Bank.try_buy_gate(gate.id)
 				print("[PROBE] bought gate %s=%s money=%.0f" % [gate.id, gate_ok, Bank.currency])
+				for buy: Array in gate.buys:
+					while Bank.upgrade_level(buy[0]) < int(buy[1]) \
+							and Bank.try_buy_upgrade(buy[0]):
+						pass
+					print("[PROBE] spec %s=%d money=%.0f" % [
+						buy[0], Bank.upgrade_level(buy[0]), Bank.currency])
 				ReportScript.dump_route_log(get_tree())
 				_driver.set_route(gate.points, float(gate.reach))
 				_lap_target = _laps_done + int(gate.laps)
 				_enter(Phase.GATE_DRIVE, "driving %s" % gate.route)
 		Phase.GATE_DRIVE:
 			_driver.drive(delta)
-			if _laps_done >= _lap_target:
+			# Lap minimum AND the resident beaten — its fleet is the point.
+			if _laps_done >= _lap_target \
+					and Bank.is_route_fleet_active(_gates[_gate_index].route):
 				_driver.release_all()
 				_watch_until = _elapsed + float(_gates[_gate_index].watch)
 				_enter(Phase.GATE_WATCH, "watching every fleet")

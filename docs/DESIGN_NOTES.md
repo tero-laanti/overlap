@@ -69,6 +69,13 @@ fast") was replaced by a rival ladder that IS the early game:
   as small locked promises; the forest secret is untouched.
 - Probe-measured arc: AMBER lap 1, garage lap 2, COBALT lap 6, ONYX
   lap 8 (~2 min of driving), then the old loop takes over.
+- **Resident rivals (slice 11)** extend the ladder into the midgame:
+  every zone ships one (JADE/SIENNA/SLATE/RUST), authored at that
+  gate's expected arrival spec ×1.04–1.05. A route's fleet only earns
+  once its resident falls — buying asphalt buys a race, not income.
+  Residents do NOT compound the ×2 active multiplier (only the ring
+  ladder does); their prize is releasing the fleet. All rivals live
+  in TrackNetworkDef.rivals; DevRivalRecord authors the whole set.
 
 ### Original research defaults (kept for reference)
 

@@ -19,6 +19,8 @@ var _recordings := {}
 func _ready() -> void:
 	Events.best_lap_recorded.connect(_on_best_lap_recorded)
 	Events.ghost_hired.connect(func(_count: int) -> void: _sync_all())
+	# A beaten rival releases its route's fleet.
+	Events.rival_beaten.connect(func(_rival_id: String) -> void: _sync_all())
 
 
 func _on_best_lap_recorded(route_id: String, recording: LapRecordingScript) -> void:
@@ -32,6 +34,9 @@ func _sync_all() -> void:
 
 
 func _sync_route(route_id: String) -> void:
+	# A standing rival holds this route — no fleet until it falls.
+	if not Bank.is_route_fleet_active(route_id):
+		return
 	var recording: LapRecordingScript = _recordings[route_id]
 	var fleet := _fleet_for(route_id)
 	while fleet.get_child_count() < Bank.ghost_slots:

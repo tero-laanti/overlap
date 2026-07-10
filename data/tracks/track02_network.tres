@@ -4,6 +4,14 @@
 [ext_resource type="Script" uid="uid://bhi68a7giyavv" path="res://scenes/track/crossing_line_def.gd" id="2"]
 [ext_resource type="Script" uid="uid://bgtfu6xjrfgsx" path="res://scenes/track/route_def.gd" id="3"]
 [ext_resource type="Script" uid="uid://kniwdrrbxkfc" path="res://scenes/track/gate_def.gd" id="4"]
+[ext_resource type="Script" path="res://scenes/ghost/rival_def.gd" id="5"]
+[ext_resource type="Resource" path="res://data/rivals/amber.tres" id="6"]
+[ext_resource type="Resource" path="res://data/rivals/cobalt.tres" id="7"]
+[ext_resource type="Resource" path="res://data/rivals/onyx.tres" id="8"]
+[ext_resource type="Resource" path="res://data/rivals/jade.tres" id="9"]
+[ext_resource type="Resource" path="res://data/rivals/sienna.tres" id="10"]
+[ext_resource type="Resource" path="res://data/rivals/slate.tres" id="11"]
+[ext_resource type="Resource" path="res://data/rivals/rust.tres" id="12"]
 
 [sub_resource type="Resource" id="Resource_line_start"]
 script = ExtResource("2")
@@ -196,3 +204,4 @@ script = ExtResource("1")
 crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_chord_mouth"), SubResource("Resource_line_chord"), SubResource("Resource_line_dune_mouth"), SubResource("Resource_line_dune"), SubResource("Resource_line_cliff_climb"), SubResource("Resource_line_cliff_top"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest"), SubResource("Resource_line_harbor_mouth"), SubResource("Resource_line_harbor")])
 routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_cut"), SubResource("Resource_route_dune"), SubResource("Resource_route_sandcut"), SubResource("Resource_route_climb"), SubResource("Resource_route_high_ring"), SubResource("Resource_route_forest"), SubResource("Resource_route_harbor")])
 gates = Array[ExtResource("4")]([SubResource("Resource_gate_chord"), SubResource("Resource_gate_dune"), SubResource("Resource_gate_cliff"), SubResource("Resource_gate_harbor")])
+rivals = Array[ExtResource("5")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12")])
