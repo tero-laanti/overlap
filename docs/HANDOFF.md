@@ -239,13 +239,33 @@ them.
    Multiple standing rivals all park on the start grid (they overlap
    if you stack unbeaten residents — rare, cosmetic, unfixed). Human
    feel pass PENDING: resident pacing per zone.
-17. Next candidates: coast linker + grand tour (needs the harbor's
-   south edge), Jump Kit gateway moment (+ cliff washout jump spot),
-   gate-exhausted badges, prestige (pick-1-of-3 seasons), route log
-   polish (gated routes could say "rival holds this road" instead of
-   income 0). Human feel passes pending: rival ladder + resident
-   pacing, cliffs hairpins at v2 scale, camera zoom/shake, audio mix
-   in long play.
+17. FLEET LIVERIES + JUMP KIT DONE 2026-07-10 (human-directed): each
+   route's fleet wears RouteDef.ghost_color (Ghost.set_livery paints
+   the shell; per-clone variation is alpha+lightness cycles). Fleets
+   held by a standing rival do NOT spawn (the human explicitly
+   rejected a dimmed preview fleet — the fleet is the prize);
+   Bank._on_ghost_lap_completed keeps a belt-check anyway. Keep
+   GhostFleet/BankIncome/Bank in agreement via is_route_fleet_active.
+   Jump Kit: $1500 (economy.jump_kit_cost),
+   offered once harbor_gate owned (ShopPacing.jump_kit_offered),
+   Bank.jump_kit_owned in the save (no version bump — key default).
+   Physics layer 5 = jump_ramp; the car point-queries it like
+   road/water/rubble and goes ballistic for CarStats.jump_air_time
+   (0.45 bare / 0.75 kit) — airborne is a BYPASS at the top of
+   _physics_process, grounded handling untouched (probe lap times on
+   old routes identical). Pier + canal geometry in track.tscn (all in
+   zone_harbor_gate, so reveal + collision-disable come free); Canal
+   Runner route (edges west/harbor_mouth/pier). The canal splash is
+   the kitless fail (normal water reset). Cliff washout + dune crest
+   jump spots from MAP_DESIGN §4 are NOT built yet — the kit
+   "activates three places" only when those land.
+18. Next candidates: coast linker + grand tour (needs the harbor's
+   south edge), cliff washout + dune crest jump spots (the kit's "map
+   explodes" moment), gate-exhausted badges, prestige (pick-1-of-3
+   seasons), route log polish (gated routes could say "rival holds
+   this road" instead of income 0). Human feel passes pending: rival
+   ladder + resident pacing, jump feel (air times in
+   starter_car.tres), cliffs hairpins, camera zoom/shake, audio mix.
 
 ## Verification workflow (mandatory before any commit)
 

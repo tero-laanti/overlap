@@ -24,6 +24,12 @@ func set_recording(recording: LapRecordingScript) -> void:
 	visible = recording != null
 
 
+## Presentation only: paint the shell in a route's fleet color.
+func set_livery(body_color: Color) -> void:
+	$Body.color = body_color
+	$Spoiler.color = body_color.darkened(0.4)
+
+
 func _process(delta: float) -> void:
 	if _recording == null:
 		return

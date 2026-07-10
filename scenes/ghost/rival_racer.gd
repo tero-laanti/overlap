@@ -13,6 +13,12 @@ const TAG_OFFSET := Vector2(0.0, -116.0)
 
 var def: RivalDefScript
 
+## True only for laps this rival actually raced (launched at the lap
+## start). A rival activated mid-lap — the next tier appears the moment
+## its predecessor falls, during the same lap_completed dispatch — must
+## not judge that lap; without this it "loses" a race it never ran.
+var _racing := false
+
 @onready var _ghost: GhostScript = $RivalGhost
 @onready var _tag: Label = $NameTag
 
@@ -50,10 +56,11 @@ func on_lap_started() -> void:
 		return
 	_ghost.set_recording(def.recording)
 	_ghost.playing = true
+	_racing = true
 
 
 func _on_lap_completed(route_id: String, lap_time: float, _is_best: bool) -> void:
-	if not visible or def == null or route_id != def.route_id:
+	if not _racing or def == null or route_id != def.route_id:
 		return
 	var won := lap_time < def.recording.lap_time
 	Events.rival_race_finished.emit(def.id, def.display_name,
@@ -65,6 +72,7 @@ func _on_lap_completed(route_id: String, lap_time: float, _is_best: bool) -> voi
 
 
 func _park() -> void:
+	_racing = false
 	if def == null:
 		return
 	_ghost.set_recording(def.recording)
@@ -77,3 +85,5 @@ func _sync_active() -> void:
 	set_process(active)
 	if active:
 		_park()
+	else:
+		_racing = false

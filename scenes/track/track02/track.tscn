@@ -1,4 +1,4 @@
-[gd_scene load_steps=44 format=3 uid="uid://bvxq2h44wr02k"]
+[gd_scene load_steps=48 format=3 uid="uid://bvxq2h44wr02k"]
 
 [ext_resource type="Script" uid="uid://7t7lgp08bywd" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" uid="uid://c6qm608rh2q2p" path="res://data/tracks/track01.tres" id="2_def"]
@@ -13,8 +13,8 @@
 [ext_resource type="PackedScene" uid="uid://b61ybjhs5jr4n" path="res://scenes/track/tree.tscn" id="11_tree"]
 [ext_resource type="Script" uid="uid://b75vxexwudubg" path="res://scenes/track/secret_road.gd" id="12_secret"]
 [ext_resource type="Script" uid="uid://cx67rrxf0ksfu" path="res://scenes/track/spinner.gd" id="13_spinner"]
-[ext_resource type="Script" path="res://scenes/track/garage_zone.gd" id="14_garagezone"]
-[ext_resource type="Script" path="res://scenes/track/track_reveal.gd" id="15_reveal"]
+[ext_resource type="Script" uid="uid://irstjeu5y08i" path="res://scenes/track/garage_zone.gd" id="14_garagezone"]
+[ext_resource type="Script" uid="uid://x7bryfg0xjnk" path="res://scenes/track/track_reveal.gd" id="15_reveal"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
 shader = ExtResource("7_water_shader")
@@ -113,6 +113,24 @@ _data = {
 }
 point_count = 10
 
+[sub_resource type="Curve2D" id="Curve2D_pier1"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 3900, -800, -80, 0, 0, 80, 5150, -800, 0, 0, 0, 0, 5150, -280)
+}
+point_count = 3
+
+[sub_resource type="Curve2D" id="Curve2D_pier2"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 5150, 290, 0, -80, -80, 0, 5150, 690, 0, 0, 0, 0, 3700, 800)
+}
+point_count = 3
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_canal"]
+size = Vector2(520, 290)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ramp"]
+size = Vector2(220, 90)
+
 [sub_resource type="Curve2D" id="Curve2D_container_a"]
 _data = {
 "points": PackedVector2Array(0, 0, 0, 0, 3600, -560, 0, 0, 0, 0, 3850, -560)
@@ -127,7 +145,7 @@ point_count = 2
 
 [sub_resource type="Curve2D" id="Curve2D_container_c"]
 _data = {
-"points": PackedVector2Array(0, 0, 0, 0, 4350, -550, 0, 0, 0, 0, 4350, -880)
+"points": PackedVector2Array(0, 0, 0, 0, 4350, -320, 0, 0, 0, 0, 4350, -620)
 }
 point_count = 2
 
@@ -262,6 +280,18 @@ border_color = Color(0.45, 0.3, 0.22, 1)
 curve = SubResource("Curve2D_dune")
 color = Color(0.72, 0.63, 0.42, 1)
 border_color = Color(0.55, 0.42, 0.25, 1)
+
+[node name="SegPier1" parent="Road" groups=["zone_harbor_gate"] instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_pier1")
+half_width = 120.0
+color = Color(0.24, 0.26, 0.3, 1)
+border_color = Color(0.45, 0.3, 0.22, 1)
+
+[node name="SegPier2" parent="Road" groups=["zone_harbor_gate"] instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_pier2")
+half_width = 120.0
+color = Color(0.24, 0.26, 0.3, 1)
+border_color = Color(0.45, 0.3, 0.22, 1)
 
 [node name="SegHubWest" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_hub_west")
@@ -547,6 +577,51 @@ color = Color(0.55, 0.28, 0.18, 1)
 curve = SubResource("Curve2D_container_f")
 half_thickness = 30.0
 color = Color(0.8, 0.65, 0.15, 1)
+
+[node name="CanalVisual" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
+z_index = -2
+color = Color(0.08, 0.3, 0.45, 1)
+polygon = PackedVector2Array(4950, -140, 5470, -140, 5470, 150, 4950, 150)
+
+[node name="CanalFoamN" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
+z_index = -2
+color = Color(0.75, 0.9, 0.95, 0.5)
+polygon = PackedVector2Array(4950, -140, 5470, -140, 5470, -128, 4950, -128)
+
+[node name="CanalFoamS" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
+z_index = -2
+color = Color(0.75, 0.9, 0.95, 0.5)
+polygon = PackedVector2Array(4950, 138, 5470, 138, 5470, 150, 4950, 150)
+
+[node name="CanalWater" type="Area2D" parent="." groups=["zone_harbor_gate"]]
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+
+[node name="Shape" type="CollisionShape2D" parent="CanalWater"]
+position = Vector2(5210, 5)
+shape = SubResource("RectangleShape2D_canal")
+
+[node name="CanalRamp" type="Area2D" parent="." groups=["zone_harbor_gate"]]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+
+[node name="RampShape" type="CollisionShape2D" parent="CanalRamp"]
+position = Vector2(5150, -325)
+shape = SubResource("RectangleShape2D_ramp")
+
+[node name="RampDeck" type="Polygon2D" parent="CanalRamp"]
+color = Color(0.8, 0.65, 0.15, 1)
+polygon = PackedVector2Array(5040, -380, 5260, -380, 5260, -160, 5040, -160)
+
+[node name="RampChevron1" type="Polygon2D" parent="CanalRamp"]
+color = Color(0.16, 0.14, 0.1, 1)
+polygon = PackedVector2Array(5060, -350, 5150, -320, 5240, -350, 5240, -326, 5150, -296, 5060, -326)
+
+[node name="RampChevron2" type="Polygon2D" parent="CanalRamp"]
+color = Color(0.16, 0.14, 0.1, 1)
+polygon = PackedVector2Array(5060, -280, 5150, -250, 5240, -280, 5240, -256, 5150, -226, 5060, -256)
 
 [node name="CraneBase" type="Polygon2D" parent="." groups=["zone_harbor_gate"]]
 color = Color(0.8, 0.65, 0.15, 1)

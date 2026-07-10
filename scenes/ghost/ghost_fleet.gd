@@ -8,10 +8,11 @@ extends Node2D
 const GHOST_SCENE := preload("res://scenes/ghost/ghost.tscn")
 const GhostScript = preload("res://scenes/ghost/ghost.gd")
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
-## Deterministic per-index tint cycles: alpha and hue repeat at different
-## periods so neighbouring clones read as distinct, stable individuals.
+## Deterministic per-index cycles: alpha and lightness repeat at
+## different periods so neighbouring clones read as distinct, stable
+## individuals. Hue comes from the route (RouteDef.ghost_color).
 const TINT_ALPHA_STEPS := 3
-const TINT_HUE_STEPS := 5
+const TINT_LIGHT_STEPS := 5
 
 var _recordings := {}
 
@@ -34,7 +35,9 @@ func _sync_all() -> void:
 
 
 func _sync_route(route_id: String) -> void:
-	# A standing rival holds this route — no fleet until it falls.
+	# A standing rival holds this route — the fleet IS the prize, so it
+	# only appears (and earns) once the rival falls. Fleets on other
+	# routes keep rolling regardless.
 	if not Bank.is_route_fleet_active(route_id):
 		return
 	var recording: LapRecordingScript = _recordings[route_id]
@@ -45,10 +48,13 @@ func _sync_route(route_id: String) -> void:
 			Events.ghost_lap_completed.emit(route_id))
 		fleet.add_child(ghost)
 	var count := fleet.get_child_count()
+	var base_color: Color = Bank.route_ghost_color(route_id)
 	for i in count:
 		var ghost: GhostScript = fleet.get_child(i)
 		ghost.playback_offset = float(i) * recording.lap_time / count
 		ghost.modulate = _fleet_tint(i)
+		ghost.set_livery(base_color.lightened(
+				0.14 * float(i % TINT_LIGHT_STEPS) / float(TINT_LIGHT_STEPS - 1)))
 		ghost.set_recording(recording)
 
 
@@ -61,14 +67,7 @@ func _fleet_for(route_id: String) -> Node2D:
 	return fleet
 
 
-## Stable per-index variation within the cyan-blue family; never drifts
-## toward the red player car.
+## Stable per-index translucency cycle; color lives in the livery.
 func _fleet_tint(index: int) -> Color:
 	var alpha_t := float(index % TINT_ALPHA_STEPS) / float(TINT_ALPHA_STEPS - 1)
-	var hue_t := float(index % TINT_HUE_STEPS) / float(TINT_HUE_STEPS - 1)
-	return Color(
-		1.0,
-		lerpf(1.0, 0.72, hue_t),
-		1.0,
-		lerpf(0.35, 0.5, alpha_t),
-	)
+	return Color(1.0, 1.0, 1.0, lerpf(0.35, 0.5, alpha_t))

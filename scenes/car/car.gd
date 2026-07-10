@@ -21,6 +21,9 @@ const ROAD_SURFACE_MASK := 1 << 1
 const WATER_MASK := 1 << 2
 ## Physics layer 4 ("rubble") — Area2Ds marking near-stop off-road strips.
 const RUBBLE_MASK := 1 << 3
+## Physics layer 5 ("jump_ramp") — Area2Ds that launch a fast car.
+const RAMP_MASK := 1 << 4
+const AIRBORNE_SHADOW_OFFSET := Vector2(12.0, 20.0)
 
 @export var stats: CarStatsScript
 
@@ -33,8 +36,10 @@ var _trails_active := false
 var _road_query: PhysicsPointQueryParameters2D
 var _water_query: PhysicsPointQueryParameters2D
 var _rubble_query: PhysicsPointQueryParameters2D
+var _ramp_query: PhysicsPointQueryParameters2D
 var _last_road_pos := Vector2.ZERO
 var _on_road := true
+var _air_time := 0.0
 
 @onready var _camera: FollowCameraScript = $Camera2D
 @onready var _dust: CPUParticles2D = $Dust
@@ -46,6 +51,7 @@ func _ready() -> void:
 	_road_query = _make_point_query(ROAD_SURFACE_MASK)
 	_water_query = _make_point_query(WATER_MASK)
 	_rubble_query = _make_point_query(RUBBLE_MASK)
+	_ramp_query = _make_point_query(RAMP_MASK)
 	_last_road_pos = global_position
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
@@ -77,6 +83,16 @@ func _refresh_stats() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Airborne: ballistic and committed — no steering, no throttle, no
+	# surface effects. Grounded handling below is untouched (feel is
+	# sacred); this is a bypass, not a modifier.
+	if _air_time > 0.0:
+		_air_time -= delta
+		move_and_slide()
+		_update_drift_trails(false, 0.0, 0.0)
+		if _air_time <= 0.0:
+			_land()
+		return
 	var throttle := Input.get_axis("brake", "accelerate")
 	var steer := Input.get_axis("steer_left", "steer_right")
 	var drifting := Input.is_action_pressed("drift")
@@ -109,10 +125,28 @@ func _physics_process(delta: float) -> void:
 	_on_road = _is_on_road()
 	if _on_road:
 		_last_road_pos = global_position
+		if velocity.length() >= _fx.jump_min_speed and _query_hit(_ramp_query):
+			_launch()
+			return
 	elif _query_hit(_water_query):
 		_reset_to_road()
 	_dust.emitting = not _on_road and velocity.length() > DUST_MIN_SPEED
 	_update_drift_trails(drifting, lateral_speed, velocity.length())
+
+
+## Flight time is the Jump Kit's whole product: without it only a maxed
+## car clears the canal (MAP_DESIGN "soft gates").
+func _launch() -> void:
+	_air_time = _fx.jump_kit_air_time if Bank.jump_kit_owned else _fx.jump_air_time
+	$Shadow.position = AIRBORNE_SHADOW_OFFSET
+	_dust.emitting = false
+
+
+func _land() -> void:
+	$Shadow.position = Vector2(3.0, 4.0)
+	_camera.bump(3.5)
+	# Whatever is under the wheels now — asphalt or canal water — the
+	# normal grounded flow handles next tick.
 
 
 func _apply_steering(steer: float, throttle: float, forward_speed: float, delta: float) -> void:

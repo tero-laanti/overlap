@@ -322,6 +322,25 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       route pays active laps only until you beat them; the win spawns
       the fleet.
 
+## Slice 12 — Fleet liveries + the Jump Kit (2026-07-10, human-directed)
+- [x] Every route's fleet wears its own livery (RouteDef.ghost_color,
+      zone-themed; per-clone variation is now alpha + lightness cycles).
+      Fleets held by a standing rival stay OFF the track — the fleet is
+      the prize and appears on the win (human chose this over a dimmed
+      preview fleet). Other routes' fleets roll and earn throughout.
+- [x] Jump Kit (MAP_DESIGN §4 "soft gates"): $1500 garage purchase, on
+      sale once the harbor is owned. New pier road forks east off the
+      container maze to a ramp over a canal; ramp flight time comes
+      from CarStats (0.45 s bare — only a maxed car flat-out barely
+      clears, the sequence-break; 0.75 s with the kit). Airborne is a
+      physics bypass, not a handling change: no steering/throttle/
+      surface effects mid-flight, splash-on-landing handled by the
+      normal water flow. Route: Canal Runner (harbor_gate + the kit in
+      practice; ability-premium payout), authored par from calibration.
+- **Accept:** fleets read as colored squads per route; a gated fleet
+      rolls gray and earns nothing until its rival falls; the canal
+      splashes a kitless car and the kit turns it into a shortcut.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

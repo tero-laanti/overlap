@@ -47,6 +47,7 @@ static func write(path: String, bank: Node) -> void:
 		"unlocked_secrets": bank.unlocked_secrets,
 		"rivals_beaten": bank.rivals_beaten,
 		"garage_unlocked": bank.garage_unlocked,
+		"jump_kit_owned": bank.jump_kit_owned,
 	})
 	file.close()
 	var err := DirAccess.rename_absolute(tmp_path, path)
@@ -77,6 +78,7 @@ static func read_into(path: String, bank: Node) -> float:
 	bank.unlocked_secrets.assign(data.get("unlocked_secrets", []))
 	bank.rivals_beaten.assign(data.get("rivals_beaten", []))
 	bank.garage_unlocked = data.get("garage_unlocked", false)
+	bank.jump_kit_owned = data.get("jump_kit_owned", false)
 	# Owning any ghost slot implies the whole onboarding is behind this
 	# profile — beating the final rival is the only path from 0 to 1 —
 	# so saves from before the current ladder are grandfathered by

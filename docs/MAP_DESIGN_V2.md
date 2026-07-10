@@ -126,10 +126,16 @@ Mouths named now so spacing is designed, not discovered:
   because rejoins don't count as decisions). Forest Run ~30 s.
 - **HARBOR (east)** — container maze east of the esses. Decision mouth
   off ess #12 (~(2050, -350)); merge into the carousel entry
-  (~(2600, 600)). Dock straight runs the east shore. BUILT: one route
-  (Container Run, par 20.0); dock-tour variants and the canal/Jump-Kit
-  ramp remain future work, as do oil-slick hazards (hazards are a
-  roadmap-later item).
+  (~(2600, 600)). Dock straight runs the east shore. BUILT: Container
+  Run (par 20.0) and, since the Jump Kit slice (2026-07-10), the PIER:
+  a fork east at the maze's NE corner (3900→5150, -800), south down
+  x=5150, RAMP at y≈-330 over a 290 px CANAL (water strip y -140..150,
+  splash = the soft-gate fail), rejoining the south return road at
+  (3700, 800). Route Canal Runner (edges west/harbor_mouth/pier,
+  ability-premium payout). Ramp flight is CarStats jump_air_time
+  (0.45 s bare — a maxed car flat-out barely lands; 0.75 s with the
+  kit). Dock-tour variants and oil-slick hazards remain future work
+  (hazards are a roadmap-later item).
 - **COAST (south)** — the linker forks off T1 (continue straight
   instead of braking — the most legible gate placement on the island)
   and runs the south beach to the harbor's south edge. Enables the

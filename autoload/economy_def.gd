@@ -16,6 +16,9 @@ extends Resource
 @export var rival_beaten_multiplier := 2.0
 ## Driving earnings at which the GARAGE opens (one-way latch, ~2 laps).
 @export var garage_unlock_cash := 50.0
+## The Jump Kit gateway purchase (goes on sale once the harbor — the
+## canal's home — is owned).
+@export var jump_kit_cost := 1500.0
 ## Offline income is capped so long absences help without trivializing the loop.
 @export var offline_cap_seconds := 8.0 * 60.0 * 60.0
 ## Fleet sizes that each multiply all income by milestone_multiplier.

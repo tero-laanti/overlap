@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scenes/ghost/rival_racer.gd" id="1_racer"]
+[ext_resource type="Script" uid="uid://cp5vc8ag5hg1f" path="res://scenes/ghost/rival_racer.gd" id="1_racer"]
 [ext_resource type="Script" uid="uid://c1ovr4qei68h1" path="res://scenes/ghost/ghost.gd" id="2_ghost"]
 
 [node name="RivalRacer" type="Node2D"]

@@ -48,6 +48,8 @@ func _ready() -> void:
 					% rival.display_name, true))
 	Events.garage_unlocked.connect(func() -> void:
 		_show_toast("GARAGE OPEN — pull in and press TAB", true))
+	Events.jump_kit_purchased.connect(func() -> void:
+		_show_toast("JUMP KIT installed — ramps are live", true))
 	# ghost_hired fires only once at slot 1: the final rival's reward.
 	Events.ghost_hired.connect(func(count: int) -> void:
 		if count == 1:
@@ -109,6 +111,9 @@ func _next_purchase_hint() -> String:
 	if gate != null and gate.price < next_cost:
 		next_cost = gate.price
 		next_name = gate.display_name
+	if ShopPacingScript.jump_kit_offered(Bank) and Bank.jump_kit_cost() < next_cost:
+		next_cost = Bank.jump_kit_cost()
+		next_name = "Jump Kit"
 	for route in ShopPacingScript.medal_offers(Bank):
 		if route.medal_unlock_cost < next_cost:
 			next_cost = route.medal_unlock_cost

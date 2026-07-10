@@ -14,8 +14,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12_menu"]
 [ext_resource type="PackedScene" path="res://scenes/audio/game_audio.tscn" id="13_audio"]
 [ext_resource type="PackedScene" uid="uid://dl0hqxm3vv2pe" path="res://scenes/ui/minimap.tscn" id="14_minimap"]
-[ext_resource type="Script" path="res://scenes/ghost/rivals.gd" id="15_rivals"]
-[ext_resource type="Script" path="res://scenes/dev/dev_rival_record.gd" id="16_rivalrec"]
+[ext_resource type="Script" uid="uid://cxleopyhequ5r" path="res://scenes/ghost/rivals.gd" id="15_rivals"]
+[ext_resource type="Script" uid="uid://bxc5gegl8umbh" path="res://scenes/dev/dev_rival_record.gd" id="16_rivalrec"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")

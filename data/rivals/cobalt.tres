@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="RivalDef" format=3]
 
-[ext_resource type="Script" path="res://scenes/ghost/lap_recording.gd" id="1_e4glm"]
-[ext_resource type="Script" path="res://scenes/ghost/rival_def.gd" id="2_86qbv"]
+[ext_resource type="Script" uid="uid://smqvbsncdh6n" path="res://scenes/ghost/lap_recording.gd" id="1_e4glm"]
+[ext_resource type="Script" uid="uid://br4gyy1mxh3aj" path="res://scenes/ghost/rival_def.gd" id="2_86qbv"]
 
 [sub_resource type="Resource" id="Resource_jvy00"]
 script = ExtResource("1_e4glm")

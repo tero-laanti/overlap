@@ -21,6 +21,13 @@ extends Resource
 @export_range(0.0, 1.0) var steering_authority_floor := 0.35
 ## Speed above which the steering authority floor applies without throttle.
 @export var steering_floor_min_speed := 20.0
+## Jump ramps (physics layer 5): below this speed a ramp is just paint.
+@export var jump_min_speed := 550.0
+## Airborne seconds off a ramp without the Jump Kit — sized so only a
+## maxed car with a perfect line barely clears the canal (soft gate).
+@export var jump_air_time := 0.45
+## Airborne seconds with the Jump Kit — any racing speed clears.
+@export var jump_kit_air_time := 0.75
 ## Minimum vehicle speed before held drift draws tire trails.
 @export var drift_trail_min_speed := 140.0
 ## Minimum sideways speed that draws tire scrub even without the drift key.

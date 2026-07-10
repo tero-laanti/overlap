@@ -20,6 +20,9 @@ extends Resource
 @export var secret := false
 ## One-line clue shown in the route log while the route is only hinted.
 @export var clue := ""
+## Livery of this route's ghost fleet — each route reads as its own
+## squad on shared asphalt (zone-themed; cyan is the hub family).
+@export var ghost_color := Color(0.35, 0.8, 1.0)
 ## Gates that must all be owned before this route is drivable; owning
 ## them promotes the route from unknown to hinted in the log.
 @export var required_gates := PackedStringArray()

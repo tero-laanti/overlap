@@ -9,6 +9,7 @@ const CarScript = preload("res://scenes/car/car.gd")
 
 var _car: CarScript
 var _garage_zone: Node2D
+var _kit_button: Button
 var _upgrade_rows := {}
 var _gate_rows := {}
 var _medal_rows := {}
@@ -28,6 +29,7 @@ func _ready() -> void:
 	Events.gate_purchased.connect(func(_id: String) -> void: _rebuild())
 	Events.route_discovered.connect(func(_id: String, _name: String) -> void: _rebuild())
 	Events.medal_unlocked.connect(func(_id: String) -> void: _rebuild())
+	Events.jump_kit_purchased.connect(_rebuild)
 	# Bank learns the active network in Main._ready, after this ready runs.
 	_rebuild.call_deferred()
 
@@ -61,6 +63,7 @@ func _rebuild() -> void:
 		return
 	for child in _rows.get_children():
 		child.queue_free()
+	_kit_button = null
 	_upgrade_rows.clear()
 	_gate_rows.clear()
 	_medal_rows.clear()
@@ -82,6 +85,10 @@ func _rebuild() -> void:
 		var row := _make_row(gate.display_name)
 		row.button.pressed.connect(Bank.try_buy_gate.bind(gate.id))
 		_gate_rows[gate.id] = row
+	if ShopPacingScript.jump_kit_offered(Bank):
+		var kit_row := _make_row("Jump Kit")
+		kit_row.button.pressed.connect(Bank.try_buy_jump_kit)
+		_kit_button = kit_row.button
 	for route in ShopPacingScript.medal_offers(Bank):
 		var row := _make_row("Mastery: %s" % route.display_name)
 		row.button.pressed.connect(Bank.try_buy_medal_unlock.bind(route.id))
@@ -133,6 +140,9 @@ func _refresh() -> void:
 		var button: Button = _medal_rows[id].button
 		button.text = "$ %d" % int(Bank.medal_unlock_cost(id))
 		button.disabled = Bank.currency < Bank.medal_unlock_cost(id)
+	if _kit_button != null:
+		_kit_button.text = "$ %d" % int(Bank.jump_kit_cost())
+		_kit_button.disabled = Bank.currency < Bank.jump_kit_cost()
 	if _ghost_label != null:
 		_ghost_label.text = "Hire Ghost  ×%d" % Bank.ghost_slots
 		_ghost_button.text = "$ %d" % int(Bank.ghost_slot_cost())

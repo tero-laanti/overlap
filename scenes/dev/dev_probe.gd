@@ -76,6 +76,9 @@ func _ready() -> void:
 		{"id": "harbor_gate", "route": "harbor", "points": RoutesScript.HARBOR,
 			"reach": 130.0, "earn": 3100.0, "laps": 2, "watch": 12.0,
 			"buys": [["acceleration", 6], ["grip", 5]]},
+		{"id": "jump_kit", "kit": true, "route": "canal",
+			"points": RoutesScript.CANAL, "reach": 130.0,
+			"earn": 1550.0, "laps": 2, "watch": 12.0, "buys": []},
 	]
 	_car = get_tree().get_first_node_in_group("player_car")
 	_driver.car = _car
@@ -156,7 +159,8 @@ func _process(delta: float) -> void:
 		Phase.GATE_EARN:
 			var gate: Dictionary = _gates[_gate_index]
 			if Bank.currency >= float(gate.earn):
-				var gate_ok := Bank.try_buy_gate(gate.id)
+				var gate_ok := Bank.try_buy_jump_kit() if gate.get("kit", false) \
+						else Bank.try_buy_gate(gate.id)
 				print("[PROBE] bought gate %s=%s money=%.0f" % [gate.id, gate_ok, Bank.currency])
 				for buy: Array in gate.buys:
 					while Bank.upgrade_level(buy[0]) < int(buy[1]) \

@@ -108,3 +108,19 @@ const HARBOR: Array[Vector2] = [
 	Vector2(4650, 650), Vector2(3700, 800), Vector2(2660, 740),
 	Vector2(2350, 1150), Vector2(1400, 1200),
 ]
+## Down the pier and over the canal ramp — flat out into the jump; the
+## post-canal waypoint keeps the driver committed through the flight.
+## GOTCHA: the canal water must never reach west of the pier — a slide
+## off the NE maze corner has to land on recoverable grass, not splash
+## (that trap cost two calibration runs).
+const CANAL: Array[Vector2] = [
+	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
+	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
+	Vector2(-1000, -1450), Vector2(0, -1380), Vector2(1000, -1450),
+	Vector2(1900, -1250), Vector2(2300, -800), Vector2(2100, -400),
+	Vector2(2750, -200), Vector2(3350, -350), Vector2(3350, -800),
+	Vector2(4300, -800), Vector2(5140, -800), Vector2(5150, -450),
+	Vector2(5150, 420), Vector2(5100, 620), Vector2(4200, 760),
+	Vector2(3700, 800), Vector2(2660, 740),
+	Vector2(2350, 1150), Vector2(1400, 1200),
+]

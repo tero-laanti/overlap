@@ -33,6 +33,8 @@ var rivals_beaten: Array[String] = []
 ## reach ECONOMY.garage_unlock_cash.
 var garage_unlocked := false
 var upgrade_levels := {}
+## The gateway equipment: ramps launch properly only once owned.
+var jump_kit_owned := false
 ## 0 until the LAST onboarding rival is beaten — that win hires ghost #1,
 ## and passive income starts there, never before. Active laps still pay.
 var ghost_slots := 0
@@ -72,6 +74,11 @@ func route_payout(route_id: String) -> float:
 		return 0.0
 	var route := _network.find_route(route_id)
 	return route.payout_per_lap if route else 0.0
+
+
+func route_ghost_color(route_id: String) -> Color:
+	var route := _network.find_route(route_id) if _network else null
+	return route.ghost_color if route else Color(0.35, 0.8, 1.0)
 
 
 func route_pb(route_id: String) -> float:
@@ -266,6 +273,21 @@ func try_buy_ghost_slot() -> bool:
 	return true
 
 
+func jump_kit_cost() -> float:
+	return ECONOMY.jump_kit_cost
+
+
+func try_buy_jump_kit() -> bool:
+	if jump_kit_owned or currency < ECONOMY.jump_kit_cost:
+		return false
+	currency -= ECONOMY.jump_kit_cost
+	jump_kit_owned = true
+	save_profile()
+	Events.currency_changed.emit(currency)
+	Events.jump_kit_purchased.emit()
+	return true
+
+
 func is_gate_purchased(gate_id: String) -> bool:
 	return gate_id in purchased_gates
 
@@ -302,6 +324,10 @@ func try_buy_gate(gate_id: String) -> bool:
 
 
 func _on_ghost_lap_completed(route_id: String) -> void:
+	# Belt over the fleet gate: a route held by a standing rival never
+	# pays a ghost lap, even if a stray ghost exists.
+	if not is_route_fleet_active(route_id):
+		return
 	currency += route_payout(route_id) * milestone_multiplier() \
 			* medal_multiplier(route_id)
 	_dirty = true
@@ -355,6 +381,7 @@ func reset_profile() -> void:
 	rivals_beaten.clear()
 	garage_unlocked = false
 	upgrade_levels.clear()
+	jump_kit_owned = false
 	ghost_slots = 0
 	_loaded_save_unix = 0.0
 	_dirty = false

@@ -35,6 +35,12 @@ static func next_gate(bank: Node) -> Resource:
 	return cheapest
 
 
+## The Jump Kit goes on sale once the harbor — home of the canal it
+## exists to cross — is owned.
+static func jump_kit_offered(bank: Node) -> bool:
+	return bank.is_gate_purchased("harbor_gate") and not bank.jump_kit_owned
+
+
 ## Discovered routes whose mastery timing is still for sale. Medals
 ## multiply fleet income, so they wait for the ghost era too.
 static func medal_offers(bank: Node) -> Array:
