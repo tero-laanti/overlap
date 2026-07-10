@@ -245,6 +245,31 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       race lap (straight → braking spot → sweepers → esses → carousel);
       full probe loop green on the new geometry.
 
+## Slice 9 — Rival onboarding (chosen from IDEAS.md, 2026-07-10)
+- [x] The game opens as a race: AMBER, an opaque named rival parked on
+      the grid, replays an authored base-car bot lap (data/rivals/
+      ring_rival.tres — 16.38 s, bot pace × 1.07 handicap) from every
+      lap start. Ghost slots now start at 0: passive income is locked
+      until a ring lap beats the rival's time; the win hires ghost #1
+      (toast + stinger, shop then starts selling slots). Active-lap
+      income still pays from lap one — pillar 4 survives. Existing
+      saves are grandfathered (owning any ghost slot implies the win).
+      RivalRacer owns the park/race/beaten flow; the rival car is a
+      dumb Ghost replay — no AI, no collision (hard rule 5; VISION
+      scope fence consciously amended). Rivals are RivalDef resources
+      authored by DevRivalRecord (user://rivalrecord.flag — rerun and
+      recommit after any change to base-car pace).
+- Notes: verified 2026-07-10 — boot clean; full probe green: fresh
+  profile slots=0, LAP 1 (15.35) beats AMBER (16.38) → rival_beaten →
+  slots=1, then the full five-gate loop matches the pre-rival baseline
+  (income 16.25/s, 10 ghosts, 12 laps, 439 s, zero errors). Photo run
+  eyeballed: rival + name tag on the grid, HUD objective line ("beat
+  the rival to hire your first ghost"), $0 +0.0/s until the win. Human
+  feel pass pending: is AMBER's pace right for a first session?
+  Generalization parked in IDEAS.md: a resident rival per zone.
+- **Accept:** a fresh profile races AMBER from the start line, income
+      stays 0 until the win, and beating it hires ghost #1.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

@@ -37,6 +37,7 @@ func _ready() -> void:
 		_show_toast("SPLASH — lap void", false))
 	Events.secret_unlocked.connect(func(_id: String) -> void:
 		_show_toast("A hidden road reveals itself…", true))
+	Events.rival_beaten.connect(_on_rival_beaten)
 	_toast_label.modulate.a = 0.0
 	_refresh_pips()
 
@@ -56,8 +57,12 @@ func _process(_delta: float) -> void:
 ## Cheapest offer currently in the garage (same pacing rules the shop
 ## renders). Read-only against Bank — no purchase logic here.
 func _next_purchase_hint() -> String:
-	var next_name := "Hire Ghost"
-	var next_cost := Bank.ghost_slot_cost()
+	var next_name := ""
+	var next_cost := INF
+	# Ghost slots are rival-gated: no hire hint until ghost #1 exists.
+	if Bank.ghost_slots >= 1:
+		next_name = "Hire Ghost"
+		next_cost = Bank.ghost_slot_cost()
 	for def in ShopPacingScript.visible_upgrades(Bank):
 		if Bank.upgrade_level(def.id) >= def.max_level:
 			continue
@@ -73,11 +78,12 @@ func _next_purchase_hint() -> String:
 		if route.medal_unlock_cost < next_cost:
 			next_cost = route.medal_unlock_cost
 			next_name = "Mastery: %s" % route.display_name
-	if Bank.currency >= next_cost:
+	if next_name != "" and Bank.currency >= next_cost:
 		return "TAB: %s ready!" % next_name
 	var income := Bank.income_per_second()
 	if income <= 0.0:
-		return ""
+		# Onboarding: no fleet yet — the objective is the rival, not a purchase.
+		return "beat the rival to hire your first ghost" if Bank.ghost_slots == 0 else ""
 	var eta := ceili((next_cost - Bank.currency) / income)
 	return "next: %s in ~%ds" % [next_name, eta]
 
@@ -109,6 +115,12 @@ func _on_lap_completed(_route_id: String, lap_time: float, is_best: bool) -> voi
 ## Discovery outranks the routine lap toast that lands the same instant.
 func _on_route_discovered(_route_id: String, display_name: String) -> void:
 	_show_toast("NEW ROUTE  %s" % display_name, true)
+	_suppress_lap_toast = true
+
+
+## The rival win also lands mid-lap-completion; it outranks the lap toast.
+func _on_rival_beaten(_rival_id: String) -> void:
+	_show_toast("RIVAL BEATEN — first ghost hired", true)
 	_suppress_lap_toast = true
 
 

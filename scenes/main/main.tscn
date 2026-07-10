@@ -14,6 +14,9 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12_menu"]
 [ext_resource type="PackedScene" path="res://scenes/audio/game_audio.tscn" id="13_audio"]
 [ext_resource type="PackedScene" uid="uid://dl0hqxm3vv2pe" path="res://scenes/ui/minimap.tscn" id="14_minimap"]
+[ext_resource type="PackedScene" path="res://scenes/ghost/rival_racer.tscn" id="15_rival"]
+[ext_resource type="Script" path="res://scenes/dev/dev_rival_record.gd" id="16_rivalrec"]
+[ext_resource type="Resource" path="res://data/rivals/ring_rival.tres" id="17_rivaldef"]
 
 [node name="Main" type="Node2D" unique_id=204625123]
 script = ExtResource("1_main")
@@ -22,6 +25,9 @@ script = ExtResource("1_main")
 
 [node name="GhostFleet" type="Node2D" parent="." unique_id=361418478]
 script = ExtResource("7_fleet")
+
+[node name="RivalRacer" parent="." instance=ExtResource("15_rival")]
+def = ExtResource("17_rivaldef")
 
 [node name="Car" parent="." unique_id=381192272 instance=ExtResource("3_car")]
 position = Vector2(600, 1200)
@@ -50,3 +56,6 @@ script = ExtResource("10_calibrate")
 
 [node name="DevPhoto" type="Node" parent="."]
 script = ExtResource("11_photo")
+
+[node name="DevRivalRecord" type="Node" parent="."]
+script = ExtResource("16_rivalrec")

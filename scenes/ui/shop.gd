@@ -20,7 +20,8 @@ func _ready() -> void:
 	visible = false
 	Events.currency_changed.connect(func(_amount: float) -> void: _refresh())
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void: _rebuild())
-	Events.ghost_hired.connect(func(_count: int) -> void: _refresh())
+	# Rebuild, not refresh: the first hire (rival beaten) reveals the row.
+	Events.ghost_hired.connect(func(_count: int) -> void: _rebuild())
 	Events.gate_purchased.connect(func(_id: String) -> void: _rebuild())
 	Events.route_discovered.connect(func(_id: String, _name: String) -> void: _rebuild())
 	Events.medal_unlocked.connect(func(_id: String) -> void: _rebuild())
@@ -47,10 +48,15 @@ func _rebuild() -> void:
 		var row := _make_row("%s" % def.display_name)
 		row.button.pressed.connect(Bank.try_buy_upgrade.bind(def.id))
 		_upgrade_rows[def.id] = row
-	var ghost_row := _make_row("Hire Ghost")
-	ghost_row.button.pressed.connect(Bank.try_buy_ghost_slot)
-	_ghost_label = ghost_row.label
-	_ghost_button = ghost_row.button
+	# Ghost slots stay off the shelf until the rival is beaten — the win
+	# hires ghost #1; only then do further slots go on sale.
+	_ghost_label = null
+	_ghost_button = null
+	if Bank.ghost_slots >= 1:
+		var ghost_row := _make_row("Hire Ghost")
+		ghost_row.button.pressed.connect(Bank.try_buy_ghost_slot)
+		_ghost_label = ghost_row.label
+		_ghost_button = ghost_row.button
 	var gate := ShopPacingScript.next_gate(Bank)
 	if gate != null:
 		var row := _make_row(gate.display_name)
@@ -88,7 +94,7 @@ func _make_row(title: String) -> Dictionary:
 
 
 func _refresh() -> void:
-	if not is_node_ready() or _ghost_label == null:
+	if not is_node_ready():
 		return
 	for id: String in _upgrade_rows:
 		var def := Bank.CATALOG.find(id)
@@ -107,9 +113,10 @@ func _refresh() -> void:
 		var button: Button = _medal_rows[id].button
 		button.text = "$ %d" % int(Bank.medal_unlock_cost(id))
 		button.disabled = Bank.currency < Bank.medal_unlock_cost(id)
-	_ghost_label.text = "Hire Ghost  ×%d" % Bank.ghost_slots
-	_ghost_button.text = "$ %d" % int(Bank.ghost_slot_cost())
-	_ghost_button.disabled = Bank.currency < Bank.ghost_slot_cost()
+	if _ghost_label != null:
+		_ghost_label.text = "Hire Ghost  ×%d" % Bank.ghost_slots
+		_ghost_button.text = "$ %d" % int(Bank.ghost_slot_cost())
+		_ghost_button.disabled = Bank.currency < Bank.ghost_slot_cost()
 	_milestone_label.text = _milestone_text()
 
 

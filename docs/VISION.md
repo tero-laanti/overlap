@@ -37,7 +37,10 @@ is a lap you actually drove. Progress is visible as traffic.
 
 - Not Overlap 1: no round timer, no pit-stop draft, no hazard placement, no
   track mutation. That game exists in ../overlap; we are not rebuilding it.
-- No opponents/AI racing in v1. Ghosts don't collide with you or each other.
+- No live AI opponents in v1. Ghosts don't collide with you or each other.
+  (Amended 2026-07-10 for rival onboarding: rival ghosts — authored
+  recordings replayed opaque and named, raced against your lap clock —
+  are in. Still no AI, no physics, no collision; hard rule 5 holds.)
 - No multiplayer, no procedural tracks in v1.
 
 ## References

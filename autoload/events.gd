@@ -13,6 +13,7 @@ signal ghost_hired(slot_count: int)
 signal upgrade_purchased(id: String, level: int)
 signal gate_purchased(gate_id: String)
 signal route_discovered(route_id: String, display_name: String)
+signal rival_beaten(rival_id: String)
 signal medal_unlocked(route_id: String)
 signal secret_unlocked(secret_id: String)
 signal car_reset_to_road

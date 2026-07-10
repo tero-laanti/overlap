@@ -14,6 +14,7 @@ func _ready() -> void:
 	_race_state.car = $Car
 	_track.lap_started.connect(_race_state.on_lap_started)
 	_track.lap_completed.connect(_race_state.on_lap_completed)
+	_track.lap_started.connect($RivalRacer.on_lap_started)
 	Bank.set_active_network(_track.network)
 	for route_id: String in Bank.route_records:
 		var recording: LapRecordingScript = Bank.route_records[route_id]

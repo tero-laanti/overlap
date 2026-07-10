@@ -1,0 +1,52 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ghost/rival_racer.gd" id="1_racer"]
+[ext_resource type="Script" uid="uid://c1ovr4qei68h1" path="res://scenes/ghost/ghost.gd" id="2_ghost"]
+
+[node name="RivalRacer" type="Node2D"]
+script = ExtResource("1_racer")
+
+[node name="RivalGhost" type="Node2D" parent="."]
+script = ExtResource("2_ghost")
+
+[node name="WheelFL" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(-21, -26, -13, -26, -13, -10, -21, -10)
+
+[node name="WheelFR" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(13, -26, 21, -26, 21, -10, 13, -10)
+
+[node name="WheelRL" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(-21, 14, -13, 14, -13, 30, -21, 30)
+
+[node name="WheelRR" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(13, 14, 21, 14, 21, 30, 13, 30)
+
+[node name="Body" type="Polygon2D" parent="RivalGhost"]
+color = Color(1, 0.62, 0.18, 1)
+polygon = PackedVector2Array(-18, 32, 18, 32, 19, 14, 18, -12, 13, -33, -13, -33, -18, -12, -19, 14)
+
+[node name="Stripe" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.28, 0.16, 0.07, 0.9)
+polygon = PackedVector2Array(-4, 32, 4, 32, 3, -32, -3, -32)
+
+[node name="Windshield" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.2, 0.13, 0.07, 1)
+polygon = PackedVector2Array(-12, -6, 12, -6, 9, -20, -9, -20)
+
+[node name="Spoiler" type="Polygon2D" parent="RivalGhost"]
+color = Color(0.45, 0.26, 0.09, 1)
+polygon = PackedVector2Array(-19, 29, 19, 29, 19, 35, -19, 35)
+
+[node name="NameTag" type="Label" parent="."]
+offset_right = 1.0
+offset_bottom = 23.0
+theme_override_colors/font_color = Color(1, 0.78, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.1, 0.07, 0.03, 1)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 26
+text = "RIVAL"
+horizontal_alignment = 1

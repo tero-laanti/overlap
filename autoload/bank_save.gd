@@ -39,6 +39,7 @@ static func write(path: String, bank: Node) -> void:
 		"purchased_gates": bank.purchased_gates,
 		"medal_unlocked_routes": bank.medal_unlocked_routes,
 		"unlocked_secrets": bank.unlocked_secrets,
+		"rivals_beaten": bank.rivals_beaten,
 	})
 	file.close()
 	var err := DirAccess.rename_absolute(tmp_path, path)
@@ -67,6 +68,13 @@ static func read_into(path: String, bank: Node) -> float:
 	bank.purchased_gates.assign(data.get("purchased_gates", []))
 	bank.medal_unlocked_routes.assign(data.get("medal_unlocked_routes", []))
 	bank.unlocked_secrets.assign(data.get("unlocked_secrets", []))
+	bank.rivals_beaten.assign(data.get("rivals_beaten", []))
+	# Owning any ghost slot implies the onboarding win — beating the ring
+	# rival is the only path from 0 to 1 — so a slotted profile with no
+	# rivals on record is from before rivals existed. Grandfather it
+	# instead of re-gating its fleets.
+	if bank.rivals_beaten.is_empty() and bank.ghost_slots >= 1:
+		bank.rivals_beaten.append("ring_rival")
 	return data.get("saved_at_unix", 0.0)
 
 

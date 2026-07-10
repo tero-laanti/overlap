@@ -25,11 +25,14 @@ over composable road geometry, not sealed one-off scenes.
 ## ~~Full track relayout~~ CHOSEN 2026-07-07 → docs/MAP_DESIGN_V2.md
 ## (15 s hub, design-all build-hub-first, full save wipe)
 
-## Roguelite rounds + rival onboarding (2026-07-07 brainstorm — user, undecided)
+## Roguelite rounds + rival onboarding (2026-07-07 brainstorm)
 
-Two linked ideas. Both rub against the scope fence (VISION: no
-opponents/AI in v1) and the tuned cold start (first buy at 20–40 s,
-DESIGN_NOTES) — refine against those before choosing.
+Two linked ideas. Item 2 (rival onboarding) CHOSEN 2026-07-10 →
+ROADMAP slice 9, ghost-replay variant with the active-income
+mitigation; the VISION scope fence was consciously amended. Its
+generalization — a resident rival per zone, beat it to claim the
+route's fleet or medal — remains parked here. Item 1 (pick-1-of-3
+rounds) remains undecided.
 
 1. **Pick-1-of-3 rounds** — after a "round" of sorts, choose one of
    three offers: a new route, extra rewards, a whole new track, etc.

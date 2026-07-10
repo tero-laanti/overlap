@@ -1,4 +1,4 @@
-# Handoff — for the next agent (updated 2026-07-07 by Claude Fable 5)
+# Handoff — for the next agent (updated 2026-07-10 by Claude Fable 5)
 
 You have fresh context. This file is your fastest path to being useful.
 Read in order: AGENTS.md (rules — non-negotiable), ROADMAP.md (state),
@@ -176,16 +176,37 @@ them.
    exactly "Shape"; (d) Bank.reset_profile now emits
    Events.profile_reset — stat consumers (car) must recompute on it;
    (e) sliver dashes at segment ends fail triangulation (guarded).
-14. Next candidates: rival onboarding (docs/IDEAS.md — the 15 s hub
-   was designed for it; calibrator recordings are the rival source),
-   Jump Kit + canal/washout soft gates, coast linker + grand tour,
-   gate-exhausted badges, prestige (pick-1-of-3 seasons). Human feel
-   passes pending: cliffs hairpins at v2 scale, camera zoom/shake,
-   audio mix in long play. OLD PLAN CONTINUES: petal 3 (harbor) — OLD PLAN CONTINUES: petal 3 (harbor) per docs/MAP_DESIGN.md §8 — the visual
-   foundation is in, so author it pretty from the start (navy/rust/
-   crane-yellow palette per MAP_DESIGN §7). Then Jump Kit gateway
-   moment (+ cliff washout jump spot), coast linker + grand tour,
-   gate-exhausted badges.
+14. RIVAL ONBOARDING DONE 2026-07-10 (chosen by the human; ROADMAP
+   slice 9, VISION scope fence consciously amended): the game opens
+   as a race against AMBER — an opaque named ghost replaying an
+   authored base-car bot lap (data/rivals/ring_rival.tres, 16.38 s =
+   bot pace × RIVAL_HANDICAP 1.07) synchronized to every lap start.
+   ghost_slots now START AT 0; beating the rival's time on the ring
+   hires ghost #1 and only then does passive income exist (active
+   laps pay from lap one — pillar 4). Shop hides Hire Ghost and the
+   HUD hint shows the rival objective while slots == 0. Existing
+   saves grandfather via an invariant, not a version bump: slots >= 1
+   with empty rivals_beaten ⇒ mark ring_rival beaten (the win is the
+   only 0→1 path). New pieces: RivalDef + RivalRacer
+   (scenes/ghost/), Events.rival_beaten, Bank.mark_rival_beaten,
+   Ghost.playing flag (parks the rival on the grid), DevRivalRecord
+   (user://rivalrecord.flag — wipes to base car, drives the ring,
+   writes the slowed .tres; RERUN + RECOMMIT after any base-car
+   handling change, like calibrate). GOTCHA from this session: an
+   aborted read_into (typed-array ternary crash) half-loaded a save
+   that a later autosave then rewrote with rivals_beaten=[] — the
+   invariant-based grandfather self-heals exactly this; prefer
+   invariants over key-presence defaults for save migrations. Human
+   feel pass PENDING: is AMBER's pace right for a first session?
+   Generalization parked in IDEAS.md: resident rival per zone, beat
+   it to claim the route's fleet/medal — discovery toast → rival
+   intro is the strong per-zone beat.
+15. Next candidates: coast linker + grand tour (needs the harbor's
+   south edge), Jump Kit gateway moment (+ cliff washout jump spot),
+   per-zone resident rivals (IDEAS.md), gate-exhausted badges,
+   prestige (pick-1-of-3 seasons). Human feel passes pending: AMBER's
+   pace, cliffs hairpins at v2 scale, camera zoom/shake, audio mix in
+   long play.
 
 ## Verification workflow (mandatory before any commit)
 
@@ -201,6 +222,11 @@ them.
 - Extend scenes/dev/dev_probe.gd with new phases when you add systems
   (that's how every slice here got verified — its phased scenario is
   the project's de-facto integration test).
+- Dev flags (user://, debug builds, never combined): autopilot.flag
+  (probe), calibrate.flag (pars), rivalrecord.flag (authors
+  data/rivals/ring_rival.tres from a base-car bot run), photo.flag
+  (windowed art check). All of them wipe or rewrite the save — back
+  up the human's save.dat first and restore it after, every time.
 - Editor bridge (godot-mcp) needs the editor open; game-window
   screenshots don't work on macOS — the probe's user://dev/*.png frames
   are the substitute. If bridge calls time out, kill orphaned

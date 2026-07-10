@@ -27,8 +27,11 @@ var discovered_routes: Array[String] = []
 var purchased_gates: Array[String] = []
 var medal_unlocked_routes: Array[String] = []
 var unlocked_secrets: Array[String] = []
+var rivals_beaten: Array[String] = []
 var upgrade_levels := {}
-var ghost_slots := 1
+## 0 until the onboarding rival is beaten — beating it hires ghost #1,
+## and passive income starts there, never before. Active laps still pay.
+var ghost_slots := 0
 
 var _network: TrackNetworkDefScript
 var _save_timer := 0.0
@@ -109,6 +112,22 @@ func medal_multiplier(route_id: String) -> float:
 
 func is_medal_unlocked(route_id: String) -> bool:
 	return route_id in medal_unlocked_routes
+
+
+func is_rival_beaten(rival_id: String) -> bool:
+	return rival_id in rivals_beaten
+
+
+## Beating a rival is the onboarding win: it hires your first ghost.
+func mark_rival_beaten(rival_id: String) -> void:
+	if rival_id in rivals_beaten:
+		return
+	rivals_beaten.append(rival_id)
+	if ghost_slots < 1:
+		ghost_slots = 1
+	save_profile()
+	Events.rival_beaten.emit(rival_id)
+	Events.ghost_hired.emit(ghost_slots)
 
 
 func is_secret_unlocked(secret_id: String) -> bool:
@@ -269,8 +288,9 @@ func reset_profile() -> void:
 	purchased_gates.clear()
 	medal_unlocked_routes.clear()
 	unlocked_secrets.clear()
+	rivals_beaten.clear()
 	upgrade_levels.clear()
-	ghost_slots = 1
+	ghost_slots = 0
 	_loaded_save_unix = 0.0
 	_dirty = false
 	_save_timer = 0.0

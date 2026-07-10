@@ -92,6 +92,8 @@ func _ready() -> void:
 			_car.global_position.x, _car.global_position.y]))
 	Events.secret_unlocked.connect(func(secret_id: String) -> void:
 		print("[PROBE] secret_unlocked id=%s" % secret_id))
+	Events.rival_beaten.connect(func(rival_id: String) -> void:
+		print("[PROBE] rival_beaten id=%s slots=%d" % [rival_id, Bank.ghost_slots]))
 	var track: TrackScript = get_tree().get_first_node_in_group("track")
 	if track:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
