@@ -24,11 +24,8 @@ extends Resource
 ## Fleet sizes that each multiply all income by milestone_multiplier.
 @export var milestone_counts: Array[int] = [10, 25, 50]
 @export var milestone_multiplier := 2.0
-## Mastery medals: a route's PB vs its authored par_time. Gold at or
-## under par; silver/bronze within these factors of par. Each tier
-## permanently multiplies that route's fleet income.
+## Medals: free recognition from a route's PB vs its authored par_time.
+## Gold at or under par; silver/bronze within these factors of par.
+## No economy effect — badges only.
 @export var medal_silver_factor := 1.1
 @export var medal_bronze_factor := 1.25
-@export var medal_gold_multiplier := 1.5
-@export var medal_silver_multiplier := 1.25
-@export var medal_bronze_multiplier := 1.1

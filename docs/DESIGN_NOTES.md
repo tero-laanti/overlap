@@ -62,8 +62,9 @@ fast") was replaced by a rival ladder that IS the early game:
 - **Garage reveals at $50 driving earnings** (~lap 2) and shopping only
   works parked AT the building (GarageZone). First upgrade lands lap
   3-4, next every ~2 laps — the requested cadence.
-- **Ghost slots, gates, medals and annex geography all wait for the
-  ghost era.** Locked annexes are hidden (roads, fields, dressing +
+- **Ghost slots, gates and annex geography all wait for the ghost
+  era.** (Medals are free badges since 2026-07-10 — the mastery
+  purchase was cut as redundant with the rival ladder.) Locked annexes are hidden (roads, fields, dressing +
   their collision); only the next gate on sale shows its road as a
   faint preview (TrackReveal, zone_<gate_id> groups). Gate bars stay
   as small locked promises; the forest secret is untouched.

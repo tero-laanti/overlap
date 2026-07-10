@@ -401,6 +401,26 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       in one lap is impossible; feel signed off (human, 2026-07-10:
       "ok yeah it's better").
 
+## Slice 15 — Remove mastery purchases; medals become free badges
+- [x] Human verdict 2026-07-10: "mastery is completely pointless as
+      is" — doubly redundant (rivals made the bot visible and beatable;
+      a faster PB already pays more via lap frequency) and a purchase
+      with no content. Removed: the per-route mastery purchase
+      (RouteDef.medal_unlock_cost, Bank.medal_unlocked_routes + its
+      save key, try_buy_medal_unlock, ShopPacing.medal_offers, shop
+      "Mastery:" rows, HUD hint branch) and the medal income
+      multiplier (economy medal_*_multiplier knobs; ghost-lap and
+      income/s formulas lose the medal term). Kept: medal tiers as
+      FREE recognition — derived from PB vs par as before (economy
+      medal_silver/bronze_factor), shown in the route log, with a new
+      `Events.medal_earned(route_id, tier)` fired when a new PB
+      upgrades the tier (plays the existing medal sting). Save stays
+      v6 — the dropped key reads back as nothing.
+- **Accept:** no mastery row in the GARAGE; medals appear in the
+      route log from the first qualifying PB with no purchase; fleet
+      income identical before/after on the same PBs (probe income
+      figures drop only by the removed medal factor).
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

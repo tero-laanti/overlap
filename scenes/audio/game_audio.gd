@@ -14,7 +14,8 @@ func _ready() -> void:
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		$Purchase.play())
 	Events.ghost_hired.connect(func(_count: int) -> void: $Purchase.play())
-	Events.medal_unlocked.connect(func(_route_id: String) -> void: $Medal.play())
+	Events.medal_earned.connect(func(_route_id: String, _tier: String) -> void:
+		$Medal.play())
 	Events.rival_beaten.connect(func(_rival_id: String) -> void: $Medal.play())
 	Events.gate_purchased.connect(func(_gate_id: String) -> void: $Gate.play())
 	Events.jump_kit_purchased.connect(func() -> void: $Gate.play())

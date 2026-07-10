@@ -12,7 +12,6 @@ var _garage_zone: Node2D
 var _kit_button: Button
 var _upgrade_rows := {}
 var _gate_rows := {}
-var _medal_rows := {}
 var _ghost_label: Label
 var _ghost_button: Button
 
@@ -28,7 +27,6 @@ func _ready() -> void:
 	Events.ghost_hired.connect(func(_count: int) -> void: _rebuild())
 	Events.gate_purchased.connect(func(_id: String) -> void: _rebuild())
 	Events.route_discovered.connect(func(_id: String, _name: String) -> void: _rebuild())
-	Events.medal_unlocked.connect(func(_id: String) -> void: _rebuild())
 	Events.jump_kit_purchased.connect(_rebuild)
 	# Bank learns the active network in Main._ready, after this ready runs.
 	_rebuild.call_deferred()
@@ -66,7 +64,6 @@ func _rebuild() -> void:
 	_kit_button = null
 	_upgrade_rows.clear()
 	_gate_rows.clear()
-	_medal_rows.clear()
 	for def in ShopPacingScript.visible_upgrades(Bank):
 		var row := _make_row("%s" % def.display_name)
 		row.button.pressed.connect(Bank.try_buy_upgrade.bind(def.id))
@@ -89,10 +86,6 @@ func _rebuild() -> void:
 		var kit_row := _make_row("Jump Kit")
 		kit_row.button.pressed.connect(Bank.try_buy_jump_kit)
 		_kit_button = kit_row.button
-	for route in ShopPacingScript.medal_offers(Bank):
-		var row := _make_row("Mastery: %s" % route.display_name)
-		row.button.pressed.connect(Bank.try_buy_medal_unlock.bind(route.id))
-		_medal_rows[route.id] = row
 	if OS.is_debug_build():
 		var reset_row := _make_row("DEBUG · wipe save")
 		(reset_row.button as Button).text = "RESET"
@@ -136,10 +129,6 @@ func _refresh() -> void:
 		var button: Button = _gate_rows[id].button
 		button.text = "$ %d" % int(Bank.gate_cost(id))
 		button.disabled = Bank.currency < Bank.gate_cost(id)
-	for id: String in _medal_rows:
-		var button: Button = _medal_rows[id].button
-		button.text = "$ %d" % int(Bank.medal_unlock_cost(id))
-		button.disabled = Bank.currency < Bank.medal_unlock_cost(id)
 	if _kit_button != null:
 		_kit_button.text = "$ %d" % int(Bank.jump_kit_cost())
 		_kit_button.disabled = Bank.currency < Bank.jump_kit_cost()

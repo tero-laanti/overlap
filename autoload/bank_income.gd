@@ -4,8 +4,6 @@ extends RefCounted
 ## operate on the Bank autoload passed in — no state here. Bank keeps
 ## the public API; payouts and offline grants stay Bank's side effects.
 
-const BankMedalsScript = preload("res://autoload/bank_medals.gd")
-
 
 ## ×2 for every fleet milestone reached (10/25/50 ghosts by default).
 static func milestone_multiplier(bank: Node) -> float:
@@ -21,8 +19,7 @@ static func route_income_per_second(bank: Node, route_id: String) -> float:
 	if pb <= 0.0 or not bank.is_route_fleet_active(route_id):
 		return 0.0
 	return bank.ghost_slots * bank.route_payout(route_id) \
-			* milestone_multiplier(bank) \
-			* BankMedalsScript.multiplier(bank, route_id) / pb
+			* milestone_multiplier(bank) / pb
 
 
 static func income_per_second(bank: Node) -> float:

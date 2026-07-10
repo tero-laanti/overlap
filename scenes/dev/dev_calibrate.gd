@@ -4,9 +4,9 @@ extends Node
 ## opens every gate, maxes every upgrade, then drives each authored
 ## route with the shared autopilot and reports best laps — the numbers
 ## RouteDef.par_time is authored from. Rerun after any handling or
-## catalog change and re-author pars. Buys each mastery unlock too, so
-## the report shows the medal the maxed autopilot earns against current
-## pars (expect gold once pars match this run's output).
+## catalog change and re-author pars. The report shows the medal the
+## maxed autopilot earns against current pars (expect gold once pars
+## match this run's output).
 
 const FLAG_PATH := "user://calibrate.flag"
 const LAPS_PER_ROUTE := 3
@@ -100,7 +100,6 @@ func _on_lap_completed(route_id: String, lap_time: float, _is_best: bool) -> voi
 	_stage_laps += 1
 	print("[CAL] %s lap %d: %.2f" % [route_id, _stage_laps, lap_time])
 	if _stage_laps >= LAPS_PER_ROUTE:
-		Bank.try_buy_medal_unlock(route_id)
 		_next_stage()
 
 

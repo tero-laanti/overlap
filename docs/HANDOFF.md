@@ -282,7 +282,22 @@ them.
    corridor; exit is a long tangential on-ramp east onto the top
    straight. Forest par 16.3 (bot 17.16 — 2 s faster than the old
    hooked exit).
-20. Next: V3-2 the strait + Port island (shore ramps both ways,
+20. MASTERY REMOVED 2026-07-10 (human: "completely pointless as is" —
+   agreed: doubly redundant since rivals made the bot beatable and a
+   faster PB already earns more via lap frequency). Medals SURVIVE as
+   free badges: tier still derived from PB vs par
+   (economy medal_silver/bronze_factor), shown in the route log;
+   NEW Events.medal_earned(route_id, tier) fires when a fresh PB
+   upgrades the tier (Bank._on_best_lap_recorded compares tier
+   before/after; PB only improves so it never downgrades) and plays
+   the medal sting. GONE: RouteDef.medal_unlock_cost,
+   Bank.medal_unlocked_routes + save key + try_buy_medal_unlock +
+   medal_multiplier, ShopPacing.medal_offers, shop "Mastery:" rows,
+   HUD mastery hint, economy medal_*_multiplier knobs, the medal term
+   in ghost-lap payouts and income/s. Save stays v6 (dropped key just
+   stops being read/written). Fleet income on identical PBs is now
+   LOWER by the removed medal factor — expected, don't "fix" it.
+21. Next: V3-2 the strait + Port island (shore ramps both ways,
    RouteTracker one-start-line-per-island, Port base loop from the
    maze/dock parts, garage pad #2, Jump Kit as the ticket) → V3-3
    pier/canal variant → V3-4 the Crag. Open V3 questions for the

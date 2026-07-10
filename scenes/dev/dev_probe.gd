@@ -18,7 +18,6 @@ const TIMEOUT := 900.0
 const REDRIVE_LAPS := 2
 const WATCH_SECONDS := 16.0
 const SLOT_EARN_TARGET := 30.0  # ghost slot ($25) + slack
-const MASTERY_ROUTE_ID := "ring"
 
 ## The ladder phase buys these in order as lap earnings allow — ending
 ## exactly at ONYX's authored spec, which beats ONYX by its handicap.
@@ -88,8 +87,8 @@ func _connect_logging() -> void:
 		print("[PROBE] route_discovered id=%s name=%s" % [route_id, display_name]))
 	Events.gate_purchased.connect(func(gate_id: String) -> void:
 		print("[PROBE] gate_purchased id=%s money=%.0f" % [gate_id, Bank.currency]))
-	Events.medal_unlocked.connect(func(route_id: String) -> void:
-		print("[PROBE] medal_unlocked route=%s money=%.0f" % [route_id, Bank.currency]))
+	Events.medal_earned.connect(func(route_id: String, tier: String) -> void:
+		print("[PROBE] medal_earned route=%s tier=%s" % [route_id, tier]))
 	Events.car_reset_to_road.connect(func() -> void:
 		print("[PROBE] splash reset pos=(%.0f, %.0f)" % [
 			_car.global_position.x, _car.global_position.y]))
@@ -204,8 +203,7 @@ func _process(delta: float) -> void:
 
 
 func _finish() -> void:
-	var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
-	print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
+	print("[PROBE] ring_medal=%s" % Bank.route_medal("ring"))
 	ReportScript.dump_route_log(get_tree())
 	print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d dune_pb=%.2f ghosts=%d" % [
 		_elapsed, Bank.currency, Bank.income_per_second(),

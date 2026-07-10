@@ -26,7 +26,6 @@ var currency := 0.0
 var route_records := {}
 var discovered_routes: Array[String] = []
 var purchased_gates: Array[String] = []
-var medal_unlocked_routes: Array[String] = []
 var unlocked_secrets: Array[String] = []
 var rivals_beaten: Array[String] = []
 ## One-way latch: the GARAGE (and upgrades) open once driving earnings
@@ -111,18 +110,10 @@ func milestone_multiplier() -> float:
 	return BankIncomeScript.milestone_multiplier(self)
 
 
-## Mastery medal for a route — "", "bronze", "silver" or "gold" —
-## derived, never stored, and only active once mastery is bought.
+## Medal for a route — "", "bronze", "silver" or "gold" — free
+## recognition derived from PB vs par, never stored, no economy effect.
 func route_medal(route_id: String) -> String:
 	return BankMedalsScript.tier(self, route_id)
-
-
-func medal_multiplier(route_id: String) -> float:
-	return BankMedalsScript.multiplier(self, route_id)
-
-
-func is_medal_unlocked(route_id: String) -> bool:
-	return route_id in medal_unlocked_routes
 
 
 func is_rival_beaten(rival_id: String) -> bool:
@@ -207,19 +198,6 @@ func unlock_secret(secret_id: String) -> void:
 	unlocked_secrets.append(secret_id)
 	save_profile()
 	Events.secret_unlocked.emit(secret_id)
-
-
-func medal_unlock_cost(route_id: String) -> float:
-	return BankMedalsScript.unlock_cost(self, route_id)
-
-
-func try_buy_medal_unlock(route_id: String) -> bool:
-	if not BankMedalsScript.try_buy_unlock(self, route_id):
-		return false
-	save_profile()
-	Events.currency_changed.emit(currency)
-	Events.medal_unlocked.emit(route_id)
-	return true
 
 
 func route_income_per_second(route_id: String) -> float:
@@ -328,8 +306,7 @@ func _on_ghost_lap_completed(route_id: String) -> void:
 	# pays a ghost lap, even if a stray ghost exists.
 	if not is_route_fleet_active(route_id):
 		return
-	currency += route_payout(route_id) * milestone_multiplier() \
-			* medal_multiplier(route_id)
+	currency += route_payout(route_id) * milestone_multiplier()
 	_dirty = true
 	Events.currency_changed.emit(currency)
 
@@ -354,8 +331,14 @@ func _on_player_lap_completed(route_id: String, _lap_time: float, _is_best: bool
 
 
 func _on_best_lap_recorded(route_id: String, recording: LapRecordingScript) -> void:
+	# PB only ever improves, so the derived medal only ever upgrades —
+	# a tier change on a new best is always a freshly earned medal.
+	var tier_before := route_medal(route_id)
 	route_records[route_id] = recording
 	save_profile()
+	var tier_after := route_medal(route_id)
+	if tier_after != tier_before and tier_after != "":
+		Events.medal_earned.emit(route_id, tier_after)
 
 
 func save_profile() -> void:
@@ -376,7 +359,6 @@ func reset_profile() -> void:
 	route_records.clear()
 	discovered_routes.clear()
 	purchased_gates.clear()
-	medal_unlocked_routes.clear()
 	unlocked_secrets.clear()
 	rivals_beaten.clear()
 	garage_unlocked = false

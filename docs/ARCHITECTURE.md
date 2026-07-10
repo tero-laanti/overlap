@@ -9,7 +9,7 @@ goes, this table decides.
 
 | Owner | Owns | Never owns |
 |---|---|---|
-| `Bank` (autoload) | currency, per-route PB recordings, discovered routes, purchased gates, medal unlocks, unlocked secrets, upgrade levels, ghost slots, save/load, offline earnings | scene nodes, per-frame gameplay (its only `_process` is the autosave timer) |
+| `Bank` (autoload) | currency, per-route PB recordings, discovered routes, purchased gates, unlocked secrets, upgrade levels, ghost slots, save/load, offline earnings | scene nodes, per-frame gameplay (its only `_process` is the autosave timer) |
 | `Events` (autoload) | cross-scene signals only (see autoload/events.gd for the full list) | state of any kind |
 | `Main` scene | instantiating track/car/UI, wiring signals | gameplay rules, flow state |
 | `Car` scene | input, movement, drift physics, surface queries (road/water/rubble), drift trails, splash reset | economy, lap validity |
@@ -20,7 +20,7 @@ goes, this table decides.
 | UI scenes (hud, shop, route_log) | presentation + purchase intents; ShopPacing (static) decides what the GARAGE offers | any math; they read Bank, never write it except via `Bank.try_buy_*` |
 
 Bank stays under the line ceiling by delegating to static helpers that
-operate on it: `BankSave` (save IO), `BankMedals` (mastery medals).
+operate on it: `BankSave` (save IO), `BankMedals` (derived medal tiers).
 
 ## Key data types (Resources)
 
@@ -31,15 +31,15 @@ operate on it: `BankSave` (save IO), `BankMedals` (mastery medals).
 - **TrackNetworkDef** — one track's gate network: crossing lines, authored
   routes, purchasable gates. RouteTracker consumes only this, so route
   detection is headless-testable and independent of scene geometry.
-- **RouteDef** — ordered edge-id sequence, par time, payout per lap, medal
-  unlock cost, `secret` flag, clue, required gates.
+- **RouteDef** — ordered edge-id sequence, par time, payout per lap,
+  `secret` flag, clue, required gates.
 - **GateDef / CrossingLineDef** — id + price / id + segment endpoints.
 - **CarStats** — movement, grass/rubble, and drift-trail tuning. The base
   resource is never mutated; Car duplicates it and applies upgrades.
 - **UpgradeDef / UpgradeCatalog** — stat name, cost curve, multiplier, max
   level, shop reveal threshold.
 - **EconomyDef** (data/economy.tres) — ghost slot costs, active-lap and
-  milestone multipliers, offline cap, medal factors/multipliers.
+  milestone multipliers, offline cap, medal tier factors.
 - **TrackDef** — legacy (scene path/base payout); currently unread. Route
   payouts live on RouteDef.
 
@@ -73,14 +73,14 @@ operate on it: `BankSave` (save IO), `BankMedals` (mastery medals).
 
 ## Economy
 
-- Per ghost lap: `payout_per_lap × milestone_multiplier × medal_multiplier`.
+- Per ghost lap: `payout_per_lap × milestone_multiplier`.
 - Per player lap: `payout_per_lap × active_lap_multiplier ×
   milestone_multiplier` — active play always out-earns watching.
 - `income_per_second = Σ over routes with a PB: ghost_slots × payout ×
-  milestone × medal / pb`.
+  milestone / pb`.
 - Offline: `earned = income_per_second × min(elapsed, offline_cap)`.
-- Medals are derived from PB vs authored par, never stored, and only count
-  once that route's mastery is bought.
+- Medals are free recognition badges derived from PB vs authored par,
+  never stored, no economy effect (`Events.medal_earned` on tier-up).
 - All curves/multipliers live in data/ resources; Bank only evaluates them.
 - Saves: v3 dictionary via `store_var` (plain data, no serialized objects),
   written atomically (temp file + rename); v2 saves migrate on load.

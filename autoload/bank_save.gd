@@ -47,7 +47,6 @@ static func write(path: String, bank: Node) -> void:
 		"routes": routes,
 		"discovered_routes": bank.discovered_routes,
 		"purchased_gates": bank.purchased_gates,
-		"medal_unlocked_routes": bank.medal_unlocked_routes,
 		"unlocked_secrets": bank.unlocked_secrets,
 		"rivals_beaten": bank.rivals_beaten,
 		"garage_unlocked": bank.garage_unlocked,
@@ -78,7 +77,6 @@ static func read_into(path: String, bank: Node) -> float:
 		bank.route_records[route_id] = _recording_from(data["routes"][route_id])
 	bank.discovered_routes.assign(data.get("discovered_routes", []))
 	bank.purchased_gates.assign(data.get("purchased_gates", []))
-	bank.medal_unlocked_routes.assign(data.get("medal_unlocked_routes", []))
 	bank.unlocked_secrets.assign(data.get("unlocked_secrets", []))
 	bank.rivals_beaten.assign(data.get("rivals_beaten", []))
 	bank.garage_unlocked = data.get("garage_unlocked", false)
@@ -91,7 +89,6 @@ static func read_into(path: String, bank: Node) -> float:
 		for route_id in V6_DROPPED_ROUTES:
 			bank.route_records.erase(route_id)
 			bank.discovered_routes.erase(route_id)
-			bank.medal_unlocked_routes.erase(route_id)
 		var known: Array[String] = []
 		for rival_id: String in bank.rivals_beaten:
 			if rival_id in KNOWN_RIVALS:

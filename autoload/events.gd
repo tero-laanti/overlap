@@ -18,7 +18,7 @@ signal rival_race_finished(rival_id: String, display_name: String,
 		player_time: float, rival_time: float, won: bool)
 signal garage_unlocked
 signal jump_kit_purchased
-signal medal_unlocked(route_id: String)
+signal medal_earned(route_id: String, tier: String)
 signal secret_unlocked(secret_id: String)
 signal car_reset_to_road
 signal profile_reset

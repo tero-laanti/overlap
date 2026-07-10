@@ -114,10 +114,6 @@ func _next_purchase_hint() -> String:
 	if ShopPacingScript.jump_kit_offered(Bank) and Bank.jump_kit_cost() < next_cost:
 		next_cost = Bank.jump_kit_cost()
 		next_name = "Jump Kit"
-	for route in ShopPacingScript.medal_offers(Bank):
-		if route.medal_unlock_cost < next_cost:
-			next_cost = route.medal_unlock_cost
-			next_name = "Mastery: %s" % route.display_name
 	if next_name != "" and Bank.currency >= next_cost:
 		return "garage: %s ready — pull in!" % next_name
 	var income := Bank.income_per_second()

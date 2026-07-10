@@ -1,10 +1,10 @@
 class_name ShopPacing
 extends RefCounted
 ## What the GARAGE currently offers — the shop evolves during a run:
-## upgrades reveal as total owned levels grow, only the cheapest
-## unpurchased gate shows at a time (concertina pacing), and mastery
-## timing sells per discovered route. Pure reads over the Bank autoload
-## passed in; shared by the shop and the HUD's next-purchase hint.
+## upgrades reveal as total owned levels grow and only the cheapest
+## unpurchased gate shows at a time (concertina pacing). Pure reads over
+## the Bank autoload passed in; shared by the shop and the HUD's
+## next-purchase hint.
 
 
 static func total_upgrade_levels(bank: Node) -> int:
@@ -39,16 +39,3 @@ static func next_gate(bank: Node) -> Resource:
 ## (MAP_DESIGN_V3 §2) — parked until that strait exists.
 static func jump_kit_offered(_bank: Node) -> bool:
 	return false
-
-
-## Discovered routes whose mastery timing is still for sale. Medals
-## multiply fleet income, so they wait for the ghost era too.
-static func medal_offers(bank: Node) -> Array:
-	var offers := []
-	if bank.ghost_slots < 1:
-		return offers
-	for route in bank.authored_routes():
-		if route.id in bank.discovered_routes \
-				and not bank.is_medal_unlocked(route.id):
-			offers.append(route)
-	return offers
