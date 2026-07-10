@@ -13,26 +13,19 @@ const SETTLE_FRAMES := 8
 ## name -> [world position, zoom]. Island v2 hub viewpoints; annex
 ## slices add their own.
 const SPOTS := {
-	"island": [Vector2(-100, -900), 0.105],
+	"island": [Vector2(-1150, -900), 0.115],
 	"start": [Vector2(500, 1150), 0.5],
-	"t1_braking": [Vector2(-2350, 950), 0.45],
+	"t1_fork": [Vector2(-2600, 1050), 0.45],
 	"riser": [Vector2(-2500, -300), 0.4],
 	"top_kink": [Vector2(0, -1400), 0.45],
 	"ne_sweep": [Vector2(2100, -1050), 0.45],
 	"esses": [Vector2(2150, 0), 0.4],
 	"carousel": [Vector2(2450, 950), 0.45],
-	"chord_gate": [Vector2(500, -1200), 0.5],
 	"shore_south": [Vector2(0, 2050), 0.5],
-	"dune_gate": [Vector2(-2750, 460), 0.5],
-	"dune_bowl": [Vector2(-4300, -400), 0.32],
-	"x_crossing": [Vector2(500, -1330), 0.5],
-	"cliff_gate": [Vector2(2150, -1400), 0.5],
-	"ladder": [Vector2(2800, -2170), 0.38],
-	"lighthouse": [Vector2(3150, -2720), 0.55],
+	"dune_bowl": [Vector2(-3900, -100), 0.3],
+	"dune_merge": [Vector2(-2900, -1000), 0.45],
 	"forest_gap": [Vector2(-1990, -1720), 0.55],
 	"woods": [Vector2(-1600, -2600), 0.3],
-	"harbor_maze": [Vector2(3800, -300), 0.35],
-	"dock": [Vector2(4650, 300), 0.45],
 }
 
 var _camera: Camera2D

@@ -18,28 +18,15 @@ const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
 const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 
 var _driver: DevDriverScript = DevDriverScript.new()
-var _route_ids: Array[String] = [
-	"ring", "cut", "dune", "sandcut", "climb", "high_ring", "forest",
-	"harbor", "canal",
-]
+var _route_ids: Array[String] = ["ring", "dune", "forest"]
 var _route_points := {
 	"ring": RoutesScript.RING,
-	"cut": RoutesScript.CUT,
 	"dune": RoutesScript.DUNE,
-	"sandcut": RoutesScript.SANDCUT,
-	"climb": RoutesScript.CLIMB,
-	"high_ring": RoutesScript.HIGH_RING,
 	"forest": RoutesScript.FOREST,
-	"harbor": RoutesScript.HARBOR,
-	"canal": RoutesScript.CANAL,
 }
 ## Routes whose mouths or hairpins need a tighter capture radius.
 var _route_reach := {
-	"climb": RoutesScript.CLIFF_REACH,
-	"high_ring": RoutesScript.CLIFF_REACH,
 	"forest": RoutesScript.CLIFF_REACH,
-	"harbor": 130.0,
-	"canal": 130.0,
 }
 var _stage := -1
 var _stage_laps := 0
@@ -64,7 +51,6 @@ func _ready() -> void:
 func _prep() -> void:
 	for gate in Bank.unpurchased_gates():
 		Bank.try_buy_gate(gate.id)
-	Bank.try_buy_jump_kit()
 	for def in Bank.CATALOG.upgrades:
 		while Bank.try_buy_upgrade(def.id):
 			pass

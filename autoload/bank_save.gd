@@ -4,16 +4,20 @@ extends RefCounted
 ## functions operate on the Bank autoload passed in — no state here.
 ## Saves are plain data via store_var (no serialized objects).
 
-## v4 = island v2 (docs/MAP_DESIGN_V2.md); v5 adds resident rivals.
-## Pre-v4 saves are wiped, not migrated: their PB recordings replay
-## geometry that no longer exists (human-approved full reset,
-## 2026-07-07). v4 loads with the resident grandfather below.
-const SAVE_VERSION := 5
+## v4 = island v2; v5 = resident rivals; v6 = archipelago V3-1
+## (docs/MAP_DESIGN_V3.md — Home island only; annex routes removed and
+## the dune line reshaped, so their PBs drop on load). Pre-v4 saves are
+## wiped, not migrated (human-approved full reset, 2026-07-07).
+const SAVE_VERSION := 6
 const OLDEST_LOADABLE_VERSION := 4
-## Keep both in sync with the rivals authored in track02_network.tres.
+## Routes that left the map (or changed shape) in v6 — recordings for
+## them replay roads that no longer exist.
+const V6_DROPPED_ROUTES: Array[String] = ["cut", "sandcut", "climb",
+		"high_ring", "harbor", "canal", "dune"]
+## Keep all three in sync with the rivals authored in track02_network.tres.
 const ONBOARDING_RIVALS: Array[String] = ["amber", "cobalt", "onyx"]
-const RESIDENT_RIVALS := {"jade": "cut", "sienna": "dune",
-		"slate": "climb", "rust": "harbor"}
+const KNOWN_RIVALS: Array[String] = ["amber", "cobalt", "onyx", "sienna"]
+const RESIDENT_RIVALS := {"sienna": "dune"}
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 
 
@@ -79,6 +83,20 @@ static func read_into(path: String, bank: Node) -> float:
 	bank.rivals_beaten.assign(data.get("rivals_beaten", []))
 	bank.garage_unlocked = data.get("garage_unlocked", false)
 	bank.jump_kit_owned = data.get("jump_kit_owned", false)
+	# v6 archipelago migration: drop records for routes that left the
+	# map or changed shape, and rivals that left with them. Runs BEFORE
+	# the grandfathers below, so a wiped dune PB correctly re-arms its
+	# resident — the reshaped road must be re-earned.
+	if int(data.get("version", 1)) < 6:
+		for route_id in V6_DROPPED_ROUTES:
+			bank.route_records.erase(route_id)
+			bank.discovered_routes.erase(route_id)
+			bank.medal_unlocked_routes.erase(route_id)
+		var known: Array[String] = []
+		for rival_id: String in bank.rivals_beaten:
+			if rival_id in KNOWN_RIVALS:
+				known.append(rival_id)
+		bank.rivals_beaten.assign(known)
 	# Owning any ghost slot implies the whole onboarding is behind this
 	# profile — beating the final rival is the only path from 0 to 1 —
 	# so saves from before the current ladder are grandfathered by

@@ -35,10 +35,10 @@ static func next_gate(bank: Node) -> Resource:
 	return cheapest
 
 
-## The Jump Kit goes on sale once the harbor — home of the canal it
-## exists to cross — is owned.
-static func jump_kit_offered(bank: Node) -> bool:
-	return bank.is_gate_purchased("harbor_gate") and not bank.jump_kit_owned
+## The Jump Kit becomes the ticket to the Port island in V3-2
+## (MAP_DESIGN_V3 §2) — parked until that strait exists.
+static func jump_kit_offered(_bank: Node) -> bool:
+	return false
 
 
 ## Discovered routes whose mastery timing is still for sale. Medals

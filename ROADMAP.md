@@ -352,6 +352,40 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       fleet appears only on the win; the canal splashes a kitless car
       and the kit turns it into a shortcut.
 
+## Slice 13 — Archipelago V3-1: simplify Home (docs/MAP_DESIGN_V3.md)
+- [x] Human verdict on the v2 mega-island: T-junction annexes kill
+      momentum and route identity is illegible ("which loops count as
+      a track?"). New model: an ARCHIPELAGO of small clovers — each
+      island one base loop + ≤2 variants + ≤1 secret, bridges (Jump
+      Kit) are travel between islands, never lap ingredients. Junction
+      grammar is now canon: entries fork straight-on (≤45°), exits
+      merge tangentially (≤30°) into straights, one decision per
+      corner, new routes beyond the cap braid existing asphalt.
+- [x] Home island simplified: chord, cliffs and harbor removed from
+      map + network (routes cut/sandcut/climb/high_ring/harbor/canal;
+      gates island_chord/cliff_gate/harbor_gate; rivals JADE/SLATE/
+      RUST retired — their material returns as Islands 2–3 per the V3
+      doc). Dunes re-grammared: straight-on fork at T1, CCW bowl,
+      tangential NNE merge into the upper riser; Dune Gate moved to
+      the fork mouth. Land shrinks east; Jump Kit off sale until it
+      becomes the Island-2 ticket (V3-2). Save v6: drops PBs/discovery
+      /medals of removed+reshaped routes (ring/forest survive), rival
+      list pruned to known ids.
+- Notes: verified 2026-07-10 — rivals re-recorded (ladder unchanged;
+  SIENNA 17.03 on the new bowl); calibration ring 13.01 / dune 16.10
+  (vs 17.58 on the old T-junction bulb — the fork grammar is
+  measurably faster) / forest 19.19 (old par still silver); dune par
+  authored 15.3, payout 28.5. Full probe green in 273 s: ladder →
+  garage → dune gate + spec → SIENNA raced AND beaten on the very
+  first dune lap (no transition lap — fork entry) → fleet income
+  steps on the win. Island overview photo: one track, two braided
+  loops, zero stubs. GOTCHA (cost one run): crossing lines are
+  DIRECTIONAL — forward is (b−a)×travel > 0; author a/b so the racing
+  direction crosses forward, else laps silently void as dirty.
+- **Accept:** Home's menu is exactly Grand Ring / Dune Bend / Forest
+      Run; every junction obeys the fork grammar; onboarding ladder
+      and dune resident work end to end on the new geometry.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

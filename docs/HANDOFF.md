@@ -259,13 +259,26 @@ them.
    the kitless fail (normal water reset). Cliff washout + dune crest
    jump spots from MAP_DESIGN §4 are NOT built yet — the kit
    "activates three places" only when those land.
-18. Next candidates: coast linker + grand tour (needs the harbor's
-   south edge), cliff washout + dune crest jump spots (the kit's "map
-   explodes" moment), gate-exhausted badges, prestige (pick-1-of-3
-   seasons), route log polish (gated routes could say "rival holds
-   this road" instead of income 0). Human feel passes pending: rival
-   ladder + resident pacing, jump feel (air times in
-   starter_car.tres), cliffs hairpins, camera zoom/shake, audio mix.
+18. ARCHIPELAGO PIVOT 2026-07-10 (human-directed; READ
+   docs/MAP_DESIGN_V3.md BEFORE ANY MAP WORK): the v2 mega-island is
+   dead — T-junction annexes killed momentum and route identity was
+   illegible. V3 model: small clover islands (one base loop + ≤2
+   variants + ≤1 secret each), junction grammar is canon (fork
+   straight-on ≤45°, merge tangential ≤30°, never into corners),
+   bridges between islands are TRAVEL not lap ingredients. V3-1 built:
+   Home = ring + dune (T1 straight-on fork, tangential riser merge) +
+   forest secret; chord/cliffs/harbor stripped (their proven geometry
+   returns as Islands 2-3 — see git history for curves); save v6
+   drops removed/reshaped-route PBs; Jump Kit off sale until V3-2
+   makes it the Island-2 ticket (ShopPacing.jump_kit_offered is
+   hardwired false — flip it there). Car jump physics + ramp layer
+   stay, dormant.
+19. Next: V3-2 the strait + Port island (shore ramps both ways,
+   RouteTracker one-start-line-per-island, Port base loop from the
+   maze/dock parts, garage pad #2, Jump Kit as the ticket) → V3-3
+   pier/canal variant → V3-4 the Crag. Open V3 questions for the
+   human are in the doc §5. Feel passes pending: T1 fork + new dune
+   bowl, rival pacing, camera zoom/shake, audio mix.
 
 ## Verification workflow (mandatory before any commit)
 
@@ -281,6 +294,10 @@ them.
 - Extend scenes/dev/dev_probe.gd with new phases when you add systems
   (that's how every slice here got verified — its phased scenario is
   the project's de-facto integration test).
+- Crossing lines are DIRECTIONAL: RouteTracker's forward test is
+  (b−a) × travel > 0. Author every line's a/b so racing-direction
+  crossings are forward — a backward crossing dirties the lap and it
+  silently never certifies (cost a calibration run in V3-1).
 - Dev flags (user://, debug builds, never combined): autopilot.flag
   (probe), calibrate.flag (pars), rivalrecord.flag (authors the three
   data/rivals/*.tres from staged bot runs), photo.flag (windowed art

@@ -28,22 +28,10 @@ const STAGES: Array[Dictionary] = [
 		"upgrades": {"top_speed": 2, "acceleration": 2, "grip": 1},
 		"handicap": 1.02, "hires": true,
 		"body": Color(0.16, 0.16, 0.19), "stripe": Color(0.95, 0.95, 0.98, 0.9)},
-	{"id": "jade", "name": "JADE", "route": "cut", "gate": "island_chord",
-		"upgrades": {"top_speed": 2, "acceleration": 2, "grip": 1},
-		"handicap": 1.05,
-		"body": Color(0.2, 0.72, 0.45), "stripe": Color(0.06, 0.25, 0.16, 0.9)},
 	{"id": "sienna", "name": "SIENNA", "route": "dune", "gate": "west_dunes",
 		"upgrades": {"top_speed": 3, "acceleration": 3, "grip": 2},
 		"handicap": 1.04,
 		"body": Color(0.82, 0.45, 0.2), "stripe": Color(0.35, 0.16, 0.06, 0.9)},
-	{"id": "slate", "name": "SLATE", "route": "climb", "gate": "cliff_gate",
-		"upgrades": {"top_speed": 3, "acceleration": 4, "grip": 4},
-		"handicap": 1.04,
-		"body": Color(0.45, 0.55, 0.66), "stripe": Color(0.14, 0.18, 0.24, 0.9)},
-	{"id": "rust", "name": "RUST", "route": "harbor", "gate": "harbor_gate",
-		"upgrades": {"top_speed": 3, "acceleration": 6, "grip": 5},
-		"handicap": 1.04,
-		"body": Color(0.62, 0.26, 0.14), "stripe": Color(0.9, 0.75, 0.3, 0.9)},
 ]
 
 const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
@@ -64,13 +52,9 @@ func _ready() -> void:
 		set_process(false)
 		return
 	_route_points = {
-		"ring": RoutesScript.RING, "cut": RoutesScript.CUT,
-		"dune": RoutesScript.DUNE, "climb": RoutesScript.CLIMB,
-		"harbor": RoutesScript.HARBOR,
+		"ring": RoutesScript.RING, "dune": RoutesScript.DUNE,
 	}
-	_route_reach = {
-		"climb": RoutesScript.CLIFF_REACH, "harbor": 130.0,
-	}
+	_route_reach = {}
 	Bank.reset_profile()
 	Bank.currency = GRANT
 	_driver.car = get_tree().get_first_node_in_group("player_car")

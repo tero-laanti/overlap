@@ -62,23 +62,10 @@ func _ready() -> void:
 	# Earn targets cover the gate PLUS that zone's arrival spec (the
 	# resident rival's authored spec — reaching it beats the resident).
 	_gates = [
-		{"id": "island_chord", "route": "cut", "points": RoutesScript.CUT,
-			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
-			"earn": 130.0, "laps": 2, "watch": 12.0, "buys": []},
 		{"id": "west_dunes", "route": "dune", "points": RoutesScript.DUNE,
 			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
 			"earn": 630.0, "laps": 2, "watch": 12.0,
 			"buys": [["top_speed", 3], ["acceleration", 3], ["grip", 2]]},
-		{"id": "cliff_gate", "route": "climb", "points": RoutesScript.CLIMB,
-			"reach": RoutesScript.CLIFF_REACH,
-			"earn": 1370.0, "laps": 2, "watch": 12.0,
-			"buys": [["acceleration", 4], ["grip", 4]]},
-		{"id": "harbor_gate", "route": "harbor", "points": RoutesScript.HARBOR,
-			"reach": 130.0, "earn": 3100.0, "laps": 2, "watch": 12.0,
-			"buys": [["acceleration", 6], ["grip", 5]]},
-		{"id": "jump_kit", "kit": true, "route": "canal",
-			"points": RoutesScript.CANAL, "reach": 130.0,
-			"earn": 1550.0, "laps": 2, "watch": 12.0, "buys": []},
 	]
 	_car = get_tree().get_first_node_in_group("player_car")
 	_driver.car = _car
@@ -220,11 +207,10 @@ func _finish() -> void:
 	var mastery_ok := Bank.try_buy_medal_unlock(MASTERY_ROUTE_ID)
 	print("[PROBE] bought mastery_ring=%s money=%.0f" % [mastery_ok, Bank.currency])
 	ReportScript.dump_route_log(get_tree())
-	print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d cut_pb=%.2f dune_pb=%.2f climb_pb=%.2f harbor_pb=%.2f ghosts=%d" % [
+	print("[PROBE] done t=%.1f money=%.0f income=%.2f/s slots=%d laps=%d routes=%d dune_pb=%.2f ghosts=%d" % [
 		_elapsed, Bank.currency, Bank.income_per_second(),
 		Bank.ghost_slots, _laps_done, Bank.discovered_routes.size(),
-		Bank.route_pb("cut"), Bank.route_pb("dune"),
-		Bank.route_pb("climb"), Bank.route_pb("harbor"),
+		Bank.route_pb("dune"),
 		get_tree().get_nodes_in_group("ghost").size(),
 	])
 	_enter(Phase.DONE, "finished")
