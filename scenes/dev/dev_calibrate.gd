@@ -18,15 +18,20 @@ const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
 const RoutesScript = preload("res://scenes/dev/dev_probe_routes.gd")
 
 var _driver: DevDriverScript = DevDriverScript.new()
-var _route_ids: Array[String] = ["ring", "dune", "forest"]
+var _route_ids: Array[String] = ["ring", "dune", "forest", "port"]
 var _route_points := {
 	"ring": RoutesScript.RING,
 	"dune": RoutesScript.DUNE,
 	"forest": RoutesScript.FOREST,
+	"port": RoutesScript.PORT,
 }
 ## Routes whose mouths or hairpins need a tighter capture radius.
 var _route_reach := {
 	"forest": RoutesScript.CLIFF_REACH,
+}
+## Routes with a one-way travel lead-in before the repeating circuit.
+var _route_loop_from := {
+	"port": RoutesScript.PORT_LOOP_FROM,
 }
 var _stage := -1
 var _stage_laps := 0
@@ -38,7 +43,9 @@ var _prepped := false
 func _ready() -> void:
 	if not (OS.is_debug_build() and FileAccess.file_exists(FLAG_PATH)):
 		set_process(false)
+		set_physics_process(false)
 		return
+	DevDriverScript.apply_dev_time_scale()
 	Bank.reset_profile()
 	Bank.currency = GRANT
 	_driver.car = get_tree().get_first_node_in_group("player_car")
@@ -51,6 +58,7 @@ func _ready() -> void:
 func _prep() -> void:
 	for gate in Bank.unpurchased_gates():
 		Bank.try_buy_gate(gate.id)
+	Bank.try_buy_jump_kit()
 	for def in Bank.CATALOG.upgrades:
 		while Bank.try_buy_upgrade(def.id):
 			pass
@@ -63,7 +71,9 @@ func _prep() -> void:
 	_next_stage()
 
 
-func _process(delta: float) -> void:
+## Physics-tick stepping, not _process: the driver must decide at the
+## same game-time cadence regardless of Engine.time_scale.
+func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	if _elapsed >= TIMEOUT:
 		print("[CAL] TIMEOUT at stage %d" % _stage)
@@ -88,7 +98,8 @@ func _next_stage() -> void:
 		return
 	var route_id := _route_ids[_stage]
 	_driver.set_route(_route_points[route_id],
-			_route_reach.get(route_id, DevDriverScript.WAYPOINT_REACHED_DISTANCE))
+			_route_reach.get(route_id, DevDriverScript.WAYPOINT_REACHED_DISTANCE),
+			_route_loop_from.get(route_id, 0))
 	print("[CAL] driving %s" % route_id)
 
 
@@ -110,5 +121,6 @@ func _report() -> void:
 			route_id, Bank.route_pb(route_id), Bank.route_medal(route_id)])
 	print("[CAL] done — author par_time from the best laps above")
 	set_process(false)
+	set_physics_process(false)
 	if DisplayServer.get_name() == "headless":
 		get_tree().quit()

@@ -5,8 +5,12 @@ extends Node
 ## tunnel-proof at any speed, no Area2D (see docs research). Owns the lap
 ## edge accumulator: forward edge crossings append, backing over the last
 ## edge pops it (U-turn), any other backward crossing dirties the lap.
-## Crossing the start line closes a clean, authored edge sequence into a
+## Crossing a start line closes a clean, authored edge sequence into a
 ## route lap and always begins a fresh lap. Timing lives in RaceState.
+## Archipelago: one start line per island; a lap only closes at the line
+## it opened at. Crossing a DIFFERENT island's start line switches the
+## active island and begins a fresh lap there (travel between islands is
+## never a lap — the accumulated edges are discarded).
 
 signal lap_started
 signal route_lap_completed(route_id: String)
@@ -30,6 +34,8 @@ var _edges := PackedStringArray()
 var _lap_active := false
 var _dirty := false
 var _disarmed := {}
+## The island the car is lapping on: the last start line crossed.
+var _active_start := ""
 
 
 func _ready() -> void:
@@ -73,8 +79,11 @@ func _test_line(line: CrossingLineDefScript, from: Vector2, to: Vector2) -> void
 
 func _on_crossing(line_id: String, forward: bool) -> void:
 	line_crossed.emit(line_id, forward)
-	if line_id == network.start_line_id:
+	if network.is_start_line(line_id):
 		if forward:
+			if line_id != _active_start:
+				_active_start = line_id
+				_lap_active = false
 			_close_or_start_lap()
 		return
 	if not _lap_active:
@@ -93,7 +102,7 @@ func _on_crossing(line_id: String, forward: bool) -> void:
 ## next lap attempt starts immediately.
 func _close_or_start_lap() -> void:
 	if _lap_active and not _dirty:
-		var route := network.match_route(_edges)
+		var route := network.match_route(_edges, _active_start)
 		if route != null:
 			route_lap_completed.emit(route.id)
 	_lap_active = true

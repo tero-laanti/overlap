@@ -9,6 +9,7 @@
 [ext_resource type="Resource" path="res://data/rivals/cobalt.tres" id="7"]
 [ext_resource type="Resource" path="res://data/rivals/onyx.tres" id="8"]
 [ext_resource type="Resource" path="res://data/rivals/sienna.tres" id="10"]
+[ext_resource type="Resource" path="res://data/rivals/rust.tres" id="11"]
 
 [sub_resource type="Resource" id="Resource_line_start"]
 script = ExtResource("2")
@@ -52,6 +53,24 @@ id = "forest"
 a = Vector2(-1650, -3130)
 b = Vector2(-1650, -3470)
 
+[sub_resource type="Resource" id="Resource_line_start_port"]
+script = ExtResource("2")
+id = "start_port"
+a = Vector2(5100, -50)
+b = Vector2(5100, -450)
+
+[sub_resource type="Resource" id="Resource_line_maze"]
+script = ExtResource("2")
+id = "maze"
+a = Vector2(6470, -475)
+b = Vector2(6830, -475)
+
+[sub_resource type="Resource" id="Resource_line_dock"]
+script = ExtResource("2")
+id = "dock"
+a = Vector2(7070, 250)
+b = Vector2(7430, 250)
+
 [sub_resource type="Resource" id="Resource_gate_dune"]
 script = ExtResource("4")
 id = "west_dunes"
@@ -87,9 +106,21 @@ par_time = 16.3
 payout_per_lap = 36.0
 secret = true
 
+[sub_resource type="Resource" id="Resource_route_port"]
+script = ExtResource("3")
+id = "port"
+display_name = "Dock Circuit"
+start_line = "start_port"
+ghost_color = Color(0.9, 0.45, 0.28, 1)
+edges = PackedStringArray("maze", "dock")
+par_time = 7.25
+payout_per_lap = 17.5
+clue = "Across the strait, steel canyons wait."
+
 [resource]
 script = ExtResource("1")
-crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_dune_fork"), SubResource("Resource_line_dune"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest")])
-routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_dune"), SubResource("Resource_route_forest")])
+start_line_ids = PackedStringArray("start", "start_port")
+crossing_lines = Array[ExtResource("2")]([SubResource("Resource_line_start"), SubResource("Resource_line_west"), SubResource("Resource_line_east"), SubResource("Resource_line_dune_fork"), SubResource("Resource_line_dune"), SubResource("Resource_line_forest_gap"), SubResource("Resource_line_forest"), SubResource("Resource_line_start_port"), SubResource("Resource_line_maze"), SubResource("Resource_line_dock")])
+routes = Array[ExtResource("3")]([SubResource("Resource_route_ring"), SubResource("Resource_route_dune"), SubResource("Resource_route_forest"), SubResource("Resource_route_port")])
 gates = Array[ExtResource("4")]([SubResource("Resource_gate_dune")])
-rivals = Array[ExtResource("5")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("10")])
+rivals = Array[ExtResource("5")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("10"), ExtResource("11")])

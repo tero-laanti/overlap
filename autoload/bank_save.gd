@@ -16,8 +16,8 @@ const V6_DROPPED_ROUTES: Array[String] = ["cut", "sandcut", "climb",
 		"high_ring", "harbor", "canal", "dune"]
 ## Keep all three in sync with the rivals authored in track02_network.tres.
 const ONBOARDING_RIVALS: Array[String] = ["amber", "cobalt", "onyx"]
-const KNOWN_RIVALS: Array[String] = ["amber", "cobalt", "onyx", "sienna"]
-const RESIDENT_RIVALS := {"sienna": "dune"}
+const KNOWN_RIVALS: Array[String] = ["amber", "cobalt", "onyx", "sienna", "rust"]
+const RESIDENT_RIVALS := {"sienna": "dune", "rust": "port"}
 const LapRecordingScript = preload("res://scenes/ghost/lap_recording.gd")
 
 

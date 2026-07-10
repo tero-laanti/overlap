@@ -1,6 +1,7 @@
 extends Control
-## Corner minimap. Reads the world, never writes: island bounds come
-## from the track's Grass polygon, roads from every visible RoadSegment
+## Corner minimap. Reads the world, never writes: bounds come from
+## every island's land polygon (group "island_land" — the archipelago
+## appears automatically), roads from every visible RoadSegment
 ## centerline (secret roads stay off the map until revealed), gates from
 ## the "gate" group (pins vanish once bought), you and your ghosts as
 ## dots. Rebuilds its road cache on a slow timer so reveals show up.
@@ -19,6 +20,8 @@ const CAR_COLOR := Color(0.95, 0.25, 0.2, 1.0)
 const MAX_GHOST_DOTS := 40
 
 var _world := Rect2()
+## Each island's land bounds in world space — drawn as its own coast.
+var _islands: Array[Rect2] = []
 ## Each entry: {"line": PackedVector2Array, "alpha": float} — preview
 ## (faded) roads draw as faintly on the map as in the world.
 var _roads: Array[Dictionary] = []
@@ -32,10 +35,17 @@ func _ready() -> void:
 	if _track == null:
 		visible = false
 		return
-	var grass: Polygon2D = _track.get_node("Grass")
-	var bounds := Rect2(grass.polygon[0], Vector2.ZERO)
-	for point in grass.polygon:
-		bounds = bounds.expand(point)
+	var bounds := Rect2()
+	for land in get_tree().get_nodes_in_group("island_land"):
+		var poly: Polygon2D = land
+		var island := Rect2(poly.polygon[0], Vector2.ZERO)
+		for point in poly.polygon:
+			island = island.expand(point)
+		_islands.append(island)
+		bounds = island if bounds.size == Vector2.ZERO else bounds.merge(island)
+	if bounds.size == Vector2.ZERO:
+		visible = false
+		return
 	_world = bounds
 	# Height follows the island's aspect so the map never distorts.
 	custom_minimum_size = Vector2(size.x, size.x * _world.size.y / _world.size.x)
@@ -83,7 +93,9 @@ func _to_map(world_pos: Vector2) -> Vector2:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), BG_COLOR)
-	draw_rect(Rect2(Vector2.ZERO, size), COAST_COLOR, false, 1.5)
+	for island in _islands:
+		draw_rect(Rect2(_to_map(island.position),
+				island.size / _world.size * size), COAST_COLOR, false, 1.5)
 	for road in _roads:
 		if road.line.size() >= 2:
 			var color: Color = ROAD_COLOR

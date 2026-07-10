@@ -120,15 +120,25 @@ func is_rival_beaten(rival_id: String) -> bool:
 	return rival_id in rivals_beaten
 
 
-## A rival stands (parked on the grid, racing your laps) once its gate
-## is owned and every earlier tier on its route has fallen.
+## A rival's arrival requirement: none (onboarding), the Jump Kit (the
+## special id "jump_kit" — island residents), or a purchased gate.
+func rival_requirement_met(rival: RivalDefScript) -> bool:
+	if rival.required_gate == "":
+		return true
+	if rival.required_gate == "jump_kit":
+		return jump_kit_owned
+	return is_gate_purchased(rival.required_gate)
+
+
+## A rival stands (parked on the grid, racing your laps) once its
+## requirement is met and every earlier tier on its route has fallen.
 func is_rival_active(rival_id: String) -> bool:
 	if _network == null:
 		return false
 	var target := _network.find_rival(rival_id)
 	if target == null or target.id in rivals_beaten:
 		return false
-	if target.required_gate != "" and not is_gate_purchased(target.required_gate):
+	if not rival_requirement_met(target):
 		return false
 	for rival in _network.rivals:
 		if rival == target:
@@ -145,8 +155,7 @@ func is_route_fleet_active(route_id: String) -> bool:
 		return true
 	for rival in _network.rivals:
 		if rival.route_id == route_id and rival.id not in rivals_beaten \
-				and (rival.required_gate == ""
-					or is_gate_purchased(rival.required_gate)):
+				and rival_requirement_met(rival):
 			return false
 	return true
 

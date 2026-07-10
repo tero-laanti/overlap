@@ -35,7 +35,14 @@ static func next_gate(bank: Node) -> Resource:
 	return cheapest
 
 
-## The Jump Kit becomes the ticket to the Port island in V3-2
-## (MAP_DESIGN_V3 §2) — parked until that strait exists.
-static func jump_kit_offered(_bank: Node) -> bool:
-	return false
+## The Jump Kit is the ticket to the Port island, and completion is
+## the price of admission (MAP_DESIGN_V3 §1 bridge-gating): it goes on
+## sale only once Home is complete — every Home route driven and the
+## dune gate owned — never on cash alone.
+static func jump_kit_offered(bank: Node) -> bool:
+	if bank.jump_kit_owned or bank.ghost_slots < 1:
+		return false
+	if not bank.is_gate_purchased("west_dunes"):
+		return false
+	return "dune" in bank.discovered_routes \
+			and "forest" in bank.discovered_routes

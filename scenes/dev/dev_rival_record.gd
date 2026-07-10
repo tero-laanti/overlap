@@ -32,6 +32,10 @@ const STAGES: Array[Dictionary] = [
 		"upgrades": {"top_speed": 3, "acceleration": 3, "grip": 2},
 		"handicap": 1.04,
 		"body": Color(0.82, 0.45, 0.2), "stripe": Color(0.35, 0.16, 0.06, 0.9)},
+	{"id": "rust", "name": "RUST", "route": "port", "gate": "jump_kit",
+		"upgrades": {"top_speed": 3, "acceleration": 3, "grip": 2},
+		"handicap": 1.05,
+		"body": Color(0.62, 0.26, 0.14), "stripe": Color(0.9, 0.75, 0.3, 0.9)},
 ]
 
 const DevDriverScript = preload("res://scenes/dev/dev_driver.gd")
@@ -45,16 +49,21 @@ var _stage_laps := 0
 var _elapsed := 0.0
 var _route_points := {}
 var _route_reach := {}
+var _route_loop_from := {}
 
 
 func _ready() -> void:
 	if not (OS.is_debug_build() and FileAccess.file_exists(FLAG_PATH)):
 		set_process(false)
+		set_physics_process(false)
 		return
+	DevDriverScript.apply_dev_time_scale()
 	_route_points = {
 		"ring": RoutesScript.RING, "dune": RoutesScript.DUNE,
+		"port": RoutesScript.PORT,
 	}
 	_route_reach = {}
+	_route_loop_from = {"port": RoutesScript.PORT_LOOP_FROM}
 	Bank.reset_profile()
 	Bank.currency = GRANT
 	_driver.car = get_tree().get_first_node_in_group("player_car")
@@ -67,10 +76,13 @@ func _ready() -> void:
 func _prep() -> void:
 	for gate in Bank.unpurchased_gates():
 		Bank.try_buy_gate(gate.id)
+	Bank.try_buy_jump_kit()
 	_enter_stage(0)
 
 
-func _process(delta: float) -> void:
+## Physics-tick stepping, not _process: the driver must decide at the
+## same game-time cadence regardless of Engine.time_scale.
+func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	if _elapsed >= TIMEOUT:
 		print("[RIVAL] TIMEOUT at stage %d" % _stage)
@@ -89,7 +101,8 @@ func _enter_stage(index: int) -> void:
 				push_error("[RIVAL] cannot buy %s for stage %s" % [id, stage.id])
 				break
 	_driver.set_route(_route_points[stage.route], float(_route_reach.get(
-			stage.route, DevDriverScript.WAYPOINT_REACHED_DISTANCE)))
+			stage.route, DevDriverScript.WAYPOINT_REACHED_DISTANCE)),
+			int(_route_loop_from.get(stage.route, 0)))
 	print("[RIVAL] stage %s — %s at spec %s" % [stage.id, stage.route, stage.upgrades])
 
 
@@ -134,6 +147,7 @@ func _write_stage(stage: Dictionary, best: LapRecordingScript) -> void:
 func _finish() -> void:
 	_driver.release_all()
 	set_process(false)
+	set_physics_process(false)
 	print("[RIVAL] done")
 	if DisplayServer.get_name() == "headless":
 		get_tree().quit()

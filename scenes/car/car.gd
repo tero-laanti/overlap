@@ -27,6 +27,9 @@ const AIRBORNE_SHADOW_OFFSET := Vector2(12.0, 20.0)
 
 @export var stats: CarStatsScript
 
+const CRUMB_SPACING := 400.0
+const CRUMB_COUNT := 4
+
 var _fx: CarStatsScript
 var _left_trail: Line2D
 var _right_trail: Line2D
@@ -37,7 +40,11 @@ var _road_query: PhysicsPointQueryParameters2D
 var _water_query: PhysicsPointQueryParameters2D
 var _rubble_query: PhysicsPointQueryParameters2D
 var _ramp_query: PhysicsPointQueryParameters2D
-var _last_road_pos := Vector2.ZERO
+## Breadcrumbs along driven asphalt (CRUMB_SPACING apart). A splash
+## resets to the OLDEST one, guaranteeing a run-up of roughly
+## (CRUMB_COUNT-1) × spacing — without it a short jump would reset the
+## car onto the ramp lip with zero runway, a splash loop.
+var _road_crumbs: Array[Vector2] = []
 var _on_road := true
 var _air_time := 0.0
 
@@ -52,7 +59,7 @@ func _ready() -> void:
 	_water_query = _make_point_query(WATER_MASK)
 	_rubble_query = _make_point_query(RUBBLE_MASK)
 	_ramp_query = _make_point_query(RAMP_MASK)
-	_last_road_pos = global_position
+	_road_crumbs = [global_position]
 	Events.upgrade_purchased.connect(func(_id: String, _level: int) -> void:
 		_refresh_stats())
 	# A dev-tool profile wipe clears upgrades without buying anything —
@@ -124,7 +131,10 @@ func _physics_process(delta: float) -> void:
 		_camera.bump(impact * IMPACT_SHAKE_SCALE)
 	_on_road = _is_on_road()
 	if _on_road:
-		_last_road_pos = global_position
+		if global_position.distance_to(_road_crumbs.back()) > CRUMB_SPACING:
+			_road_crumbs.append(global_position)
+			while _road_crumbs.size() > CRUMB_COUNT:
+				_road_crumbs.pop_front()
 		if velocity.length() >= _fx.jump_min_speed and _query_hit(_ramp_query):
 			_launch()
 			return
@@ -191,10 +201,12 @@ func _query_hit(query: PhysicsPointQueryParameters2D) -> bool:
 	return not get_world_2d().direct_space_state.intersect_point(query, 1).is_empty()
 
 
-## Splash: back to the last spot of asphalt under the wheels, dead stop.
-## The route tracker listens and voids the running lap.
+## Splash: back to driven asphalt with a run-up, facing the way you
+## were going, dead stop. The route tracker listens and voids the lap.
 func _reset_to_road() -> void:
-	global_position = _last_road_pos
+	global_position = _road_crumbs.front()
+	if _road_crumbs.size() > 1:
+		rotation = (_road_crumbs[1] - _road_crumbs[0]).angle() + PI / 2.0
 	velocity = Vector2.ZERO
 	_splash.restart()
 	Events.car_reset_to_road.emit()

@@ -51,7 +51,9 @@ var _gates: Array[Dictionary] = []
 func _ready() -> void:
 	if not (OS.is_debug_build() and FileAccess.file_exists(FLAG_PATH)):
 		set_process(false)
+		set_physics_process(false)
 		return
+	DevDriverScript.apply_dev_time_scale()
 	# Every probe run starts from zero through the real reset path, so
 	# the debug wipe is exercised on every verification loop. Runs
 	# before Main._ready, which then adopts the (now empty) records.
@@ -65,6 +67,10 @@ func _ready() -> void:
 			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
 			"earn": 630.0, "laps": 2, "watch": 12.0,
 			"buys": [["top_speed", 3], ["acceleration", 3], ["grip", 2]]},
+		{"id": "jump_kit", "kit": true, "route": "port",
+			"points": RoutesScript.PORT, "loop_from": RoutesScript.PORT_LOOP_FROM,
+			"reach": DevDriverScript.WAYPOINT_REACHED_DISTANCE,
+			"earn": 1600.0, "laps": 2, "watch": 12.0, "buys": []},
 	]
 	_car = get_tree().get_first_node_in_group("player_car")
 	_driver.car = _car
@@ -110,7 +116,9 @@ func _connect_logging() -> void:
 		track.lap_started.connect(func() -> void: print("[PROBE] lap_started"))
 
 
-func _process(delta: float) -> void:
+## Physics-tick stepping, not _process: the driver must decide at the
+## same game-time cadence regardless of Engine.time_scale.
+func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	if _car == null:
 		return
@@ -155,7 +163,8 @@ func _process(delta: float) -> void:
 					print("[PROBE] spec %s=%d money=%.0f" % [
 						buy[0], Bank.upgrade_level(buy[0]), Bank.currency])
 				ReportScript.dump_route_log(get_tree())
-				_driver.set_route(gate.points, float(gate.reach))
+				_driver.set_route(gate.points, float(gate.reach),
+						int(gate.get("loop_from", 0)))
 				_lap_target = _laps_done + int(gate.laps)
 				_enter(Phase.GATE_DRIVE, "driving %s" % gate.route)
 		Phase.GATE_DRIVE:
@@ -186,6 +195,7 @@ func _process(delta: float) -> void:
 		_driver.release_all()
 		print("[PROBE] TIMEOUT at phase %s money=%.0f" % [Phase.keys()[_phase], Bank.currency])
 		set_process(false)
+		set_physics_process(false)
 		return
 
 	if _elapsed >= _next_telemetry:
@@ -213,6 +223,7 @@ func _finish() -> void:
 	])
 	_enter(Phase.DONE, "finished")
 	set_process(false)
+	set_physics_process(false)
 	if DisplayServer.get_name() == "headless":
 		get_tree().quit()
 

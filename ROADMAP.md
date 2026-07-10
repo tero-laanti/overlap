@@ -421,6 +421,53 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       income identical before/after on the same PBs (probe income
       figures drop only by the removed medal factor).
 
+## Slice 16 — V3-2: the strait + Port island (archipelago becomes real)
+- [x] Second island east of Home across a 640 px water strait
+      (MAP_DESIGN_V3 §2 build spec has every coordinate). Jump Kit is
+      the completion-gated ticket: on sale only once Home is complete
+      (dune gate + all three Home routes driven; ShopPacing). Two
+      one-way ramp crossings (physics layer 5, CanalRamp pattern):
+      OUT forks straight-on east at the ring's NE corner (the V2
+      cliffs-approach mouth — the old ess harbor mouth violates the
+      V3 fork grammar), BACK continues west off the Port's south
+      straight into the carousel funnel. Bare car max flight 495 px
+      < 640 (can NEVER clear without the kit); kit clears with ~20%
+      margin at flat-out commitment.
+- [x] Port base loop: the V2 container maze + dock straight rebuilt
+      as a closed stop-go circuit (recovered from 5f25833, +2600 x)
+      with container WallSegments, crane, navy/rust palette, its own
+      start line + checker + garage pad #2 (same shop — GarageZone
+      polling is any-zone now). Route "port" (Dock Circuit), par 7.25
+      (bot 7.61), payout 17.5 (2.41/s·slot, continuing the per-second
+      progression premium). RUST re-authored on the real circuit
+      (8.86 s at TS3/A3/G2 ×1.05, required_gate="jump_kit" — Bank's
+      rival_requirement_met understands the special id).
+- [x] RouteTracker archipelago rules: TrackNetworkDef.start_line_ids
+      + RouteDef.start_line; a lap closes only at the line it opened
+      at, crossing another island's start line switches islands and
+      discards the accumulator (travel is never a lap). Minimap
+      bounds/coasts from the island_land group. Splash reset now
+      lands on a breadcrumb ~1200 px back along driven asphalt facing
+      forward (was: the exact water's edge — a failed jump would
+      splash-loop with zero runway).
+- [x] Dev tooling: DevDriver loop_from (one-way travel lead-in +
+      repeating circuit), probe kit+port phases, calibrate/rivalrecord
+      cover the port, OVERLAP_TIMESCALE=<n> env knob (time_scale +
+      physics_ticks_per_second scaled together — per-step dt stays
+      1/60; all three tools step the driver in _physics_process so
+      bot behavior is timescale-invariant). Full probe verified
+      identical at 8/16/32×: 56/29/14 s wall vs 475 s at 1×.
+- Notes: rival re-record reproduces the ladder byte-for-byte (15.93/
+  15.06/14.28) — no handling drift from the breadcrumb change.
+  GOTCHA: a recovered .tres may set the same property twice (rust
+  kept a stale required_gate="harbor_gate" below the edit point; the
+  LAST wins and it cost a probe run). GOTCHA: never run boot checks
+  while a flag run is active — two instances share user://.
+- **Accept:** probe drives ladder → dune → kit → strait jump → Dock
+      Circuit; RUST races and falls; port fleet pays only after;
+      feel passes pending (strait jump, stop-go rhythm, ~8 s lap
+      length, breadcrumb reset).
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

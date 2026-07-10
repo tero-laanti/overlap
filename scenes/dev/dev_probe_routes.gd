@@ -28,6 +28,26 @@ const DUNE: Array[Vector2] = [
 	Vector2(2350, 300), Vector2(2650, 750), Vector2(2350, 1150),
 	Vector2(1400, 1200),
 ]
+## Home → Port travel + the Dock Circuit. Indices 0..PORT_LOOP_FROM-1
+## are the ONE-WAY lead-in (ring to the NE corner, straight on where
+## the hub bends south, flat out over the strait ramp); pass
+## PORT_LOOP_FROM as DevDriver loop_from so laps repeat only the
+## circuit. The jump happens between (3350,-590) and (4300,-380) —
+## the driver holds accelerate through the flight.
+const PORT_LOOP_FROM := 16
+const PORT: Array[Vector2] = [
+	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
+	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
+	Vector2(-1000, -1450), Vector2(0, -1380), Vector2(1000, -1450),
+	Vector2(1900, -1250), Vector2(2400, -1140), Vector2(2900, -900),
+	Vector2(3200, -660), Vector2(3350, -590), Vector2(4300, -380),
+	Vector2(4700, -345),
+	Vector2(5350, -150), Vector2(5950, -350), Vector2(5950, -800),
+	Vector2(6650, -800), Vector2(6650, -150), Vector2(7250, -150),
+	Vector2(7250, 650), Vector2(6300, 800), Vector2(5260, 740),
+	Vector2(4700, 550), Vector2(4550, 100), Vector2(4650, -350),
+]
+
 ## The riser bends right at (-2700,-700); the forest doesn't — straight
 ## on through the golden gap, around the woods, and a long on-ramp
 ## easing east onto the top straight. Forks on the riser section the

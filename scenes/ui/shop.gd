@@ -8,7 +8,6 @@ const ShopPacingScript = preload("res://scenes/ui/shop_pacing.gd")
 const CarScript = preload("res://scenes/car/car.gd")
 
 var _car: CarScript
-var _garage_zone: Node2D
 var _kit_button: Button
 var _upgrade_rows := {}
 var _gate_rows := {}
@@ -44,16 +43,18 @@ func _process(_delta: float) -> void:
 			_refresh()
 
 
+## One shop, several locations: any garage pad on any island counts.
 func _at_garage() -> bool:
 	if not Bank.garage_unlocked:
 		return false
 	if _car == null:
 		_car = get_tree().get_first_node_in_group("player_car")
-	if _garage_zone == null:
-		_garage_zone = get_tree().get_first_node_in_group("garage_zone")
-	if _car == null or _garage_zone == null:
+	if _car == null:
 		return false
-	return _garage_zone.contains(_car.global_position)
+	for zone in get_tree().get_nodes_in_group("garage_zone"):
+		if zone.contains(_car.global_position):
+			return true
+	return false
 
 
 func _rebuild() -> void:

@@ -8,6 +8,9 @@ extends Resource
 
 @export var id := ""
 @export var display_name := "Route"
+## The island this route lives on: the crossing-line id of the start
+## line its laps open and close at (archipelago, MAP_DESIGN_V3 §3).
+@export var start_line := "start"
 @export var edges := PackedStringArray()
 ## Maxed-car autopilot benchmark lap (user://calibrate.flag run) — the
 ## medal yardstick only. Payouts are authored separately; par never

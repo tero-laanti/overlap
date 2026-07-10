@@ -71,7 +71,11 @@ func on_lap_completed(route_id: String) -> void:
 	lap_count += 1
 	if is_best and _positions.size() > 2:
 		var recording := LapRecordingScript.new()
-		recording.sample_dt = float(SAMPLE_EVERY_TICKS) / Engine.physics_ticks_per_second
+		# time_scale/tps = the per-step GAME dt (1/60 normally). Under
+		# OVERLAP_TIMESCALE both scale together, so samples stay 30 Hz
+		# of game time — dividing by tps alone would be wall time.
+		recording.sample_dt = float(SAMPLE_EVERY_TICKS) * Engine.time_scale \
+				/ Engine.physics_ticks_per_second
 		recording.positions = _positions.duplicate()
 		recording.rotations = _rotations.duplicate()
 		recording.lap_time = last_lap_time

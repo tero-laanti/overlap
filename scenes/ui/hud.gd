@@ -13,7 +13,6 @@ const ShopPacingScript = preload("res://scenes/ui/shop_pacing.gd")
 var race_state: RaceStateScript
 var car: CarScript
 
-var _garage_zone: Node2D
 var _pips_filled := 0
 var _pips_total := 2
 var _suppress_lap_toast := false
@@ -49,7 +48,12 @@ func _ready() -> void:
 	Events.garage_unlocked.connect(func() -> void:
 		_show_toast("GARAGE OPEN — pull in and press TAB", true))
 	Events.jump_kit_purchased.connect(func() -> void:
-		_show_toast("JUMP KIT installed — ramps are live", true))
+		var rival = Bank.rival_for_gate("jump_kit")
+		if rival != null:
+			_show_toast("JUMP KIT installed — %s waits across the strait"
+					% rival.display_name, true)
+		else:
+			_show_toast("JUMP KIT installed — ramps are live", true))
 	# ghost_hired fires only once at slot 1: the final rival's reward.
 	Events.ghost_hired.connect(func(count: int) -> void:
 		if count == 1:
@@ -83,9 +87,10 @@ func _process(_delta: float) -> void:
 func _at_garage() -> bool:
 	if not Bank.garage_unlocked or car == null:
 		return false
-	if _garage_zone == null:
-		_garage_zone = get_tree().get_first_node_in_group("garage_zone")
-	return _garage_zone != null and _garage_zone.contains(car.global_position)
+	for zone in get_tree().get_nodes_in_group("garage_zone"):
+		if zone.contains(car.global_position):
+			return true
+	return false
 
 
 ## One line of direction: onboarding objectives first, then the cheapest

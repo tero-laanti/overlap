@@ -29,6 +29,7 @@ func _ready() -> void:
 	Events.car_reset_to_road.connect(_park)
 	Events.rival_beaten.connect(func(_id: String) -> void: _sync_active())
 	Events.gate_purchased.connect(func(_id: String) -> void: _sync_active())
+	Events.jump_kit_purchased.connect(_sync_active)
 	Events.profile_reset.connect(_sync_active)
 	if def != null:
 		_tag.text = def.display_name

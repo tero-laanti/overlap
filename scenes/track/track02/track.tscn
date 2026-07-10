@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://bvxq2h44wr02k"]
+[gd_scene load_steps=46 format=3 uid="uid://bvxq2h44wr02k"]
 
 [ext_resource type="Script" uid="uid://7t7lgp08bywd" path="res://scenes/track/track.gd" id="1_track"]
 [ext_resource type="Resource" uid="uid://c6qm608rh2q2p" path="res://data/tracks/track01.tres" id="2_def"]
@@ -13,11 +13,12 @@
 [ext_resource type="Script" uid="uid://b75vxexwudubg" path="res://scenes/track/secret_road.gd" id="12_secret"]
 [ext_resource type="Script" uid="uid://irstjeu5y08i" path="res://scenes/track/garage_zone.gd" id="14_garagezone"]
 [ext_resource type="Script" uid="uid://x7bryfg0xjnk" path="res://scenes/track/track_reveal.gd" id="15_reveal"]
+[ext_resource type="PackedScene" uid="uid://bid5ymy01usvm" path="res://scenes/track/wall_segment.tscn" id="16_wall"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
 shader = ExtResource("7_water_shader")
-shader_parameter/land_center = Vector2(-1150, -900)
-shader_parameter/land_extents = Vector2(4450, 2900)
+shader_parameter/land_center = Vector2(1400, -900)
+shader_parameter/land_extents = Vector2(7000, 2900)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_grass"]
 shader = ExtResource("8_mottle_shader")
@@ -86,6 +87,97 @@ size = Vector2(20000, 6500)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_water_v"]
 size = Vector2(5100, 20000)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_harbor"]
+shader = ExtResource("8_mottle_shader")
+shader_parameter/base_color = Color(0.34, 0.36, 0.4, 1)
+shader_parameter/detail_color = Color(0.29, 0.31, 0.35, 1)
+shader_parameter/noise_scale = 0.006
+shader_parameter/detail_strength = 0.85
+
+[sub_resource type="Curve2D" id="Curve2D_port_a"]
+_data = {
+"points": PackedVector2Array(0, 0, 90, 0, 6300, -800, -90, 0, 0, 90, 6650, -800, 0, -90, 90, 0, 6650, -150, -90, 0, 0, 90, 7250, -150, 0, -90, 0, 0, 7250, 250)
+}
+point_count = 5
+
+[sub_resource type="Curve2D" id="Curve2D_port_b"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 100, 7250, 250, 0, -100, -140, 22, 7250, 650, 140, -22, -150, -9, 6300, 800, 150, 9, -112, -38, 5260, 740, 112, 38, -45, -135, 4700, 550, 38, 113, 25, -113, 4550, 100, -25, 113, 140, 40, 4650, -350, -140, -40, 120, -40, 5350, -150, -120, 40, 0, -90, 5950, -350, 0, 90, 105, 0, 5950, -800, -105, 0, 0, 0, 6300, -800)
+}
+point_count = 11
+
+[sub_resource type="Curve2D" id="Curve2D_strait_out"]
+_data = {
+"points": PackedVector2Array(0, 0, 260, 40, 1750, -1290, -230, -70, 230, 70, 2400, -1140, -180, -100, 180, 100, 2900, -900, -110, -60, 110, 60, 3200, -660, -100, -30, 0, 0, 3350, -590)
+}
+point_count = 5
+
+[sub_resource type="Curve2D" id="Curve2D_strait_land"]
+_data = {
+"points": PackedVector2Array(0, 0, 180, 15, 3990, -410, -160, -10, 160, 10, 4300, -380, -170, -10, 0, 0, 4700, -345)
+}
+point_count = 3
+
+[sub_resource type="Curve2D" id="Curve2D_strait_back"]
+_data = {
+"points": PackedVector2Array(0, 0, -160, 5, 5300, 750, 170, -8, -170, 8, 4900, 775, 180, -4, -180, 4, 4400, 785, 140, 0, 0, 0, 3990, 785)
+}
+point_count = 4
+
+[sub_resource type="Curve2D" id="Curve2D_strait_home"]
+_data = {
+"points": PackedVector2Array(0, 0, -140, 20, 3350, 760, 130, -30, -130, 30, 3000, 850, 160, -60, -160, 60, 2550, 1060, 140, -35, -140, 35, 2150, 1180, 110, -8, 0, 0, 1850, 1200)
+}
+point_count = 5
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ramp"]
+size = Vector2(90, 220)
+
+[sub_resource type="Curve2D" id="Curve2D_container_a"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 6200, -560, 0, 0, 0, 0, 6450, -560)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_container_b"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 5600, -650, 0, 0, 0, 0, 5600, -950)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_container_c"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 6950, -320, 0, 0, 0, 0, 6950, -620)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_container_d"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 6300, 150, 0, 0, 0, 0, 6600, 150)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_container_e"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 7550, -50, 0, 0, 0, 0, 7550, 350)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_container_f"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 5600, 380, 0, 0, 0, 0, 5900, 430)
+}
+point_count = 2
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_water_strait"]
+size = Vector2(640, 5800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_water_port_n"]
+size = Vector2(4410, 1900)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_water_port_s"]
+size = Vector2(4410, 500)
+
 [node name="Track" type="Node2D" groups=["track"]]
 script = ExtResource("1_track")
 def = ExtResource("2_def")
@@ -95,13 +187,24 @@ network = ExtResource("3_network")
 z_index = -4
 material = SubResource("ShaderMaterial_water")
 color = Color(0.13, 0.3, 0.42, 1)
-polygon = PackedVector2Array(-9000, -9000, 9000, -9000, 9000, 9000, -9000, 9000)
+polygon = PackedVector2Array(-12000, -12000, 12000, -12000, 12000, 12000, -12000, 12000)
 
-[node name="Grass" type="Polygon2D" parent="."]
+[node name="Grass" type="Polygon2D" parent="." groups=["island_land"]]
 z_index = -3
 material = SubResource("ShaderMaterial_grass")
 color = Color(0.2, 0.42, 0.18, 1)
 polygon = PackedVector2Array(-5600, -3800, 3300, -3800, 3300, 2000, -5600, 2000)
+
+[node name="PortGrass" type="Polygon2D" parent="." groups=["island_land"]]
+z_index = -3
+material = SubResource("ShaderMaterial_grass")
+color = Color(0.2, 0.42, 0.18, 1)
+polygon = PackedVector2Array(3990, -1900, 8400, -1900, 8400, 1500, 3990, 1500)
+
+[node name="HarborField" type="Polygon2D" parent="."]
+z_index = -2
+material = SubResource("ShaderMaterial_harbor")
+polygon = PackedVector2Array(5100, -1000, 6900, -1100, 7900, -700, 7950, 900, 6900, 1100, 5500, 900, 5000, 200, 4900, -500)
 
 [node name="Infield" type="Polygon2D" parent="."]
 z_index = -2
@@ -141,6 +244,38 @@ curve = SubResource("Curve2D_hub_west")
 
 [node name="SegHubEast" parent="Road" instance=ExtResource("6_segment")]
 curve = SubResource("Curve2D_hub_east")
+
+[node name="SegPortA" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_port_a")
+half_width = 130.0
+color = Color(0.24, 0.26, 0.3, 1)
+border_color = Color(0.45, 0.3, 0.22, 1)
+
+[node name="SegPortB" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_port_b")
+half_width = 130.0
+color = Color(0.24, 0.26, 0.3, 1)
+border_color = Color(0.45, 0.3, 0.22, 1)
+
+[node name="SegStraitOut" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_strait_out")
+half_width = 120.0
+
+[node name="SegStraitLand" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_strait_land")
+half_width = 120.0
+color = Color(0.24, 0.26, 0.3, 1)
+border_color = Color(0.45, 0.3, 0.22, 1)
+
+[node name="SegStraitBack" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_strait_back")
+half_width = 120.0
+color = Color(0.24, 0.26, 0.3, 1)
+border_color = Color(0.45, 0.3, 0.22, 1)
+
+[node name="SegStraitHome" parent="Road" instance=ExtResource("6_segment")]
+curve = SubResource("Curve2D_strait_home")
+half_width = 120.0
 
 [node name="StartLine" type="Polygon2D" parent="."]
 material = SubResource("ShaderMaterial_checker")
@@ -197,6 +332,127 @@ polygon = PackedVector2Array(200, 1436, 450, 1436, 450, 1466, 200, 1466)
 [node name="GarageLamp" type="Polygon2D" parent="."]
 color = Color(1, 0.85, 0.4, 1)
 polygon = PackedVector2Array(468, 1442, 490, 1442, 490, 1460, 468, 1460)
+
+[node name="PortStartLine" type="Polygon2D" parent="."]
+material = SubResource("ShaderMaterial_checker")
+color = Color(0.92, 0.92, 0.92, 1)
+polygon = PackedVector2Array(5076, -390, 5124, -390, 5124, -130, 5076, -130)
+
+[node name="PortGantryPillarN" type="Polygon2D" parent="."]
+color = Color(0.16, 0.16, 0.18, 1)
+polygon = PackedVector2Array(5086, -416, 5114, -416, 5114, -390, 5086, -390)
+
+[node name="PortGantryPillarS" type="Polygon2D" parent="."]
+color = Color(0.16, 0.16, 0.18, 1)
+polygon = PackedVector2Array(5086, -130, 5114, -130, 5114, -104, 5086, -104)
+
+[node name="PortGaragePad" type="Polygon2D" parent="."]
+z_index = -1
+color = Color(0.24, 0.25, 0.28, 1)
+polygon = PackedVector2Array(5650, 910, 5960, 910, 5960, 1006, 5650, 1006)
+
+[node name="PortGarageZone" type="Node2D" parent="."]
+position = Vector2(5805, 970)
+script = ExtResource("14_garagezone")
+
+[node name="PortGarageBase" type="Polygon2D" parent="."]
+color = Color(0.2, 0.21, 0.24, 1)
+polygon = PackedVector2Array(5620, 1006, 5990, 1006, 5990, 1226, 5620, 1226)
+
+[node name="PortGarageRoof" type="Polygon2D" parent="."]
+color = Color(0.26, 0.28, 0.32, 1)
+polygon = PackedVector2Array(5632, 1018, 5978, 1018, 5978, 1214, 5632, 1214)
+
+[node name="PortGarageDoor" type="Polygon2D" parent="."]
+color = Color(0.5, 0.52, 0.55, 1)
+polygon = PackedVector2Array(5680, 1006, 5930, 1006, 5930, 1036, 5680, 1036)
+
+[node name="PortGarageLamp" type="Polygon2D" parent="."]
+color = Color(1, 0.85, 0.4, 1)
+polygon = PackedVector2Array(5948, 1012, 5970, 1012, 5970, 1030, 5948, 1030)
+
+[node name="RampOut" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+
+[node name="RampShapeOut" type="CollisionShape2D" parent="RampOut"]
+position = Vector2(3305, -590)
+shape = SubResource("RectangleShape2D_ramp")
+
+[node name="RampDeckOut" type="Polygon2D" parent="RampOut"]
+color = Color(0.8, 0.65, 0.15, 1)
+polygon = PackedVector2Array(3130, -700, 3350, -700, 3350, -480, 3130, -480)
+
+[node name="RampChevronOut1" type="Polygon2D" parent="RampOut"]
+color = Color(0.16, 0.14, 0.1, 1)
+polygon = PackedVector2Array(3170, -680, 3200, -590, 3170, -500, 3194, -500, 3224, -590, 3194, -680)
+
+[node name="RampChevronOut2" type="Polygon2D" parent="RampOut"]
+color = Color(0.16, 0.14, 0.1, 1)
+polygon = PackedVector2Array(3240, -680, 3270, -590, 3240, -500, 3264, -500, 3294, -590, 3264, -680)
+
+[node name="RampBack" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+
+[node name="RampShapeBack" type="CollisionShape2D" parent="RampBack"]
+position = Vector2(4035, 760)
+shape = SubResource("RectangleShape2D_ramp")
+
+[node name="RampDeckBack" type="Polygon2D" parent="RampBack"]
+color = Color(0.8, 0.65, 0.15, 1)
+polygon = PackedVector2Array(3990, 650, 4210, 650, 4210, 870, 3990, 870)
+
+[node name="RampChevronBack1" type="Polygon2D" parent="RampBack"]
+color = Color(0.16, 0.14, 0.1, 1)
+polygon = PackedVector2Array(4170, 680, 4140, 760, 4170, 840, 4146, 840, 4116, 760, 4146, 680)
+
+[node name="RampChevronBack2" type="Polygon2D" parent="RampBack"]
+color = Color(0.16, 0.14, 0.1, 1)
+polygon = PackedVector2Array(4100, 680, 4070, 760, 4100, 840, 4076, 840, 4046, 760, 4076, 680)
+
+[node name="Containers" type="Node2D" parent="."]
+
+[node name="ContainerA" parent="Containers" instance=ExtResource("16_wall")]
+curve = SubResource("Curve2D_container_a")
+half_thickness = 30.0
+color = Color(0.55, 0.28, 0.18, 1)
+
+[node name="ContainerB" parent="Containers" instance=ExtResource("16_wall")]
+curve = SubResource("Curve2D_container_b")
+half_thickness = 30.0
+color = Color(0.16, 0.28, 0.42, 1)
+
+[node name="ContainerC" parent="Containers" instance=ExtResource("16_wall")]
+curve = SubResource("Curve2D_container_c")
+half_thickness = 30.0
+color = Color(0.8, 0.65, 0.15, 1)
+
+[node name="ContainerD" parent="Containers" instance=ExtResource("16_wall")]
+curve = SubResource("Curve2D_container_d")
+half_thickness = 30.0
+color = Color(0.16, 0.28, 0.42, 1)
+
+[node name="ContainerE" parent="Containers" instance=ExtResource("16_wall")]
+curve = SubResource("Curve2D_container_e")
+half_thickness = 30.0
+color = Color(0.55, 0.28, 0.18, 1)
+
+[node name="ContainerF" parent="Containers" instance=ExtResource("16_wall")]
+curve = SubResource("Curve2D_container_f")
+half_thickness = 30.0
+color = Color(0.8, 0.65, 0.15, 1)
+
+[node name="CraneBase" type="Polygon2D" parent="."]
+color = Color(0.8, 0.65, 0.15, 1)
+polygon = PackedVector2Array(6980, -1080, 7060, -1080, 7060, -920, 6980, -920)
+
+[node name="CraneBoom" type="Polygon2D" parent="."]
+z_index = 1
+color = Color(0.85, 0.7, 0.2, 1)
+polygon = PackedVector2Array(7000, -1020, 7500, -1000, 7500, -970, 7000, -990)
 
 [node name="TrackReveal" type="Node" parent="."]
 script = ExtResource("15_reveal")
@@ -317,5 +573,17 @@ position = Vector2(-8150, 0)
 shape = SubResource("RectangleShape2D_water_v")
 
 [node name="East" type="CollisionShape2D" parent="Water"]
-position = Vector2(5850, 0)
+position = Vector2(10950, 0)
 shape = SubResource("RectangleShape2D_water_v")
+
+[node name="Strait" type="CollisionShape2D" parent="Water"]
+position = Vector2(3670, -900)
+shape = SubResource("RectangleShape2D_water_strait")
+
+[node name="PortNorth" type="CollisionShape2D" parent="Water"]
+position = Vector2(6195, -2850)
+shape = SubResource("RectangleShape2D_water_port_n")
+
+[node name="PortSouth" type="CollisionShape2D" parent="Water"]
+position = Vector2(6195, 1750)
+shape = SubResource("RectangleShape2D_water_port_s")

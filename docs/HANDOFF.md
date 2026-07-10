@@ -297,13 +297,44 @@ them.
    in ghost-lap payouts and income/s. Save stays v6 (dropped key just
    stops being read/written). Fleet income on identical PBs is now
    LOWER by the removed medal factor — expected, don't "fix" it.
-21. Next: V3-2 the strait + Port island (shore ramps both ways,
-   RouteTracker one-start-line-per-island, Port base loop from the
-   maze/dock parts, garage pad #2, Jump Kit as the ticket) → V3-3
-   pier/canal variant → V3-4 the Crag. Open V3 questions for the
-   human are in the doc §5. Feel passes pending: rival pacing,
-   camera zoom/shake, audio mix (dune fork + forest both signed off
-   2026-07-10).
+21. V3-2 THE STRAIT + PORT DONE 2026-07-10 (ROADMAP slice 16;
+   MAP_DESIGN_V3 §2 build spec has every coordinate): second island
+   across a 640 px strait, Jump Kit = completion-gated ticket
+   (ShopPacing: dune gate + all Home routes driven), one-way ramp
+   crossings both ways, Dock Circuit from the recovered V2 maze
+   (par 7.25, payout 17.5), RUST resident (required_gate="jump_kit"
+   — Bank.rival_requirement_met knows the special id), garage pad
+   #2 (shop polls ALL garage_zone nodes), per-island start lines
+   (TrackNetworkDef.start_line_ids + RouteDef.start_line — a lap
+   closes only where it opened; island travel discards the
+   accumulator), minimap bounds from the island_land group. Splash
+   reset is now breadcrumb-based (~1200 px runway, faces travel) —
+   REQUIRED for retryable failed jumps; feel-pass it. GOTCHAS: (a)
+   recovered .tres files can set a property twice — the LAST wins
+   (stale required_gate cost a probe run); (b) never boot-check
+   while a flag run is live, two instances share user://; (c) the
+   V2 ess harbor mouth is a ~120° fork — V3 grammar forbids reusing
+   it, the NE-corner straight-on mouth is the pattern.
+22. FAST DEV RUNS: OVERLAP_TIMESCALE=<n> (1..32) before any headless
+   flag run. Verified 2026-07-10: full probe arc identical at 8/16/32×
+   (461-sample recordings, same PBs/rival results within cross-run
+   noise) in 56/29/14 s wall vs 475 s at 1× — use 32× freely on this
+   machine, drop to 8-16× if a slower box ever shows sample counts
+   shrinking. HOW IT WORKS (the trap cost a probe run): Godot's
+   Engine.time_scale alone makes each physics step integrate a BIGGER
+   dt — sloppier sim, sparse recordings. DevDriver.apply_dev_time_scale
+   scales physics_ticks_per_second with it (per-step game dt stays
+   1/60 — more steps, not bigger) and raises max_physics_steps_per_
+   frame so frame drops can't starve physics. RaceState.sample_dt is
+   time_scale/tps-aware. Probe/calibrate/rivalrecord step the
+   DevDriver in _physics_process so the bot is timescale-invariant;
+   keep BOTH invariants for any new dev tool or recorder.
+23. Next: V3-3 pier/canal variant on the Port (the jump INSIDE a
+   lap, second Port resident) → V3-4 the Crag. Open V3 questions
+   for the human are in the doc §5. Feel passes pending: rival
+   pacing, camera zoom/shake, audio mix, strait jump + Dock Circuit
+   rhythm + ~8 s lap length + breadcrumb splash reset (dune fork +
+   forest signed off 2026-07-10).
 
 ## Verification workflow
 
@@ -329,10 +360,12 @@ them.
   (b−a) × travel > 0. Author every line's a/b so racing-direction
   crossings are forward — a backward crossing dirties the lap and it
   silently never certifies (cost a calibration run in V3-1).
-- Dev flags (user://, debug builds, never combined): autopilot.flag
-  (probe), calibrate.flag (pars), rivalrecord.flag (authors the three
+- Dev flags (user://, debug builds, never combined — and never boot-
+  check while one runs, instances share user://): autopilot.flag
+  (probe), calibrate.flag (pars), rivalrecord.flag (authors ALL
   data/rivals/*.tres from staged bot runs), photo.flag (windowed art
-  check). All of them wipe or rewrite the save — back up the human's
+  check). Prefix OVERLAP_TIMESCALE=8 for ~8× faster wall-clock (see
+  item 22). All of them wipe or rewrite the save — back up the human's
   save.dat ONCE at session start to one canonical file and restore
   that same file after every dev run. Do NOT re-copy save.dat between
   runs: a 2026-07-10 session chained backups and briefly "restored" a

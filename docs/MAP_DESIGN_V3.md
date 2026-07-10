@@ -5,7 +5,8 @@ the same day. Supersedes the "one growing island" premise of
 MAP_DESIGN_V2 §0; V2's hub geometry, junction-spacing rules and
 economy normalization still govern everything that survives. Read V2
 first. BUILT: V3-1 (Home simplified — chord/cliffs/harbor removed,
-dunes re-grammared as the T1 fork). NEXT: V3-2 the strait + Port.
+dunes re-grammared as the T1 fork); V3-2 (the strait + Port island,
+2026-07-10 — see the build spec in §2). NEXT: V3-3 the pier variant.
 
 ## 0. Why v3 (human feedback, 2026-07-10)
 
@@ -88,7 +89,77 @@ ingredient.
   jump INSIDE a route, introduced only after jumps are familiar as
   travel. Canal Runner's premium survives here.
 - Variant 2 (later): crane yard / oil-slick alley (V2 hazard note).
-- Rivals: its own resident pair at Port arrival spec.
+- Rivals: RUST returns as the Port resident (re-recorded at Port
+  arrival spec); the pier variant brings the second resident in V3-3.
+
+#### V3-2 build spec (authored 2026-07-10; source geometry recovered
+#### from commit 5f25833, translated east by +2600 x)
+
+**The strait.** Home's grass ends at x=3300. Open water spans
+x 3350..4050 — a 700 px gap sized against jump physics: bare
+0.45 s × ~1200 px/s max = 540 px (never clears, splash reset is the
+soft fail); kit 0.75 s needs ≥ ~930 px/s (flat-out commitment on a
+long approach). Port land runs x 4050..8400, y -1900..1500.
+
+**Two one-way crossings** (both travel, both CanalRamp-pattern
+Area2Ds on physics layer 5, layer mask 16, monitoring off):
+- OUT (eastbound, y≈-1200): fork at the ring's NE corner
+  (1900,-1250) — continue STRAIGHT east where the hub bends south,
+  the exact grammar the V2 cliffs approach validated (the old ess
+  harbor mouth is a ~120° turn and violates the V3 fork rule — do
+  not reuse it). Spur runs east, ramp deck ends at the shore
+  x=3350, flight over the strait, landing road from x 4050 sweeping
+  SE to merge tangentially into the Port loop's north straight just
+  before the start line.
+- BACK (westbound, y≈760): exit spur continuing straight west off
+  the Port loop's south straight at (5260,740) (the loop itself
+  bends NNW there), ramp deck ends x 4050, landing road from x 3350
+  curving SW to merge tangentially into Home's start straight
+  (westbound, merge-only mouth ~x 1900, blending with the carousel
+  funnel).
+
+**Port base loop** (SegPort, half_width 130, navy road
+(0.24,0.26,0.3), rust border (0.45,0.3,0.22)) — the recovered maze
+anchors +2600 x, closed with a new west leg:
+(4650,-350) → (5350,-150) → (5950,-350) → (5950,-800) → (6650,-800)
+→ (6650,-150) → (7250,-150) → (7250,650) → (6300,800) → (5260,740)
+→ west leg (4700,550) → (4550,100) → close at (4650,-350).
+~8.1k px; stop-go rhythm (maze burst-and-brake) with the dock
+straight (7250,-150 → 7250,650) as the one long breath. Container
+WallSegment ribbons (+2600 x from recovery), crane dressing NE,
+HarborField navy underlay, gold liveries.
+
+**Network.** New start line `start_port` crossing the north straight
+at x=5100 (a=(5100,-50) b=(5100,-450), forward = eastbound); edges
+`maze` (a=(6470,-475) b=(6830,-475), forward = south down the maze
+leg) and `dock` (a=(7070,250) b=(7430,250), forward = south down the
+dock). Route `port` ("Dock Circuit", start_line=start_port, edges
+[maze, dock], no required_gates — the kit is the travel gate, the
+island's roads are free once you're there). RouteTracker archipelago
+rules (one start line per island) are BUILT (2026-07-10).
+
+**Rival plumbing.** RivalDef.required_gate learns the special id
+`"jump_kit"` (Bank checks jump_kit_owned instead of purchased_gates)
+so RUST is a resident, NOT an onboarding-ladder rival (those are
+required_gate == "" and grow the ×2 multiplier).
+
+**Garage pad #2** at (5800,1050) (GarageZone radius 360 touching the
+south straight) with pad/building dressing — same shop, second
+location; shop.gd already polls the garage_zone GROUP, so it must
+take the NEAREST zone, not the first.
+
+**Minimap**: bounds expand over BOTH islands' land polygons (group
+`island_land` on Grass + PortGrass) — full per-island minimap zoom
+is deferred; the Port simply appears as geography.
+
+**Pars/payouts**: calibrated 2026-07-10 — maxed bot 7.61 s, par
+authored 7.25 (bot/1.05 = silver, the house rule), payout 17.5/lap
+(2.41/s·slot, continuing the ring 1.69 → dune 1.86 → forest 2.21
+progression premium). NOTE for the feel pass: the circuit laps
+SHORTER than the Home ring (stop-go rhythm, ~8 s human laps) — if it
+reads too small when driven, grow the maze east/south into the land
+reserved for the pier variant. Kit price $1500 already authored
+(economy.jump_kit_cost).
 
 ### Island 3 — THE CRAG (later; hardest)
 - The proven cliff ladder + lighthouse + esses as the SPINE of its
