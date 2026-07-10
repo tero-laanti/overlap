@@ -28,15 +28,16 @@ const DUNE: Array[Vector2] = [
 	Vector2(2350, 300), Vector2(2650, 750), Vector2(2350, 1150),
 	Vector2(1400, 1200),
 ]
-## Through the golden tree gap into the woods arc — the first crossing
-## proves the secret trigger fires from real driving.
+## The riser bends right at (-2700,-700); the forest doesn't — straight
+## on through the golden gap, around the woods, and a long on-ramp
+## easing east onto the top straight. Forks on the riser section the
+## dune bypasses, so dune+forest laps are geographically impossible.
 const FOREST: Array[Vector2] = [
 	Vector2(-1500, 1200), Vector2(-2450, 1080), Vector2(-2620, 700),
-	Vector2(-2350, 100), Vector2(-2700, -700), Vector2(-2350, -1250),
-	Vector2(-1900, -1450), Vector2(-1990, -1620), Vector2(-2060, -1810),
-	Vector2(-2250, -2100),
-	Vector2(-2350, -2850), Vector2(-1650, -3300), Vector2(-800, -3150),
-	Vector2(-550, -2400), Vector2(-1100, -1450),
+	Vector2(-2350, 100), Vector2(-2700, -640),
+	Vector2(-2820, -1250), Vector2(-2830, -1550), Vector2(-2850, -2050),
+	Vector2(-2400, -2800), Vector2(-1650, -3300), Vector2(-800, -3150),
+	Vector2(-950, -2500), Vector2(-700, -1470),
 	Vector2(0, -1380), Vector2(1000, -1450), Vector2(1900, -1250),
 	Vector2(2300, -800), Vector2(1950, -250), Vector2(2350, 300),
 	Vector2(2650, 750), Vector2(2350, 1150), Vector2(1400, 1200),

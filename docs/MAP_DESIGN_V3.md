@@ -46,6 +46,13 @@ in its own livery filling its own roads.
 3. One decision per corner; junction mouths ≥ 1600 px apart (V2 §4).
 4. New routes beyond the per-island cap come from braiding existing
    asphalt (line combos), never from new appendages.
+5. **Variants exclude by position** (human, 2026-07-10): every
+   variant's fork sits on a track section another variant bypasses,
+   so no two variants fit in one lap. N loops = exactly N+1 possible
+   laps, never a combinatorial menu — and no drivable lap can match
+   zero authored routes (an unauthored combo silently voids, the
+   worst feedback in the game). On Home: the dune bypasses the riser;
+   the forest forks off the riser, so dune+forest cannot happen.
 
 ## 2. The islands
 

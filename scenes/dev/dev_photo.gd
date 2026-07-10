@@ -24,7 +24,7 @@ const SPOTS := {
 	"shore_south": [Vector2(0, 2050), 0.5],
 	"dune_bowl": [Vector2(-3900, -100), 0.3],
 	"dune_merge": [Vector2(-2900, -1000), 0.45],
-	"forest_gap": [Vector2(-1990, -1720), 0.55],
+	"forest_gap": [Vector2(-2830, -1560), 0.55],
 	"woods": [Vector2(-1600, -2600), 0.3],
 }
 

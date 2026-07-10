@@ -386,6 +386,21 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       Run; every junction obeys the fork grammar; onboarding ladder
       and dune resident work end to end on the new geometry.
 
+## Slice 14 — Forest re-grammar: variants exclude by position
+- [x] Human feedback after driving V3-1: the forest rejoin hooked
+      backwards (~130°) and two free-floating loops made 4 lap combos
+      — with dune+forest matching NO authored route (silently voided
+      laps, the worst feedback). Fix chosen by the human: the forest
+      fork moves onto the riser — the section the dune bypasses — so
+      dune+forest is geographically impossible. New grammar rule in
+      MAP_DESIGN_V3 §1.5: variants exclude by position; N loops =
+      N+1 laps exactly. Forest now forks straight-on where the riser
+      bends right, threads the relocated golden gap north, rides the
+      old woods arc, and eases onto the top straight tangentially.
+- **Accept:** forest entry and exit both flow at speed; dune+forest
+      in one lap is impossible; feel signed off (human, 2026-07-10:
+      "ok yeah it's better").
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:

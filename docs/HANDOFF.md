@@ -273,12 +273,22 @@ them.
    makes it the Island-2 ticket (ShopPacing.jump_kit_offered is
    hardwired false — flip it there). Car jump physics + ramp layer
    stay, dormant.
-19. Next: V3-2 the strait + Port island (shore ramps both ways,
+19. FOREST RE-GRAMMAR DONE 2026-07-10 (human-directed, feel signed
+   off "ok yeah it's better"): the forest forks off the RISER — the
+   section the dune bypasses — so dune+forest in one lap is
+   geographically impossible (grammar rule V3 §1.5: variants exclude
+   by position, N loops = N+1 laps; unauthored combos silently void,
+   so never leave one reachable). Golden gap relocated to the north
+   corridor; exit is a long tangential on-ramp east onto the top
+   straight. Forest par 16.3 (bot 17.16 — 2 s faster than the old
+   hooked exit).
+20. Next: V3-2 the strait + Port island (shore ramps both ways,
    RouteTracker one-start-line-per-island, Port base loop from the
    maze/dock parts, garage pad #2, Jump Kit as the ticket) → V3-3
    pier/canal variant → V3-4 the Crag. Open V3 questions for the
-   human are in the doc §5. Feel passes pending: T1 fork + new dune
-   bowl, rival pacing, camera zoom/shake, audio mix.
+   human are in the doc §5. Feel passes pending: rival pacing,
+   camera zoom/shake, audio mix (dune fork + forest both signed off
+   2026-07-10).
 
 ## Verification workflow (mandatory before any commit)
 
