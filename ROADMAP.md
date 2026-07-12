@@ -529,9 +529,18 @@ notes for the recovery method).
       ladder and per-second route premiums, check the minute-15
       "10-ghost ×2 looming" checkpoint still holds (DESIGN_NOTES
       "Tuned economy v1" targets). Knobs in data/economy.tres only.
-- [ ] Minimap per-island zoom (V3 §3 deferred): current island
-      large, others as silhouettes. Pure minimap.gd work; bounds
-      groups already exist (island_land).
+- [x] Minimap per-island zoom (V3 §3): DONE 2026-07-12 — active
+      island (the one under the car; unchanged mid-jump) fills the
+      map, other islands draw as aspect-true coast silhouettes
+      clamped to the map edge along their true bearing; roads cached
+      in world space and projected per draw; control re-sizes to the
+      active island's aspect; off-island dots clip (clip_contents).
+      Verified via photo mode, which now covers the Port (7 new
+      viewpoints) and can teleport the CAR to a spot (third array
+      element `true`) so car-anchored UI like the minimap renders
+      that island's state — photo_archipelago/port_island.png show
+      the switch both ways. Photo runs load the human save: back it
+      up around them (ritual unchanged).
 - [ ] Route log: show authored routes grouped by island (start_line)
       once ≥2 islands are common — flat list stops scaling at ~6
       routes.

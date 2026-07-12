@@ -3,7 +3,10 @@ extends Node
 ## free camera to authored viewpoints across the island and saves one
 ## PNG per spot to user://dev/, then quits — the visual-verification
 ## loop for art passes (macOS headless can't screenshot; this runs
-## windowed in seconds). Doesn't touch the profile or move the car.
+## windowed in seconds). Doesn't touch the profile. A spot with a
+## third element `true` also teleports the CAR there (dead stop), so
+## car-anchored UI — the per-island minimap — renders that island's
+## state; position isn't persisted, so the profile stays untouched.
 
 const FLAG_PATH := "user://photo.flag"
 const SHOT_DIR := "user://dev"
@@ -26,6 +29,13 @@ const SPOTS := {
 	"dune_merge": [Vector2(-2900, -1000), 0.45],
 	"forest_gap": [Vector2(-2830, -1560), 0.55],
 	"woods": [Vector2(-1600, -2600), 0.3],
+	"archipelago": [Vector2(1400, -200), 0.115],
+	"strait_out": [Vector2(3670, -590), 0.4],
+	"strait_back": [Vector2(3670, 760), 0.4],
+	"port_island": [Vector2(6200, -200), 0.115, true],
+	"port_maze": [Vector2(6300, -475), 0.4, true],
+	"port_dock": [Vector2(7250, 250), 0.45, true],
+	"port_garage": [Vector2(5800, 970), 0.5, true],
 }
 
 var _camera: Camera2D
@@ -49,9 +59,14 @@ func _ready() -> void:
 
 func _shoot_all() -> void:
 	_camera.make_current()
+	var car: Node2D = get_tree().get_first_node_in_group("player_car")
 	for spot_name: String in SPOTS:
-		_camera.global_position = SPOTS[spot_name][0]
-		_camera.zoom = Vector2.ONE * (SPOTS[spot_name][1] as float)
+		var spot: Array = SPOTS[spot_name]
+		_camera.global_position = spot[0]
+		_camera.zoom = Vector2.ONE * (spot[1] as float)
+		if spot.size() > 2 and spot[2] and car != null:
+			car.global_position = spot[0]
+			car.velocity = Vector2.ZERO
 		await _snap(spot_name)
 	var menu := get_node_or_null("/root/Main/PauseMenu")
 	if menu != null:
