@@ -203,13 +203,15 @@ reserved for the pier variant. Kit price $1500 already authored
 
 ## 5. Open questions (human)
 
-- Port base-loop rhythm: pure stop-go (maze) or maze + dock straight
-  as the lap? (Doc assumes maze+dock: burst-and-brake with one long
-  breath.)
+- ~~Port base-loop rhythm: pure stop-go (maze) or maze + dock straight
+  as the lap?~~ BUILT 2026-07-10 as maze+dock (the doc's assumption);
+  human feel verdict pending — the ~8 s lap is the thing to judge.
 - ~~Does the ferry/coast linker idea survive for Island 3, or is a
   long jump the only bridge grammar?~~ ANSWERED 2026-07-10: bridge
   flavor is free per crossing (jump/ferry/teleport all fine); the
   only rule is travel-not-lap. Pick per island for theme. A teleport
   bridge could foreshadow the non-Euclidean biome idea (IDEAS.md).
-- Island 1 keeps 2 gates (dune + ???) or just the Dune Gate before
-  the Jump Kit ticket? (Doc assumes just dune — Home stays gentle.)
+- ~~Island 1 keeps 2 gates (dune + ???) or just the Dune Gate before
+  the Jump Kit ticket?~~ BUILT 2026-07-10 as just dune (the doc's
+  assumption) — revisit only if Home feels thin after the Port lands
+  for real players.

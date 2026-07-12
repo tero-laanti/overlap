@@ -1,10 +1,47 @@
-# Handoff — for the next agent (updated 2026-07-10 by Claude Fable 5)
+# Handoff — for the next agent (updated 2026-07-12 by Claude Fable 5)
 
 You have fresh context. This file is your fastest path to being useful.
 Read in order: AGENTS.md (rules — non-negotiable), ROADMAP.md (state),
 this file (next steps), and when you touch the gate network, the design
 doc on the `design/gate-network` branch (remote-only now — no local
 worktree; `git show origin/design/gate-network:docs/GATE_NETWORK.md`).
+
+## Operating checklist (the working method that ships slices — follow it)
+
+1. **Docs before geometry.** Any map/route work: write the build spec
+   (coordinates, junction angles, crossing-line a/b with directions,
+   pars-to-be) into MAP_DESIGN_V3 §2 FIRST, then build to your own
+   spec. Every junction-grammar violation so far happened when
+   geometry was improvised.
+2. **State the verification plan before building.** One sentence:
+   "verified by <probe phase / calibrate / photo> showing <log
+   lines>". If you can't say it, the slice isn't ready to build.
+3. **Session start ritual:** back up the human's save.dat ONCE to one
+   canonical file; restore that same file after every dev run; never
+   re-copy between runs. Session end: no *.flag files left, save
+   restored, boot clean.
+4. **Probes are 14 s now** (OVERLAP_TIMESCALE=32) — run the full loop
+   for any geometry/route/handling/save change without hesitating.
+   Boot check (--quit, zero errors) before EVERY commit regardless.
+5. **One godot instance at a time.** Never boot-check while a flag
+   run is live (shared user://).
+6. **Evidence, not confidence.** A slice is done when the probe log
+   shows the acceptance lines. Quote them in the commit/notes. "Should
+   work" has cost this project calibration runs; grep this file for
+   GOTCHA before touching .tscn/.tres — the list is battle scars.
+7. **Recovered/generated .tres files:** read the whole file after
+   editing — a property set twice keeps the LAST value (a stale
+   required_gate cost a probe run). After any new class_name:
+   `godot --headless --import .` once; preload-const typing per
+   AGENTS rule 8.
+8. **When the human gives a feel verdict, write it down verbatim** in
+   the slice notes and encode the generalized rule in the design doc
+   (like "variants exclude by position"). Verdicts are design canon;
+   your job is turning them into named, reusable rules.
+9. **Scope discipline:** finish the slice, tick the box, THEN look
+   around. If you notice adjacent work, add it to ROADMAP's groomed
+   queue instead of doing it. Exception: a bug that invalidates the
+   slice's acceptance.
 
 ## Where the project stands
 

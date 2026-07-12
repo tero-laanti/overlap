@@ -468,6 +468,77 @@ Tick when done. Notes about deviations go under the slice, not in new files.
       feel passes pending (strait jump, stop-go rhythm, ~8 s lap
       length, breadcrumb reset).
 
+## Slice 17 — V3-3: the pier variant (NEXT; speced 2026-07-12)
+The Port's Variant 1: the one lap with a jump INSIDE it. Geometry is
+recovered V2 pier material +2600 x (git show 5f25833, see slice 16
+notes for the recovery method).
+- [ ] Pier fork: continue STRAIGHT EAST off the Port loop's top
+      straight where it turns south at (6650,-800) — V3 fork grammar,
+      same pattern as the strait fork. Pier road: (6650,-800) →
+      (7750,-800) → south down x=7750 → CANAL (water strip ~290 px at
+      y≈0, Area2D layer 4 like the old canal) with a CanalRamp
+      (layer 16) at (7750,-325) → lands pier2 → (7750,690) →
+      tangential rejoin WEST into the south straight near (6300,800).
+      Positional exclusion (V3 §1.5): the pier BYPASSES the dock
+      straight, so dock+pier in one lap is impossible; Port menu
+      stays exactly 2 routes (base + pier) = N+1.
+- [ ] Network: crossing line "pier" on pier1 south of the fork
+      (forward = south; author a/b with the (b−a)×travel > 0 rule!).
+      Route id "canal" (Canal Runner), start_line="start_port",
+      edges ["maze","pier"] — verify with a probe lap that the dock
+      line is NOT crossed on the pier lap, else add it to edges.
+      Keep the canal splash the kitless... kit is owned by arrival;
+      the canal fail is a mistimed/slow jump — breadcrumb reset
+      handles retry.
+- [ ] Second Port resident on "canal" (pick a name/livery — teal
+      family matches the old Canal Runner ghost_color 0.35,0.8,0.75),
+      required_gate="jump_kit", authored by a new DevRivalRecord
+      stage at the same TS3/A3/G2 arrival spec, handicap ~1.05.
+      Update bank_save KNOWN_RIVALS + RESIDENT_RIVALS and the
+      network rivals array (order after rust).
+- [ ] Tooling: PORT_PIER waypoints in dev_probe_routes (travel
+      lead-in reuses PORT[0..15], loop_from same pattern), calibrate
+      + rivalrecord + probe phase for the canal route. Calibrate,
+      then author par (bot/1.05) and payout (~2.6/s·slot premium —
+      ability routes pay chunkier per V2 §3).
+- [ ] **Accept:** OVERLAP_TIMESCALE=32 probe drives base + pier
+      routes, second resident raced and beaten, both Port fleets
+      pay, Home routes unaffected (identical PBs), boot clean.
+
+## Slice 18 — V3-4: the Crag (speced-lite; design before build)
+- [ ] Third island: the proven cliff ladder + lighthouse + esses
+      (git history, commit 5812e53 + slice 13's re-adaptation) as
+      the SPINE of its base loop — the whole island is the technical
+      lap. Washout gap (MAP_DESIGN §4) as its jump variant. Bridge:
+      ferry/linker or long jump — human decides flavor; grammar only
+      requires travel-not-lap and completion-gating (Port complete +
+      cash). WRITE THE MAP_DESIGN_V3 §2 BUILD SPEC WITH COORDINATES
+      FIRST, like V3-2's — geometry work without a written spec is
+      how junction grammar violations happen.
+- [ ] **Accept:** probe drives all three islands in one run; every
+      junction obeys the grammar; per-island start lines close laps
+      only where opened.
+
+## Groomed queue (small, independent — good session warmups)
+- [ ] Feel-pass bundle for the human (present as one session):
+      strait jump commitment, Dock Circuit stop-go rhythm + ~8 s lap
+      length (grow the maze into pier land if too small), breadcrumb
+      splash reset fairness, rival pacing overall, camera zoom/shake
+      exports, audio mix + engine A/B. Collect verdicts, fix, tick.
+- [ ] Economy re-sim (docs/econ_sim.py): with the ×2-per-onboarding
+      ladder and per-second route premiums, check the minute-15
+      "10-ghost ×2 looming" checkpoint still holds (DESIGN_NOTES
+      "Tuned economy v1" targets). Knobs in data/economy.tres only.
+- [ ] Minimap per-island zoom (V3 §3 deferred): current island
+      large, others as silhouettes. Pure minimap.gd work; bounds
+      groups already exist (island_land).
+- [ ] Route log: show authored routes grouped by island (start_line)
+      once ≥2 islands are common — flat list stops scaling at ~6
+      routes.
+- Parked (do not start without the human): pick-1-of-3 draft moment
+  (IDEAS.md), non-Euclidean teleport-seam biome (IDEAS.md — strong
+  V3-5/V4 candidate), prestige/seasons, Godot 4.7.1 bump.
+
 ## In review (branches, 2026-07-05 autonomous session)
 - `design/gate-network` — full gate/route-discovery design + topology
   diagrams + research (docs/GATE_NETWORK.md there). Recommendation:
